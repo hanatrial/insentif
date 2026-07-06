@@ -250,11 +250,11 @@ function compute(){
   const rangeSchool = periodRange('Juli');
 
   rawData.forEach(r=>{
-    const sales = normSales(r['NamaSales']);
+    const sales = normSales(r['Nama Sales']);
     if(!salesList.includes(sales)) return;
-    const nota = r['KodeNota'];
-    const toko = r['ShipTo'] || r['Perusahaan'];
-    const barang = r['NamaBarang'];
+    const nota = r['Kode Nota'];
+    const toko = r['Ship To'] || r['Perusahaan'];
+    const barang = r['Nama Barang'];
     const merek = r['Merek'];
     const tgl = r['Tgl'];
     if(!sales || !barang) return;
