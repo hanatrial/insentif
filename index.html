@@ -214,10 +214,13 @@ const SALES_ALIAS = {
   "MISWAR JAMIL": "KAMELIA (NFI)",
   "ST DEWI PUSPITA SARI": "KAMELIA (NFI)",
   "SALDI RENALDI": "HABRIYANTO",
-  "IDUL KIHAJAR B": "HABRIYANTO"
+  "IDUL KIHAJAR B": "HABRIYANTO",
+  "MOHAMAD SUGIARTO PONTOH": "MUHAMMAD SUGIARTO"
 };
 function normSales(name){
-  return SALES_ALIAS[name] || name;
+  if(!name) return name;
+  const trimmed = String(name).trim();
+  return SALES_ALIAS[trimmed] || trimmed;
 }
 
 function processFile(){
