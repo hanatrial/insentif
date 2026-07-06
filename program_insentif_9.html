@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Program Insentif</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  body { font-family: Arial, sans-serif; background:#f2f2f2; padding:20px; }
+  .wrap { max-width:950px; margin:0 auto; }
+  .toolbar {
+    background:#fff; border:1px solid #ccc; border-radius:6px; padding:14px 16px;
+    margin-bottom:16px; display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+  }
+  .toolbar input[type=file]{ font-size:13px; }
+  .toolbar button {
+    background:#0a5c36; color:#fff; border:none; padding:8px 14px; border-radius:4px;
+    cursor:pointer; font-size:13px;
+  }
+  #status { font-size:13px; color:#555; }
+  table { width:100%; border-collapse:collapse; background:#fff; }
+  caption {
+    background:#0a5c36; color:#fff; font-weight:bold; font-size:18px;
+    padding:8px; border:1px solid #333;
+  }
+  th {
+    background:#a9d18e; border:1px solid #333; padding:6px; font-size:13px;
+  }
+  td {
+    border:1px solid #333; padding:5px 8px; font-size:13px; text-align:center;
+    vertical-align:middle;
+  }
+  td.nama { text-align:left; color:#1155cc; font-weight:bold; }
+  td.program { text-align:left; font-weight:bold; }
+  .bar-cell { padding:4px 6px; }
+  .bar-wrap { display:flex; align-items:center; gap:6px; }
+  .bar-bg { background:#e8e8e8; border-radius:2px; width:100px; height:16px; position:relative; overflow:hidden; flex-shrink:0; }
+  .bar-fill { background:#4caf50; height:16px; border-radius:2px 0 0 2px; }
+  .bar-label { font-size:12px; white-space:nowrap; }
+  .target-input { width:50px; text-align:center; border:1px solid #ccc; }
+  .toolbar button.branch-active { background:#073d24; box-shadow: inset 0 0 0 2px #fff; }
+</style>
+<style>
+  .login-screen {
+    max-width:400px; margin:80px auto; background:#fff; border:1px solid #ccc;
+    border-radius:8px; padding:30px; text-align:center;
+  }
+  .login-screen h2 { margin-top:0; color:#0a5c36; }
+  .login-option {
+    display:block; width:100%; background:#0a5c36; color:#fff; border:none;
+    padding:12px; margin:8px 0; border-radius:6px; font-size:15px; cursor:pointer;
+  }
+  .login-option:hover { background:#073d24; }
+  #loginError { color:#c00; font-size:13px; min-height:18px; }
+  .hidden { display:none; }
+</style>
+</head>
+<body>
+
+<div class="login-screen" id="loginScreen">
+  <h2>Pilih Cabang</h2>
+  <button class="login-option" onclick="login('Irfan')">Irfan (Makassar)</button>
+  <button class="login-option" onclick="login('Teddy')">Teddy (Gorontalo)</button>
+  <div id="loginError"></div>
+</div>
+
+<div class="wrap hidden" id="appWrap">
+
+<div class="toolbar">
+  <button onclick="logout()" style="background:#888;">&larr; Kembali</button>
+  <input type="file" id="fileInput" accept=".xlsx,.xls,.csv">
+  <button onclick="processFile()">Proses & Hitung</button>
+  <span id="status">Belum ada file. Upload data mentah transaksi (kolom: Tgl, KodeNota, NamaBarang, Merek, NamaSales).</span>
+</div>
+
+<div class="toolbar">
+  <span style="font-size:13px; font-weight:bold;">Cabang:</span>
+  <button id="btn-Makassar" onclick="switchBranch('Makassar')">Makassar</button>
+  <button id="btn-Bulukumba" onclick="switchBranch('Bulukumba')">Bulukumba</button>
+  <button id="btn-Gorontalo" onclick="switchBranch('Gorontalo')">Gorontalo</button>
+</div>
+
+<table id="mainTable">
+<caption>Program Insentif Juli</caption>
+</table>
+
+</div>
+
+<script>
+const BRANCH_SALES = {
+  Makassar: ["DIAN FARADILA","JUSTANG","KAMELIA (NFI)","RINALDI","SYAHRUL (NFI)","WAHYUDDIN ABU","YOHANES BUDIYANTO"],
+  Bulukumba: ["ERWIN SABAR","HABRIYANTO"],
+  Gorontalo: ["RANDI HASAN","ULAN DJAFAR","MUHAMMAD SUGIARTO","ISMAIL KODJI"]
+};
+
+const LOGIN_CONFIG = {
+  Irfan: { password:'1', branches:['Makassar','Bulukumba'] },
+  Teddy: { password:'1', branches:['Gorontalo'] }
+};
+
+function logout(){
+  rawData = [];
+  document.getElementById('fileInput').value = '';
+  document.getElementById('appWrap').classList.add('hidden');
+  document.getElementById('loginScreen').classList.remove('hidden');
+  document.getElementById('loginError').textContent = '';
+}
+
+function login(user){
+  const pw = prompt('Masukkan password untuk ' + user + ':');
+  if(pw === null) return;
+  const cfg = LOGIN_CONFIG[user];
+  if(pw !== cfg.password){
+    document.getElementById('loginError').textContent = 'Password salah, coba lagi.';
+    return;
+  }
+  document.getElementById('loginError').textContent = '';
+  document.getElementById('loginScreen').classList.add('hidden');
+  document.getElementById('appWrap').classList.remove('hidden');
+
+  // tampilkan hanya tombol toggle cabang yang diizinkan untuk user ini
+  const allBranches = ['Makassar','Bulukumba','Gorontalo'];
+  allBranches.forEach(b=>{
+    const btn = document.getElementById('btn-' + b);
+    if(btn) btn.classList.toggle('hidden', !cfg.branches.includes(b));
+  });
+  switchBranch(cfg.branches[0]);
+}
+let currentBranch = 'Makassar';
+function getSalesList(){ return BRANCH_SALES[currentBranch]; }
+
+const PROGRAMS = [
+  { id:'ea5', title:'Insentif EA NS 5 Varian Maksasar dari Item Terpilih', periode:'Juli', insentif:'2,000,000', target:50 },
+  { id:'nstea', title:'Insentif EA NS Tea', periode:'Juli', insentif:'500,000', target:40 },
+  { id:'matcha', title:'Insentif EA Matcha', periode:'Juli', insentif:'250,000 jika cabang ach', target:30 },
+  { id:'swiss', title:'Insentif EA Hilo Swiss', periode:'Juli - Agustus', insentif:'200,000', target:40 },
+];
+
+const YEAR = 2026;
+const MONTHS_ID = ['januari','februari','maret','april','mei','juni','juli','agustus','september','oktober','november','desember'];
+function periodRange(periodeStr){
+  const parts = periodeStr.split('-').map(s=>s.trim().toLowerCase());
+  const startMonth = MONTHS_ID.indexOf(parts[0]) + 1;
+  const endMonth = parts[1] ? (MONTHS_ID.indexOf(parts[1]) + 1) : startMonth;
+  const start = new Date(YEAR, startMonth - 1, 1);
+  const end = new Date(YEAR, endMonth, 0, 23, 59, 59);
+  return [start, end];
+}
+function toDate(tgl){
+  if(tgl instanceof Date) return tgl;
+  if(typeof tgl === 'string'){
+    const d = new Date(tgl.replace(' ', 'T'));
+    if(!isNaN(d.getTime())) return d;
+  }
+  if(typeof tgl === 'number'){
+    // Excel serial date fallback
+    const d = new Date(Date.UTC(1899, 11, 30) + tgl * 86400000);
+    if(!isNaN(d.getTime())) return d;
+  }
+  return null;
+}
+function inPeriod(tgl, range){
+  const d = toDate(tgl);
+  if(!d) return false;
+  return d >= range[0] && d <= range[1];
+}
+
+function itemGroup5(name, branch){
+  const n = name.toUpperCase();
+  if(branch === 'Bulukumba'){
+    if(n.includes('JERUK PERAS')) return 'JERUK_PERAS';
+    if(n.includes('NS AMERICAN SWEET ORANGE')) return 'ASO';
+    if(n.includes('LEMON TEA')) return 'LEMON_TEA';
+    if(n.includes('JERUK MANIS')) return 'JERUK_MANIS';
+    if(n.includes('MARKISA')) return 'MARKISA';
+    if(n.includes('JERUK NIPIS')) return 'NIPIS';
+    if(n.startsWith('NS ANGGUR PLS')) return 'ANGGUR';
+    if(n.includes('MILKY ORANGE')) return 'MILKY';
+    if(n.includes('SWEET MANGO')) return 'MANGO';
+    if(n.includes('JERUK PONTIANAK')) return 'PONTIANAK';
+    return null;
+  }
+  if(branch === 'Gorontalo'){
+    if(n.includes('JERUK PERAS')) return 'JERUK_PERAS';
+    if(n.includes('JERUK MANIS')) return 'JERUK_MANIS';
+    if(n.includes('LEMON TEA')) return 'LEMON_TEA';
+    if(n.includes('JERUK MAROKO')) return 'JERUK_MAROKO';
+    if(n.includes('MILKY ORANGE')) return 'MILKY';
+    if(n.includes('JERUK NIPIS')) return 'NIPIS';
+    if(n.includes('BLACKCURRANT TEA') && n.includes('PLS')) return 'BLACKCURRANT';
+    if(n.includes('JERUK PONTIANAK')) return 'PONTIANAK';
+    return null;
+  }
+  // default: Makassar
+  if(n.includes('NS AMERICAN SWEET ORANGE')) return 'ASO';
+  if(n.includes('JERUK PONTIANAK')) return 'PONTIANAK';
+  if(n.includes('BLACKCURRANT TEA') && n.includes('PLS')) return 'BLACKCURRANT';
+  if(n.includes('SWEET MANGO')) return 'MANGO';
+  if(n.includes('MILKY ORANGE')) return 'MILKY';
+  if(n.includes('JERUK NIPIS')) return 'NIPIS';
+  if(n.startsWith('NS ANGGUR PLS')) return 'ANGGUR';
+  return null;
+}
+function isTea(name, merek){
+  const n = name.toUpperCase();
+  return merek === 'NUTRISARI' && n.includes('TEA') && n.includes('PLS');
+}
+function isMatcha(name){ const n=name.toUpperCase(); return n.includes('MATCHA') && n.includes('PLS'); }
+function isSwiss(name){ return name.toUpperCase().includes('HILO SWISS CHOCOLATE PLS'); }
+function isSchool(name){ return name.toUpperCase().includes('HILO SCHOOL'); }
+
+let rawData = [];
+
+const SALES_ALIAS = {
+  "MISWAR JAMIL": "KAMELIA (NFI)",
+  "ST DEWI PUSPITA SARI": "KAMELIA (NFI)",
+  "SALDI RENALDI": "HABRIYANTO",
+  "IDUL KIHAJAR B": "HABRIYANTO"
+};
+function normSales(name){
+  return SALES_ALIAS[name] || name;
+}
+
+function processFile(){
+  const f = document.getElementById('fileInput').files[0];
+  if(!f){ document.getElementById('status').textContent = 'Pilih file dulu.'; return; }
+  const reader = new FileReader();
+  reader.onload = function(e){
+    const data = new Uint8Array(e.target.result);
+    const wb = XLSX.read(data, {type:'array', cellDates:true});
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    rawData = XLSX.utils.sheet_to_json(ws, {defval:null});
+    document.getElementById('status').textContent = `Terbaca ${rawData.length} baris. Menghitung...`;
+    compute();
+  };
+  reader.readAsArrayBuffer(f);
+}
+
+function compute(){
+  const salesList = getSalesList();
+  const trans5 = {};
+  const transTea = {};
+  const transMatcha = {};
+  const transSwiss = {};
+  const schoolDays = {};
+
+  const rangeEa5 = periodRange(PROGRAMS.find(p=>p.id==='ea5').periode);
+  const rangeTea = periodRange(PROGRAMS.find(p=>p.id==='nstea').periode);
+  const rangeMatcha = periodRange(PROGRAMS.find(p=>p.id==='matcha').periode);
+  const rangeSwiss = periodRange(PROGRAMS.find(p=>p.id==='swiss').periode);
+  const rangeSchool = periodRange('Juli');
+
+  rawData.forEach(r=>{
+    const sales = normSales(r['NamaSales']);
+    if(!salesList.includes(sales)) return;
+    const nota = r['KodeNota'];
+    const toko = r['ShipTo'] || r['Perusahaan'];
+    const barang = r['NamaBarang'];
+    const merek = r['Merek'];
+    const tgl = r['Tgl'];
+    if(!sales || !barang) return;
+    const key = sales + '|' + nota;
+    const tokoKey = sales + '|' + toko;
+
+    const g5 = itemGroup5(barang, currentBranch);
+    if(g5 && inPeriod(tgl, rangeEa5)){ (trans5[tokoKey] = trans5[tokoKey] || new Set()).add(g5); }
+
+    if(isTea(barang, merek) && inPeriod(tgl, rangeTea)){ transTea[key] = sales; }
+    if(isMatcha(barang) && inPeriod(tgl, rangeMatcha)){ transMatcha[key] = sales; }
+    if(isSwiss(barang) && inPeriod(tgl, rangeSwiss)){ transSwiss[key] = sales; }
+    if(isSchool(barang) && inPeriod(tgl, rangeSchool)){
+      const d = toDate(tgl);
+      let dateStr = d ? d.toISOString().slice(0,10) : String(tgl);
+      (schoolDays[sales] = schoolDays[sales] || new Set()).add(dateStr);
+    }
+  });
+
+  const ea5Count = {}; salesList.forEach(s=>ea5Count[s]=0);
+  Object.keys(trans5).forEach(key=>{
+    const sales = key.split('|')[0];
+    if(trans5[key].size >= 5 && ea5Count[sales] !== undefined) ea5Count[sales]++;
+  });
+
+  function countTransactions(transObj){
+    const res = {}; salesList.forEach(s=>res[s]=0);
+    Object.values(transObj).forEach(sales=>{ if(res[sales] !== undefined) res[sales]++; });
+    return res;
+  }
+  const teaCount = countTransactions(transTea);
+  const matchaCount = countTransactions(transMatcha);
+  const swissCount = countTransactions(transSwiss);
+
+  const schoolCount = {}; salesList.forEach(s=>schoolCount[s] = schoolDays[s] ? schoolDays[s].size : 0);
+
+  const results = { ea5: ea5Count, nstea: teaCount, matcha: matchaCount, swiss: swissCount };
+  render(results, schoolCount);
+  document.getElementById('status').textContent = `Selesai menghitung dari ${rawData.length} baris data.`;
+}
+
+function pct(ach, target){
+  if(!target) return 0;
+  return Math.round((ach/target)*100);
+}
+
+function render(results, schoolCount){
+  const salesList = getSalesList();
+  const table = document.getElementById('mainTable');
+  table.innerHTML = '<caption>Program Insentif Juli</caption>';
+
+  PROGRAMS.forEach(p=>{
+    const thead = table.insertRow(-1);
+    thead.innerHTML = '<th>Program Insentif</th><th>Periode</th><th>Nama Salesman</th><th>Insentif</th><th>Target</th><th>Ach</th><th>%Ach</th>';
+
+    salesList.forEach((sales, idx)=>{
+      const ach = (results[p.id] && results[p.id][sales]) || 0;
+      const p_ = pct(ach, p.target);
+      const width = Math.max(0, Math.min(p_, 100));
+      const row = table.insertRow(-1);
+      let html = '';
+      if(idx === 0){
+        html += `<td class="program" rowspan="${salesList.length}">${p.title}</td>`;
+        html += `<td rowspan="${salesList.length}">${p.periode}</td>`;
+      }
+      html += `<td class="nama">${sales}</td>`;
+      if(idx === 0){
+        html += `<td rowspan="${salesList.length}">${p.insentif}</td>`;
+      }
+      html += `<td><input class="target-input" type="number" value="${p.target}" onchange="updateTarget('${p.id}', this.value)"></td>`;
+      html += `<td>${ach}</td>`;
+      html += `<td class="bar-cell"><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:${width}%"></div></div><span class="bar-label">${p_}%</span></div></td>`;
+      row.innerHTML = html;
+    });
+  });
+
+  const thead5 = table.insertRow(-1);
+  thead5.innerHTML = '<th>Program Insentif</th><th>Periode</th><th>Nama Salesman</th><th>Insentif</th><th>Jumlah Hari Ach</th><th>Nominal Insentif</th><th></th>';
+  salesList.forEach((sales, idx)=>{
+    const days = (schoolCount && schoolCount[sales]) || 0;
+    const nominal = days * 10000;
+    const row = table.insertRow(-1);
+    let html = '';
+    if(idx === 0){
+      html += `<td class="program" rowspan="${salesList.length}">Insentif 1 Ec/Day Hilo School</td>`;
+      html += `<td rowspan="${salesList.length}">Juli</td>`;
+    }
+    html += `<td class="nama">${sales}</td>`;
+    if(idx === 0){
+      html += `<td rowspan="${salesList.length}">10.000/Hari</td>`;
+    }
+    html += `<td>${days}</td><td>${nominal.toLocaleString('id-ID')}</td><td></td>`;
+    row.innerHTML = html;
+  });
+}
+
+function switchBranch(branch){
+  currentBranch = branch;
+  ['Makassar','Bulukumba','Gorontalo'].forEach(b=>{
+    const btn = document.getElementById('btn-' + b);
+    if(btn) btn.classList.toggle('branch-active', b === branch);
+  });
+  if(rawData.length) compute();
+  else render({ea5:{},nstea:{},matcha:{},swiss:{}}, {});
+}
+
+function updateTarget(id, val){
+  const p = PROGRAMS.find(p=>p.id===id);
+  if(p) p.target = parseInt(val) || 0;
+  if(rawData.length) compute();
+}
+
+// menunggu login sebelum render pertama (lihat fungsi login())
+</script>
+</body>
+</html>
