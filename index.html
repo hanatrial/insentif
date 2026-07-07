@@ -418,27 +418,29 @@ function render(results, schoolCount, kpiCount){
     row.innerHTML = html;
   });
 
-  const theadKpi = table.insertRow(-1);
-  theadKpi.innerHTML = '<th>Program Insentif</th><th>Periode</th><th>Nama Salesman</th><th>Insentif</th><th>Target</th><th>Ach</th><th>%Ach</th>';
-  salesList.forEach((sales, idx)=>{
-    const ach = (kpiCount && kpiCount[sales]) || 0;
-    const p_ = pct(ach, KPI_MT.target);
-    const width = Math.max(0, Math.min(p_, 100));
-    const row = table.insertRow(-1);
-    let html = '';
-    if(idx === 0){
-      html += `<td class="program" rowspan="${salesList.length}">${KPI_MT.title}</td>`;
-      html += `<td rowspan="${salesList.length}">${KPI_MT.periode}</td>`;
-    }
-    html += `<td class="nama">${sales}</td>`;
-    if(idx === 0){
-      html += `<td rowspan="${salesList.length}">${KPI_MT.insentif}</td>`;
-    }
-    html += `<td>${KPI_MT.target}</td>`;
-    html += `<td>${ach}</td>`;
-    html += `<td class="bar-cell"><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:${width}%"></div></div><span class="bar-label">${p_}%</span></div></td>`;
-    row.innerHTML = html;
-  });
+  if(currentBranch === 'Bulukumba'){
+    const theadKpi = table.insertRow(-1);
+    theadKpi.innerHTML = '<th>Program Insentif</th><th>Periode</th><th>Nama Salesman</th><th>Insentif</th><th>Target</th><th>Ach</th><th>%Ach</th>';
+    salesList.forEach((sales, idx)=>{
+      const ach = (kpiCount && kpiCount[sales]) || 0;
+      const p_ = pct(ach, KPI_MT.target);
+      const width = Math.max(0, Math.min(p_, 100));
+      const row = table.insertRow(-1);
+      let html = '';
+      if(idx === 0){
+        html += `<td class="program" rowspan="${salesList.length}">${KPI_MT.title}</td>`;
+        html += `<td rowspan="${salesList.length}">${KPI_MT.periode}</td>`;
+      }
+      html += `<td class="nama">${sales}</td>`;
+      if(idx === 0){
+        html += `<td rowspan="${salesList.length}">${KPI_MT.insentif}</td>`;
+      }
+      html += `<td>${KPI_MT.target}</td>`;
+      html += `<td>${ach}</td>`;
+      html += `<td class="bar-cell"><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:${width}%"></div></div><span class="bar-label">${p_}%</span></div></td>`;
+      row.innerHTML = html;
+    });
+  }
 }
 
 function switchBranch(branch){
