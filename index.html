@@ -228,10 +228,11 @@ function itemGroupKPI(name){
   if(n.includes('RTD') && n.includes('OAT DRINK') && n.includes('VANILLICIOUS')) return 'TS_RTD_OAT';
   if(n.includes('RTD') && n.includes('ALMOND DRINK') && n.includes('CHOCOLICIOUS')) return 'TS_RTD_ALMOND';
   if(n.includes('JAMBU BIJI')) return 'NS_RTD_JAMBU';
-  if(n.includes('SQUEEZE ORANGE')) return 'NS_RTD_SQUEEZE';
+  if(n.includes('SQUEEZE') && n.includes('ORANGE')) return 'NS_RTD_SQUEEZE';
   if(n.includes('JERUK MADU')) return 'NS_RTD_JERUKMADU';
   const cokVar = n.includes('COKLAT') || n.includes('COKELAT') ? 'COKLAT' : (n.includes('VANILLA') ? 'VANILLA' : null);
-  if(n.includes('RTD') && (n.includes('HILO SCHOOL') || n.includes('HILO TEEN')) && cokVar === 'COKLAT') return 'HILO_SCHOOL_TEEN_RTD_COKLAT';
+  if(n.includes('RTD') && n.includes('HILO SCHOOL') && cokVar === 'COKLAT') return 'HILO_SCHOOL_RTD_COKLAT';
+  if(n.includes('RTD') && n.includes('HILO TEEN') && cokVar === 'COKLAT') return 'HILO_TEEN_RTD_COKLAT';
   if(n.includes('HILO SCHOOL') && n.includes('250') && cokVar) return 'HILO_SCHOOL_' + cokVar + '_250';
   if(n.includes('HILO TEEN') && n.includes('250') && cokVar) return 'HILO_TEEN_' + cokVar + '_250';
   if(n.includes('HILO ACTIVE') && n.includes('250') && cokVar === 'COKLAT') return 'HILO_ACTIVE_COKLAT_250';
