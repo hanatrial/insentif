@@ -421,7 +421,7 @@ function render(results, schoolCount, kpiCount){
     row.innerHTML = html;
   });
 
-  if(currentBranch === 'Bulukumba'){
+  if(currentBranch === 'Bulukumba' || currentBranch === 'Gorontalo'){
     const theadKpi = table.insertRow(-1);
     theadKpi.innerHTML = '<th>Program Insentif</th><th>Periode</th><th>Nama Salesman</th><th>Insentif</th><th>Target</th><th>Ach</th><th>%Ach</th>';
     salesList.forEach((sales, idx)=>{
