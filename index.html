@@ -213,13 +213,13 @@ function isSchool(name){ return name.toUpperCase().includes('HILO SCHOOL'); }
 
 function itemGroupKPI(name){
   const n = name.toUpperCase();
-  if(n.includes('TS DIABTX')){
+  if(n.includes('DIABTX')){
     if(n.includes('25')) return 'TS_DIABTX_25';
     if(n.includes('50')) return 'TS_DIABTX_50';
     if(n.includes('100')) return 'TS_DIABTX_100';
     return null;
   }
-  if(n.includes('TS CLASSIC')){
+  if(n.includes('TS') && n.includes('CLASSIC')){
     if(n.includes('25')) return 'TS_CLASSIC_25';
     if(n.includes('50')) return 'TS_CLASSIC_50';
     if(n.includes('100')) return 'TS_CLASSIC_100';
@@ -230,12 +230,14 @@ function itemGroupKPI(name){
   if(n.includes('JAMBU BIJI')) return 'NS_RTD_JAMBU';
   if(n.includes('SQUEEZE') && n.includes('ORANGE')) return 'NS_RTD_SQUEEZE';
   if(n.includes('JERUK MADU')) return 'NS_RTD_JERUKMADU';
-  const cokVar = n.includes('COKLAT') || n.includes('COKELAT') ? 'COKLAT' : (n.includes('VANILLA') ? 'VANILLA' : null);
-  if(n.includes('RTD') && n.includes('HILO SCHOOL') && cokVar === 'COKLAT') return 'HILO_SCHOOL_RTD_COKLAT';
-  if(n.includes('RTD') && n.includes('HILO TEEN') && cokVar === 'COKLAT') return 'HILO_TEEN_RTD_COKLAT';
-  if(n.includes('HILO SCHOOL') && n.includes('250') && cokVar) return 'HILO_SCHOOL_' + cokVar + '_250';
-  if(n.includes('HILO TEEN') && n.includes('250') && cokVar) return 'HILO_TEEN_' + cokVar + '_250';
-  if(n.includes('HILO ACTIVE') && n.includes('250') && cokVar === 'COKLAT') return 'HILO_ACTIVE_COKLAT_250';
+  const isHilo = n.includes('HILO') || n.includes('HI LO');
+  if(!isHilo) return null;
+  const cokVar = (n.includes('COKLAT') || n.includes('COKELAT') || n.includes('CHOCOLATE')) ? 'COKLAT' : (n.includes('VANILLA') ? 'VANILLA' : null);
+  if(n.includes('RTD') && n.includes('SCHOOL') && cokVar === 'COKLAT') return 'HILO_SCHOOL_RTD_COKLAT';
+  if(n.includes('RTD') && n.includes('TEEN') && cokVar === 'COKLAT') return 'HILO_TEEN_RTD_COKLAT';
+  if(n.includes('SCHOOL') && n.includes('250') && cokVar) return 'HILO_SCHOOL_' + cokVar + '_250';
+  if(n.includes('TEEN') && n.includes('250') && cokVar) return 'HILO_TEEN_' + cokVar + '_250';
+  if(n.includes('ACTIVE') && n.includes('250') && cokVar === 'COKLAT') return 'HILO_ACTIVE_COKLAT_250';
   return null;
 }
 
