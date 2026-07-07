@@ -127,6 +127,7 @@ function login(user){
 }
 let currentBranch = 'Makassar';
 function getSalesList(){ return BRANCH_SALES[currentBranch]; }
+const ALL_SALES = [...BRANCH_SALES.Makassar, ...BRANCH_SALES.Bulukumba, ...BRANCH_SALES.Gorontalo];
 
 const PROGRAMS = [
   { id:'ea5', title:'Insentif EA NS 5 Varian Maksasar dari Item Terpilih', periode:'Juli', insentif:'2,000,000', target:50 },
@@ -134,6 +135,8 @@ const PROGRAMS = [
   { id:'matcha', title:'Insentif EA Matcha', periode:'Juli', insentif:'250,000 jika cabang ach', target:30 },
   { id:'swiss', title:'Insentif EA Hilo Swiss', periode:'Juli - Agustus', insentif:'200,000', target:40 },
 ];
+
+const KPI_MT = { title:'KPI MT', periode:'Juli - September', insentif:'Belum ada', target:20 };
 
 const YEAR = 2026;
 const MONTHS_ID = ['januari','februari','maret','april','mei','juni','juli','agustus','september','oktober','november','desember'];
@@ -207,6 +210,33 @@ function isTea(name, merek){
 function isMatcha(name){ const n=name.toUpperCase(); return n.includes('MATCHA') && n.includes('PLS'); }
 function isSwiss(name){ return name.toUpperCase().includes('HILO SWISS CHOCOLATE PLS'); }
 function isSchool(name){ return name.toUpperCase().includes('HILO SCHOOL'); }
+
+function itemGroupKPI(name){
+  const n = name.toUpperCase();
+  if(n.includes('TS DIABTX')){
+    if(n.includes('25')) return 'TS_DIABTX_25';
+    if(n.includes('50')) return 'TS_DIABTX_50';
+    if(n.includes('100')) return 'TS_DIABTX_100';
+    return null;
+  }
+  if(n.includes('TS CLASSIC')){
+    if(n.includes('25')) return 'TS_CLASSIC_25';
+    if(n.includes('50')) return 'TS_CLASSIC_50';
+    if(n.includes('100')) return 'TS_CLASSIC_100';
+    return null;
+  }
+  if(n.includes('RTD') && n.includes('OAT DRINK') && n.includes('VANILLICIOUS')) return 'TS_RTD_OAT';
+  if(n.includes('RTD') && n.includes('ALMOND DRINK') && n.includes('CHOCOLICIOUS')) return 'TS_RTD_ALMOND';
+  if(n.includes('JAMBU BIJI')) return 'NS_RTD_JAMBU';
+  if(n.includes('SQUEEZE ORANGE')) return 'NS_RTD_SQUEEZE';
+  if(n.includes('JERUK MADU')) return 'NS_RTD_JERUKMADU';
+  const cokVar = n.includes('COKLAT') || n.includes('COKELAT') ? 'COKLAT' : (n.includes('VANILLA') ? 'VANILLA' : null);
+  if(n.includes('RTD') && (n.includes('HILO SCHOOL') || n.includes('HILO TEEN')) && cokVar === 'COKLAT') return 'HILO_SCHOOL_TEEN_RTD_COKLAT';
+  if(n.includes('HILO SCHOOL') && n.includes('250') && cokVar) return 'HILO_SCHOOL_' + cokVar + '_250';
+  if(n.includes('HILO TEEN') && n.includes('250') && cokVar) return 'HILO_TEEN_' + cokVar + '_250';
+  if(n.includes('HILO ACTIVE') && n.includes('250') && cokVar === 'COKLAT') return 'HILO_ACTIVE_COKLAT_250';
+  return null;
+}
 
 let rawData = [];
 
@@ -302,8 +332,36 @@ function compute(){
   const schoolCount = {}; salesList.forEach(s=>schoolCount[s] = schoolDays[s] ? schoolDays[s].size : 0);
 
   const results = { ea5: ea5Count, nstea: teaCount, matcha: matchaCount, swiss: swissCount };
-  render(results, schoolCount);
+
+  const kpiCount = computeKpiMT();
+
+  render(results, schoolCount, kpiCount);
   document.getElementById('status').textContent = `Selesai menghitung dari ${rawData.length} baris data.`;
+}
+
+function computeKpiMT(){
+  const transKPI = {};
+  const rangeKpiMT = periodRange(KPI_MT.periode);
+
+  rawData.forEach(r=>{
+    const sales = normSales(field(r, 'Nama Sales', 'NamaSales'));
+    if(!ALL_SALES.includes(sales)) return;
+    const toko = field(r, 'Ship To', 'ShipTo') || field(r, 'Perusahaan');
+    const barang = field(r, 'Nama Barang', 'NamaBarang');
+    const tgl = field(r, 'Tgl');
+    if(!sales || !barang) return;
+    const tokoKey = sales + '|' + toko;
+
+    const gKpi = itemGroupKPI(barang);
+    if(gKpi && inPeriod(tgl, rangeKpiMT)){ (transKPI[tokoKey] = transKPI[tokoKey] || new Set()).add(gKpi); }
+  });
+
+  const kpiCount = {}; ALL_SALES.forEach(s=>kpiCount[s]=0);
+  Object.keys(transKPI).forEach(key=>{
+    const sales = key.split('|')[0];
+    if(transKPI[key].size >= 5 && kpiCount[sales] !== undefined) kpiCount[sales]++;
+  });
+  return kpiCount;
 }
 
 function pct(ach, target){
@@ -311,7 +369,7 @@ function pct(ach, target){
   return Math.round((ach/target)*100);
 }
 
-function render(results, schoolCount){
+function render(results, schoolCount, kpiCount){
   const salesList = getSalesList();
   const table = document.getElementById('mainTable');
   table.innerHTML = '<caption>Program Insentif Juli</caption>';
@@ -359,6 +417,28 @@ function render(results, schoolCount){
     html += `<td>${days}</td><td>${nominal.toLocaleString('id-ID')}</td><td></td>`;
     row.innerHTML = html;
   });
+
+  const theadKpi = table.insertRow(-1);
+  theadKpi.innerHTML = '<th>Program Insentif</th><th>Periode</th><th>Nama Salesman</th><th>Insentif</th><th>Target</th><th>Ach</th><th>%Ach</th>';
+  ALL_SALES.forEach((sales, idx)=>{
+    const ach = (kpiCount && kpiCount[sales]) || 0;
+    const p_ = pct(ach, KPI_MT.target);
+    const width = Math.max(0, Math.min(p_, 100));
+    const row = table.insertRow(-1);
+    let html = '';
+    if(idx === 0){
+      html += `<td class="program" rowspan="${ALL_SALES.length}">${KPI_MT.title}</td>`;
+      html += `<td rowspan="${ALL_SALES.length}">${KPI_MT.periode}</td>`;
+    }
+    html += `<td class="nama">${sales}</td>`;
+    if(idx === 0){
+      html += `<td rowspan="${ALL_SALES.length}">${KPI_MT.insentif}</td>`;
+    }
+    html += `<td>${KPI_MT.target}</td>`;
+    html += `<td>${ach}</td>`;
+    html += `<td class="bar-cell"><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:${width}%"></div></div><span class="bar-label">${p_}%</span></div></td>`;
+    row.innerHTML = html;
+  });
 }
 
 function switchBranch(branch){
@@ -368,7 +448,7 @@ function switchBranch(branch){
     if(btn) btn.classList.toggle('branch-active', b === branch);
   });
   if(rawData.length) compute();
-  else render({ea5:{},nstea:{},matcha:{},swiss:{}}, {});
+  else render({ea5:{},nstea:{},matcha:{},swiss:{}}, {}, {});
 }
 
 function updateTarget(id, val){
