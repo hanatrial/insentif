@@ -161,7 +161,14 @@ const PROGRAMS = [
   { id:'swiss', title:'Insentif EA Hilo Swiss', periode:'Juli - Agustus', insentif:'200,000', target:40 },
 ];
 
-const KPI_MT = { title:'KPI MT', periode:'Juli - September', insentif:'Belum ada', target:20 };
+const KPI_MT = {
+  title:'Insentif EA MT 5 Varian',
+  periode:'Juli - September',
+  byBranch: {
+    Bulukumba: { insentif:'750,000/sales', target:25 },
+    Gorontalo: { insentif:'400,000/sales', target:20 }
+  }
+};
 
 const YEAR = 2026;
 const MONTHS_ID = ['januari','februari','maret','april','mei','juni','juli','agustus','september','oktober','november','desember'];
@@ -469,12 +476,13 @@ function render(results, schoolCount, kpiCount){
     row.innerHTML = html;
   });
 
-  if(currentBranch === 'Bulukumba' || currentBranch === 'Gorontalo'){
+  const kpiBranchCfg = KPI_MT.byBranch[currentBranch];
+  if(kpiBranchCfg){
     const theadKpi = table.insertRow(-1);
     theadKpi.innerHTML = '<th>Program Insentif</th><th>Periode</th><th>Nama Salesman</th><th>Insentif</th><th>Target</th><th>Ach</th><th>%Ach</th>';
     salesList.forEach((sales, idx)=>{
       const ach = (kpiCount && kpiCount[sales]) || 0;
-      const p_ = pct(ach, KPI_MT.target);
+      const p_ = pct(ach, kpiBranchCfg.target);
       const width = Math.max(0, Math.min(p_, 100));
       const row = table.insertRow(-1);
       let html = '';
@@ -484,9 +492,9 @@ function render(results, schoolCount, kpiCount){
       }
       html += `<td class="nama">${sales}</td>`;
       if(idx === 0){
-        html += `<td rowspan="${salesList.length}">${KPI_MT.insentif}</td>`;
+        html += `<td rowspan="${salesList.length}">${kpiBranchCfg.insentif}</td>`;
       }
-      html += `<td>${KPI_MT.target}</td>`;
+      html += `<td>${kpiBranchCfg.target}</td>`;
       html += `<td>${ach}</td>`;
       html += `<td class="bar-cell"><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:${width}%"></div></div><span class="bar-label">${p_}%</span></div></td>`;
       row.innerHTML = html;
