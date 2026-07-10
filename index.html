@@ -295,6 +295,18 @@ function field(r, ...keys){
   return null;
 }
 
+function slimRow(r){
+  return {
+    'Tgl': field(r, 'Tgl'),
+    'Kode Nota': field(r, 'Kode Nota', 'KodeNota'),
+    'Ship To': field(r, 'Ship To', 'ShipTo'),
+    'Perusahaan': field(r, 'Perusahaan'),
+    'Nama Barang': field(r, 'Nama Barang', 'NamaBarang'),
+    'Merek': field(r, 'Merek'),
+    'Nama Sales': field(r, 'Nama Sales', 'NamaSales')
+  };
+}
+
 function processFile(){
   const f = document.getElementById('fileInput').files[0];
   if(!f){ document.getElementById('status').textContent = 'Pilih file dulu.'; return; }
@@ -303,7 +315,7 @@ function processFile(){
     const data = new Uint8Array(e.target.result);
     const wb = XLSX.read(data, {type:'array', cellDates:true});
     const ws = wb.Sheets[wb.SheetNames[0]];
-    rawData = XLSX.utils.sheet_to_json(ws, {defval:null});
+    rawData = XLSX.utils.sheet_to_json(ws, {defval:null}).map(slimRow);
     document.getElementById('status').textContent = `Terbaca ${rawData.length} baris. Mengunggah ke cloud (mengganti data lama)...`;
     try{
       await saveDataToCloud(currentBranch, rawData);
