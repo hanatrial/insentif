@@ -130,7 +130,8 @@ function logout(){
   document.getElementById('loginError').textContent = '';
 }
 
-function login(user){
+let currentUser = null;
+async function login(user){
   const pw = prompt('Masukkan password untuk ' + user + ':');
   if(pw === null) return;
   const cfg = LOGIN_CONFIG[user];
@@ -141,6 +142,7 @@ function login(user){
   document.getElementById('loginError').textContent = '';
   document.getElementById('loginScreen').classList.add('hidden');
   document.getElementById('appWrap').classList.remove('hidden');
+  currentUser = user;
 
   // tampilkan hanya tombol toggle cabang yang diizinkan untuk user ini
   const allBranches = ['Makassar','Bulukumba','Gorontalo'];
@@ -148,7 +150,12 @@ function login(user){
     const btn = document.getElementById('btn-' + b);
     if(btn) btn.classList.toggle('hidden', !cfg.branches.includes(b));
   });
-  switchBranch(cfg.branches[0]);
+  currentBranch = cfg.branches[0];
+  ['Makassar','Bulukumba','Gorontalo'].forEach(b=>{
+    const btn = document.getElementById('btn-' + b);
+    if(btn) btn.classList.toggle('branch-active', b === currentBranch);
+  });
+  await loadUserFromCloud(currentUser);
 }
 let currentBranch = 'Makassar';
 function getSalesList(){ return BRANCH_SALES[currentBranch]; }
@@ -318,8 +325,8 @@ function processFile(){
     rawData = XLSX.utils.sheet_to_json(ws, {defval:null}).map(slimRow);
     document.getElementById('status').textContent = `Terbaca ${rawData.length} baris. Mengunggah ke cloud (mengganti data lama)...`;
     try{
-      await saveDataToCloud(currentBranch, rawData);
-      document.getElementById('status').textContent = `Data cabang ${currentBranch} sudah diganti di cloud (${rawData.length} baris). Menghitung...`;
+      await saveDataToCloud(currentUser, rawData);
+      document.getElementById('status').textContent = `Data ${currentUser} sudah diganti di cloud (${rawData.length} baris). Menghitung...`;
     }catch(err){
       document.getElementById('status').textContent = `Gagal simpan ke cloud: ${err.message}. Menghitung dari data lokal saja...`;
     }
@@ -328,16 +335,16 @@ function processFile(){
   reader.readAsArrayBuffer(f);
 }
 
-async function loadBranchFromCloud(branch){
-  document.getElementById('status').textContent = `Memuat data cabang ${branch} dari cloud...`;
+async function loadUserFromCloud(user){
+  document.getElementById('status').textContent = `Memuat data ${user} dari cloud...`;
   try{
-    rawData = await loadDataFromCloud(branch);
+    rawData = await loadDataFromCloud(user);
     if(rawData.length){
       compute();
-      document.getElementById('status').textContent = `Dimuat ${rawData.length} baris dari cloud untuk cabang ${branch}.`;
+      document.getElementById('status').textContent = `Dimuat ${rawData.length} baris dari cloud untuk ${user}.`;
     } else {
       render({ea5:{},nstea:{},matcha:{},swiss:{}}, {}, {});
-      document.getElementById('status').textContent = `Belum ada data cloud untuk cabang ${branch}. Upload file untuk mengisi.`;
+      document.getElementById('status').textContent = `Belum ada data cloud untuk ${user}. Upload file untuk mengisi.`;
     }
   }catch(err){
     render({ea5:{},nstea:{},matcha:{},swiss:{}}, {}, {});
@@ -520,7 +527,8 @@ function switchBranch(branch){
     const btn = document.getElementById('btn-' + b);
     if(btn) btn.classList.toggle('branch-active', b === branch);
   });
-  loadBranchFromCloud(branch);
+  if(rawData.length) compute();
+  else render({ea5:{},nstea:{},matcha:{},swiss:{}}, {}, {});
 }
 
 function updateTarget(id, val){
