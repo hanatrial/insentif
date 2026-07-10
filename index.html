@@ -189,6 +189,7 @@ function periodRange(periodeStr){
 }
 function toDate(tgl){
   if(tgl instanceof Date) return tgl;
+  if(tgl && typeof tgl.toDate === 'function') return tgl.toDate(); // Firestore Timestamp
   if(typeof tgl === 'string'){
     const d = new Date(tgl.replace(' ', 'T'));
     if(!isNaN(d.getTime())) return d;
