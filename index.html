@@ -164,7 +164,7 @@ const ALL_SALES = [...BRANCH_SALES.Makassar, ...BRANCH_SALES.Bulukumba, ...BRANC
 const PROGRAMS = [
   { id:'ea5', title:'Insentif EA NS 5 Varian Maksasar dari Item Terpilih', periode:'Juli', insentif:'2,000,000', target:50 },
   { id:'nstea', title:'Insentif EA NS Tea', periode:'Juli', insentif:'250,000', target:40 },
-  { id:'matcha', title:'Insentif EA Matcha', periode:'Juli', insentif:'250,000 jika cabang ach', target:30 },
+  { id:'matcha', title:'Insentif EA Matcha', periode:'Juli', insentif:'250,000 jika cabang ach', target:30, targetByBranch:{ Gorontalo:60 } },
   { id:'swiss', title:'Insentif EA Hilo Swiss', periode:'Juli - Agustus', insentif:'200,000', target:40 },
 ];
 
@@ -456,9 +456,11 @@ function render(results, schoolCount, kpiCount){
     const thead = table.insertRow(-1);
     thead.innerHTML = '<th>Program Insentif</th><th>Periode</th><th>Nama Salesman</th><th>Insentif</th><th>Target</th><th>Ach</th><th>%Ach</th>';
 
+    const target = (p.targetByBranch && p.targetByBranch[currentBranch] !== undefined) ? p.targetByBranch[currentBranch] : p.target;
+
     salesList.forEach((sales, idx)=>{
       const ach = (results[p.id] && results[p.id][sales]) || 0;
-      const p_ = pct(ach, p.target);
+      const p_ = pct(ach, target);
       const width = Math.max(0, Math.min(p_, 100));
       const row = table.insertRow(-1);
       let html = '';
@@ -470,7 +472,7 @@ function render(results, schoolCount, kpiCount){
       if(idx === 0){
         html += `<td rowspan="${salesList.length}">${p.insentif}</td>`;
       }
-      html += `<td><input class="target-input" type="number" value="${p.target}" onchange="updateTarget('${p.id}', this.value)"></td>`;
+      html += `<td><input class="target-input" type="number" value="${target}" onchange="updateTarget('${p.id}', this.value)"></td>`;
       html += `<td>${ach}</td>`;
       html += `<td class="bar-cell"><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:${width}%"></div></div><span class="bar-label">${p_}%</span></div></td>`;
       row.innerHTML = html;
@@ -534,7 +536,14 @@ function switchBranch(branch){
 
 function updateTarget(id, val){
   const p = PROGRAMS.find(p=>p.id===id);
-  if(p) p.target = parseInt(val) || 0;
+  if(p){
+    const num = parseInt(val) || 0;
+    if(p.targetByBranch && p.targetByBranch[currentBranch] !== undefined){
+      p.targetByBranch[currentBranch] = num;
+    } else {
+      p.target = num;
+    }
+  }
   if(rawData.length) compute();
 }
 
