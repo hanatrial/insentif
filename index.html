@@ -371,21 +371,19 @@ function compute(){
   rawData.forEach(r=>{
     const sales = normSales(field(r, 'Nama Sales', 'NamaSales'));
     if(!salesList.includes(sales)) return;
-    const nota = field(r, 'Kode Nota', 'KodeNota');
     const toko = field(r, 'Ship To', 'ShipTo') || field(r, 'Perusahaan');
     const barang = field(r, 'Nama Barang', 'NamaBarang');
     const merek = field(r, 'Merek');
     const tgl = field(r, 'Tgl');
     if(!sales || !barang) return;
-    const key = sales + '|' + nota;
     const tokoKey = sales + '|' + toko;
 
     const g5 = itemGroup5(barang, currentBranch);
     if(g5 && inPeriod(tgl, rangeEa5)){ (trans5[tokoKey] = trans5[tokoKey] || new Set()).add(g5); }
 
-    if(isTea(barang, merek) && inPeriod(tgl, rangeTea)){ transTea[key] = sales; }
-    if(isMatcha(barang) && inPeriod(tgl, rangeMatcha)){ transMatcha[key] = sales; }
-    if(isSwiss(barang) && inPeriod(tgl, rangeSwiss)){ transSwiss[key] = sales; }
+    if(isTea(barang, merek) && inPeriod(tgl, rangeTea)){ transTea[tokoKey] = sales; }
+    if(isMatcha(barang) && inPeriod(tgl, rangeMatcha)){ transMatcha[tokoKey] = sales; }
+    if(isSwiss(barang) && inPeriod(tgl, rangeSwiss)){ transSwiss[tokoKey] = sales; }
     if(isSchool(barang) && inPeriod(tgl, rangeSchool)){
       const d = toDate(tgl);
       let dateStr = d ? d.toISOString().slice(0,10) : String(tgl);
