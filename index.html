@@ -18,7 +18,10 @@
     background:#0a5c36; color:#fff; border:none; padding:8px 14px; border-radius:4px;
     cursor:pointer; font-size:13px;
   }
-  #status { font-size:13px; color:#555; }
+  #status { font-size:13px; color:#555; font-weight:bold; }
+  #status.ok { color:#0a5c36; }
+  #status.error { color:#c00; }
+  #status.pending { color:#a86a00; }
   table { width:100%; border-collapse:collapse; background:#fff; }
   caption {
     background:#0a5c36; color:#fff; font-weight:bold; font-size:18px;
@@ -99,16 +102,47 @@ const FIREBASE_CONFIG = {
 firebase.initializeApp(FIREBASE_CONFIG);
 const db = firebase.firestore();
 
+const CLOUD_CHUNK_SIZE = 1000;
+
 async function saveDataToCloud(branch, data){
+  const colRef = db.collection('insentifData').doc(branch).collection('chunks');
+
+  const existing = await colRef.get();
+  let batch = db.batch();
+  let opCount = 0;
+  for(const doc of existing.docs){
+    batch.delete(doc.ref);
+    opCount++;
+    if(opCount >= 450){ await batch.commit(); batch = db.batch(); opCount = 0; }
+  }
+  if(opCount > 0){ await batch.commit(); }
+
+  const chunks = [];
+  for(let i = 0; i < data.length; i += CLOUD_CHUNK_SIZE){ chunks.push(data.slice(i, i + CLOUD_CHUNK_SIZE)); }
+
+  batch = db.batch();
+  opCount = 0;
+  for(let idx = 0; idx < chunks.length; idx++){
+    const ref = colRef.doc(String(idx).padStart(5, '0'));
+    batch.set(ref, { rows: chunks[idx], updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
+    opCount++;
+    if(opCount >= 450){ await batch.commit(); batch = db.batch(); opCount = 0; }
+  }
+  if(opCount > 0){ await batch.commit(); }
+
   await db.collection('insentifData').doc(branch).set({
-    rawData: data,
+    chunkCount: chunks.length,
+    rowCount: data.length,
     updatedAt: firebase.firestore.FieldValue.serverTimestamp()
   });
 }
 
 async function loadDataFromCloud(branch){
-  const snap = await db.collection('insentifData').doc(branch).get();
-  return snap.exists ? (snap.data().rawData || []) : [];
+  const colRef = db.collection('insentifData').doc(branch).collection('chunks');
+  const snap = await colRef.orderBy(firebase.firestore.FieldPath.documentId()).get();
+  let all = [];
+  snap.forEach(doc=>{ all = all.concat(doc.data().rows || []); });
+  return all;
 }
 
 const BRANCH_SALES = {
@@ -326,32 +360,39 @@ function processFile(){
     const wb = XLSX.read(data, {type:'array', cellDates:true});
     const ws = wb.Sheets[wb.SheetNames[0]];
     rawData = XLSX.utils.sheet_to_json(ws, {defval:null}).map(slimRow);
-    document.getElementById('status').textContent = `Terbaca ${rawData.length} baris. Mengunggah ke cloud (mengganti data lama)...`;
+    setStatus(`⏳ Terbaca ${rawData.length} baris. Mengunggah ke cloud (mengganti data lama)...`, 'pending');
     try{
       await saveDataToCloud(currentUser, rawData);
-      document.getElementById('status').textContent = `Data ${currentUser} sudah diganti di cloud (${rawData.length} baris). Menghitung...`;
+      setStatus(`✅ TERSIMPAN DI CLOUD — data ${currentUser} sudah diganti (${rawData.length} baris).`, 'ok');
     }catch(err){
-      document.getElementById('status').textContent = `Gagal simpan ke cloud: ${err.message}. Menghitung dari data lokal saja...`;
+      setStatus(`❌ GAGAL SIMPAN KE CLOUD: ${err.message}. Data cuma ada di layar ini, akan hilang saat refresh!`, 'error');
     }
     compute();
   };
   reader.readAsArrayBuffer(f);
 }
 
+function setStatus(text, kind){
+  const el = document.getElementById('status');
+  el.textContent = text;
+  el.classList.remove('ok','error','pending');
+  if(kind) el.classList.add(kind);
+}
+
 async function loadUserFromCloud(user){
-  document.getElementById('status').textContent = `Memuat data ${user} dari cloud...`;
+  setStatus(`⏳ Memuat data ${user} dari cloud...`, 'pending');
   try{
     rawData = await loadDataFromCloud(user);
     if(rawData.length){
       compute();
-      document.getElementById('status').textContent = `Dimuat ${rawData.length} baris dari cloud untuk ${user}.`;
+      setStatus(`✅ Dimuat ${rawData.length} baris dari cloud untuk ${user}.`, 'ok');
     } else {
       render({ea5:{},nstea:{},matcha:{},swiss:{}}, {}, {});
-      document.getElementById('status').textContent = `Belum ada data cloud untuk ${user}. Upload file untuk mengisi.`;
+      setStatus(`⚠️ Belum ada data cloud untuk ${user}. Upload file untuk mengisi.`, 'error');
     }
   }catch(err){
     render({ea5:{},nstea:{},matcha:{},swiss:{}}, {}, {});
-    document.getElementById('status').textContent = `Gagal memuat data cloud: ${err.message}`;
+    setStatus(`❌ GAGAL memuat data cloud: ${err.message}`, 'error');
   }
 }
 
