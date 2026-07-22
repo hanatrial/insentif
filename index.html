@@ -249,7 +249,7 @@ function isTea(name, merek){
 }
 function isMatcha(name){ const n=name.toUpperCase(); return n.includes('MATCHA') && n.includes('PLS'); }
 function isSwiss(name){ return name.toUpperCase().includes('HILO SWISS CHOCOLATE PLS'); }
-function isSchool(name){ return name.toUpperCase().includes('HILO SCHOOL'); }
+function isSchool(name, group1){ return name.toUpperCase().includes('HILO SCHOOL') && String(group1 || '').trim().toUpperCase() === 'TRADITIONAL'; }
 
 function itemGroupKPI(name){
   const n = name.toUpperCase();
@@ -312,6 +312,7 @@ function slimRow(r){
     'Perusahaan': field(r, 'Perusahaan'),
     'Nama Barang': field(r, 'Nama Barang', 'NamaBarang'),
     'Merek': field(r, 'Merek'),
+    'Group1Barang': field(r, 'Group 1Barang', 'Group1Barang'),
     'Nama Sales': field(r, 'Nama Sales', 'NamaSales')
   };
 }
@@ -374,6 +375,7 @@ function compute(){
     const toko = field(r, 'Ship To', 'ShipTo') || field(r, 'Perusahaan');
     const barang = field(r, 'Nama Barang', 'NamaBarang');
     const merek = field(r, 'Merek');
+    const group1 = field(r, 'Group 1Barang', 'Group1Barang');
     const tgl = field(r, 'Tgl');
     if(!sales || !barang) return;
     const tokoKey = sales + '|' + toko;
@@ -384,7 +386,7 @@ function compute(){
     if(isTea(barang, merek) && inPeriod(tgl, rangeTea)){ transTea[tokoKey] = sales; }
     if(isMatcha(barang) && inPeriod(tgl, rangeMatcha)){ transMatcha[tokoKey] = sales; }
     if(isSwiss(barang) && inPeriod(tgl, rangeSwiss)){ transSwiss[tokoKey] = sales; }
-    if(isSchool(barang) && inPeriod(tgl, rangeSchool)){
+    if(isSchool(barang, group1) && inPeriod(tgl, rangeSchool)){
       const d = toDate(tgl);
       let dateStr = d ? d.toISOString().slice(0,10) : String(tgl);
       (schoolDays[sales] = schoolDays[sales] || new Set()).add(dateStr);
