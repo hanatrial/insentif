@@ -490,6 +490,13 @@ function pct(ach, target){
   return Math.round((ach/target)*100);
 }
 
+function parseInsentifAmount(str){
+  if(!str) return 0;
+  const m = String(str).match(/[\d.,]+/);
+  if(!m) return 0;
+  return parseInt(m[0].replace(/[.,]/g, ''), 10) || 0;
+}
+
 function render(results, schoolCount, kpiCount){
   const salesList = getSalesList();
   const table = document.getElementById('mainTable');
@@ -565,6 +572,40 @@ function render(results, schoolCount, kpiCount){
       row.innerHTML = html;
     });
   }
+
+  const totals = {}; salesList.forEach(s=>totals[s]=0);
+  PROGRAMS.forEach(p=>{
+    const target = (p.targetByBranch && p.targetByBranch[currentBranch] !== undefined) ? p.targetByBranch[currentBranch] : p.target;
+    const amount = parseInsentifAmount(p.insentif);
+    salesList.forEach(sales=>{
+      const ach = (results[p.id] && results[p.id][sales]) || 0;
+      if(target && ach >= target){ totals[sales] += amount; }
+    });
+  });
+  salesList.forEach(sales=>{
+    const days = (schoolCount && schoolCount[sales]) || 0;
+    totals[sales] += days * 10000;
+  });
+  if(kpiBranchCfg){
+    const kpiAmount = parseInsentifAmount(kpiBranchCfg.insentif);
+    salesList.forEach(sales=>{
+      const ach = (kpiCount && kpiCount[sales]) || 0;
+      if(kpiBranchCfg.target && ach >= kpiBranchCfg.target){ totals[sales] += kpiAmount; }
+    });
+  }
+
+  const theadTotal = table.insertRow(-1);
+  theadTotal.innerHTML = '<th colspan="2">Ringkasan</th><th>Nama Salesman</th><th colspan="4">Total Insentif</th>';
+  salesList.forEach((sales, idx)=>{
+    const row = table.insertRow(-1);
+    let html = '';
+    if(idx === 0){
+      html += `<td class="program" rowspan="${salesList.length}" colspan="2">Total Insentif per Salesman</td>`;
+    }
+    html += `<td class="nama">${sales}</td>`;
+    html += `<td colspan="4" style="text-align:right; font-weight:bold;">Rp ${totals[sales].toLocaleString('id-ID')}</td>`;
+    row.innerHTML = html;
+  });
 }
 
 function switchBranch(branch){
