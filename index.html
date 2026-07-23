@@ -74,6 +74,7 @@
   <button onclick="logout()" style="background:#888;">&larr; Kembali</button>
   <input type="file" id="fileInput" accept=".xlsx,.xls,.csv">
   <button onclick="processFile()">Proses & Hitung</button>
+  <button onclick="exportToExcel()" style="background:#1155cc;">Export Excel</button>
   <span id="status">Belum ada file. Upload data mentah transaksi (kolom: Tgl, KodeNota, NamaBarang, Merek, NamaSales).</span>
 </div>
 
@@ -587,6 +588,22 @@ function updateTarget(id, val){
     }
   }
   if(rawData.length) compute();
+}
+
+function exportToExcel(){
+  if(!rawData.length){
+    alert('Belum ada data untuk diexport. Pilih cabang yang datanya sudah ada, atau upload file dulu.');
+    return;
+  }
+  const exportRows = rawData.map(r=>{
+    const d = toDate(r['Tgl']);
+    return Object.assign({}, r, { 'Tgl': d || r['Tgl'] });
+  });
+  const ws = XLSX.utils.json_to_sheet(exportRows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Data Mentah');
+  const tanggal = new Date().toISOString().slice(0,10);
+  XLSX.writeFile(wb, `Data_Insentif_${currentUser || currentBranch}_${tanggal}.xlsx`);
 }
 
 // menunggu login sebelum render pertama (lihat fungsi login())
