@@ -710,7 +710,8 @@ async function loadDashboardBranch(branch){
   try{
     const cloudRows = await loadDataFromCloud(owner);
     const salesList = BRANCH_SALES[branch];
-    const stores = buildStoreStats(cloudRows, r => salesList.includes(normSales(field(r, 'Nama Sales', 'NamaSales'))));
+    const filterFn = (branch === 'Gorontalo') ? null : (r => salesList.includes(normSales(field(r, 'Nama Sales', 'NamaSales'))));
+    const stores = buildStoreStats(cloudRows, filterFn);
     dashboardStores = stores;
     renderTokoTargetDashboard(branch, stores);
     setStatus(`✅ Dashboard Toko ${branch} dimuat (${Object.keys(stores).length} toko transaksi, ${(TOKO_TARGETS[branch]||[]).length} toko target).`, 'ok');
