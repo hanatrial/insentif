@@ -57,6 +57,26 @@
   .login-option:hover { background:#073d24; }
   #loginError { color:#c00; font-size:13px; min-height:18px; }
   .hidden { display:none; }
+  #tokoModalOverlay {
+    position:fixed; top:0; left:0; width:100%; height:100%;
+    background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center;
+    z-index:1000;
+  }
+  #tokoModalBox {
+    background:#fff; border-radius:8px; max-width:700px; width:90%; max-height:80vh;
+    overflow-y:auto; padding:0;
+  }
+  #tokoModalHeader {
+    display:flex; align-items:center; justify-content:space-between;
+    background:#0a5c36; color:#fff; padding:12px 18px; border-radius:8px 8px 0 0;
+    position:sticky; top:0;
+  }
+  #tokoModalHeader h3 { margin:0; font-size:16px; }
+  #tokoModalClose {
+    background:none; border:none; color:#fff; font-size:22px; cursor:pointer; line-height:1;
+  }
+  #tokoModalBody { padding:16px 18px; text-align:left; font-size:13px; }
+  #tokoModalBody ul { margin:6px 0; padding-left:18px; }
 </style>
 </head>
 <body>
@@ -94,6 +114,16 @@
 <caption>Dashboard Toko</caption>
 </table>
 
+</div>
+
+<div id="tokoModalOverlay" class="hidden" onclick="if(event.target===this) closeTokoModal()">
+  <div id="tokoModalBox">
+    <div id="tokoModalHeader">
+      <h3 id="tokoModalTitle"></h3>
+      <button onclick="closeTokoModal()" id="tokoModalClose">&times;</button>
+    </div>
+    <div id="tokoModalBody"></div>
+  </div>
 </div>
 
 <script>
@@ -475,35 +505,42 @@ function renderDashboardToko(stores){
   const table = document.getElementById('dashboardTable');
   table.innerHTML = '<caption>Dashboard Toko</caption>';
   const thead = table.insertRow(-1);
-  thead.innerHTML = '<th>Nama Toko</th><th>Omzet Tradisional</th><th>Omzet Non-Tradisional</th>';
+  thead.innerHTML = '<th>Nama Toko</th><th>Omzet Tradisional</th><th>Omzet Non-Tradisional</th><th>Omzet Total</th>';
   const keys = Object.keys(stores).sort((a,b)=> stores[a].nama.localeCompare(stores[b].nama));
   keys.forEach(k=>{
     const s = stores[k];
+    const total = s.omzetTradisional + s.omzetNonTradisional;
     const row = table.insertRow(-1);
-    row.innerHTML = `<td class="nama" style="cursor:pointer; text-decoration:underline;" onclick="toggleTokoDetail('${k.replace(/'/g,"\\'")}', this)">${s.nama}</td><td>${fmtRp(s.omzetTradisional)}</td><td>${fmtRp(s.omzetNonTradisional)}</td>`;
+    row.innerHTML = `<td class="nama" style="cursor:pointer; text-decoration:underline;" onclick="openTokoModal('${k.replace(/'/g,"\\'")}')">${s.nama}</td><td>${fmtRp(s.omzetTradisional)}</td><td>${fmtRp(s.omzetNonTradisional)}</td><td style="font-weight:bold;">${fmtRp(total)}</td>`;
   });
 }
 
-function toggleTokoDetail(tokoKey, cellEl){
-  const row = cellEl.closest('tr');
-  const next = row.nextElementSibling;
-  if(next && next.classList.contains('toko-detail-row')){
-    next.remove();
-    return;
-  }
+function openTokoModal(tokoKey){
   const s = dashboardStores[tokoKey];
   if(!s) return;
-  const table = document.getElementById('dashboardTable');
-  const detailRow = table.insertRow(row.rowIndex);
-  detailRow.classList.add('toko-detail-row');
-  const tradList = Object.keys(s.itemsTradisional).sort().map(name=>`<li>${name} — ${fmtRp(s.itemsTradisional[name])}</li>`).join('');
-  const modernList = Object.keys(s.itemsModern).sort().map(name=>`<li>${name} — ${fmtRp(s.itemsModern[name])}</li>`).join('');
-  detailRow.innerHTML = `<td colspan="3" style="text-align:left; background:#f7f7f7;">
+  const tradList = Object.keys(s.itemsTradisional).sort().map(name=>`<li data-name="${name.toUpperCase()}">${name} — ${fmtRp(s.itemsTradisional[name])}</li>`).join('');
+  const modernList = Object.keys(s.itemsModern).sort().map(name=>`<li data-name="${name.toUpperCase()}">${name} — ${fmtRp(s.itemsModern[name])}</li>`).join('');
+  document.getElementById('tokoModalTitle').textContent = s.nama;
+  document.getElementById('tokoModalBody').innerHTML = `
+    <input type="text" id="tokoItemSearch" placeholder="Cari item..." oninput="filterTokoModalItems(this.value)"
+      style="width:100%; padding:8px; margin-bottom:12px; border:1px solid #ccc; border-radius:4px; box-sizing:border-box;">
     <div style="display:flex; gap:24px; flex-wrap:wrap;">
-      <div><b>Item Tradisional:</b><ul>${tradList || '<li>(tidak ada)</li>'}</ul></div>
-      <div><b>Item Non-Tradisional (Modern):</b><ul>${modernList || '<li>(tidak ada)</li>'}</ul></div>
-    </div>
-  </td>`;
+      <div><b>Item Tradisional:</b><ul id="tokoListTradisional">${tradList || '<li>(tidak ada)</li>'}</ul></div>
+      <div><b>Item Non-Tradisional (Modern):</b><ul id="tokoListModern">${modernList || '<li>(tidak ada)</li>'}</ul></div>
+    </div>`;
+  document.getElementById('tokoModalOverlay').classList.remove('hidden');
+}
+
+function filterTokoModalItems(query){
+  const q = query.trim().toUpperCase();
+  document.querySelectorAll('#tokoModalBody li[data-name]').forEach(li=>{
+    li.style.display = li.dataset.name.includes(q) ? '' : 'none';
+  });
+}
+
+function closeTokoModal(){
+  document.getElementById('tokoModalOverlay').classList.add('hidden');
+}
 }
 
 function compute(){
