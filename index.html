@@ -102,10 +102,16 @@
 
 <div class="toolbar">
   <span style="font-size:13px; font-weight:bold;">Cabang:</span>
+  <button id="btn-BSP" class="hidden" onclick="showBSPDashboard()" style="background:#888;">BSP</button>
   <button id="btn-Makassar" onclick="switchBranch('Makassar')">Makassar</button>
   <button id="btn-Bulukumba" onclick="switchBranch('Bulukumba')">Bulukumba</button>
   <button id="btn-Gorontalo" onclick="switchBranch('Gorontalo')">Gorontalo</button>
   <button id="btn-tokoMT" class="hidden" onclick="showTokoMTDashboard()" style="background:#888;">Toko MT</button>
+</div>
+
+<div id="bspUploadRow" class="toolbar hidden">
+  <input type="file" id="bspFileInput" accept=".xlsx,.xls,.csv">
+  <button onclick="processBSPFile()">Proses & Hitung BSP</button>
 </div>
 
 <table id="mainTable">
@@ -389,6 +395,8 @@ function logout(){
   document.getElementById('fileInput').classList.remove('hidden');
   document.querySelector('button[onclick="processFile()"]').classList.remove('hidden');
   document.querySelector('button[onclick="exportToExcel()"]').classList.remove('hidden');
+  document.getElementById('btn-BSP').classList.add('hidden');
+  document.getElementById('bspUploadRow').classList.add('hidden');
 }
 
 let currentUser = null;
@@ -409,6 +417,9 @@ async function login(user){
   document.querySelector('button[onclick="exportToExcel()"]').classList.toggle('hidden', isDashboard);
   document.getElementById('btn-tokoMT').classList.toggle('hidden', !isDashboard);
   document.getElementById('btn-tokoMT').classList.remove('branch-active');
+  document.getElementById('btn-BSP').classList.toggle('hidden', !isDashboard);
+  document.getElementById('btn-BSP').classList.remove('branch-active');
+  document.getElementById('bspUploadRow').classList.add('hidden');
 
   // tampilkan hanya tombol toggle cabang yang diizinkan untuk user ini
   const allBranches = ['Makassar','Bulukumba','Gorontalo'];
@@ -708,6 +719,8 @@ async function showTokoMTDashboard(){
     const btn = document.getElementById('btn-' + b);
     if(btn) btn.classList.remove('branch-active');
   });
+  document.getElementById('btn-BSP').classList.remove('branch-active');
+  document.getElementById('bspUploadRow').classList.add('hidden');
   document.getElementById('btn-tokoMT').classList.add('branch-active');
   setStatus('⏳ Memuat Dashboard Toko MT...', 'pending');
   try{
@@ -766,6 +779,116 @@ function renderTokoMTSection(table, branchName, stores){
     const row = table.insertRow(-1);
     row.innerHTML = `<td class="nama" style="cursor:pointer; text-decoration:underline;" onclick="openTokoModal('${k.replace(/'/g,"\\'")}')">${s.nama}</td><td style="white-space:nowrap;">${fmtRp(targetVal)}</td><td style="white-space:nowrap;">${fmtRp(s.omzetTradisional)}</td><td style="white-space:nowrap;">${fmtRp(s.omzetNonTradisional)}</td><td style="font-weight:bold; white-space:nowrap;">${fmtRp(total)}</td><td class="bar-cell"><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:${width}%"></div></div><span class="bar-label">${p_}%</span></div></td>`;
   });
+}
+
+function slimBSPRow(r){
+  return {
+    'Tgl': r['Tgl Faktur'],
+    'Nomor Faktur': r['Nomor Faktur'],
+    'Nama Toko': r['Outlet'] || r['Nama Customer'],
+    'Nama Barang': r['Nama Barang'],
+    'Sub Group Barang': r['Sub Group Barang'],
+    'Salesman': r['Salesman'],
+    'Netto': r['Netto']
+  };
+}
+
+function processBSPFile(){
+  const f = document.getElementById('bspFileInput').files[0];
+  if(!f){ setStatus('Pilih file BSP dulu.', 'error'); return; }
+  const reader = new FileReader();
+  reader.onload = async function(e){
+    const data = new Uint8Array(e.target.result);
+    const wb = XLSX.read(data, {type:'array', cellDates:true});
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const allRows = XLSX.utils.sheet_to_json(ws, {defval:null, range:2});
+    const filtered = allRows.filter(r=>{
+      const sg = String(r['Sub Group Barang'] || '').trim().toUpperCase();
+      return sg === 'HILO TRADISIONAL' || sg === 'NS TRADITIONAL';
+    }).map(slimBSPRow);
+    setStatus(`⏳ Terbaca ${filtered.length} baris tradisional (dari ${allRows.length} total). Mengunggah ke cloud...`, 'pending');
+    try{
+      await saveDataToCloud('BSP', filtered);
+      setStatus(`✅ Data BSP tersimpan di cloud (${filtered.length} baris).`, 'ok');
+      await showBSPDashboard();
+    }catch(err){
+      setStatus(`❌ GAGAL simpan data BSP: ${err.message}`, 'error');
+    }
+  };
+  reader.readAsArrayBuffer(f);
+}
+
+let bspStores = {};
+
+async function showBSPDashboard(){
+  currentBranch = 'BSP';
+  ['Makassar','Bulukumba','Gorontalo'].forEach(b=>{
+    const btn = document.getElementById('btn-' + b);
+    if(btn) btn.classList.remove('branch-active');
+  });
+  document.getElementById('btn-tokoMT').classList.remove('branch-active');
+  document.getElementById('btn-BSP').classList.add('branch-active');
+  document.getElementById('bspUploadRow').classList.remove('hidden');
+  setStatus('⏳ Memuat data BSP dari cloud...', 'pending');
+  try{
+    const rows = await loadDataFromCloud('BSP');
+    const stores = {};
+    rows.forEach(r=>{
+      const toko = r['Nama Toko'] || '(tanpa nama)';
+      const nominal = parseFloat(r['Netto']) || 0;
+      if(!stores[toko]){ stores[toko] = { nama: toko, omzet:0, items:{}, salesNames:new Set() }; }
+      const s = stores[toko];
+      s.omzet += nominal;
+      const barang = r['Nama Barang'];
+      if(barang){
+        if(!s.items[barang]) s.items[barang] = { omzet:0, notas:new Set(), dates:new Set(), merek: String(r['Sub Group Barang']||'').includes('HILO') ? 'HILO' : 'NUTRISARI' };
+        s.items[barang].omzet += nominal;
+        const nota = r['Nomor Faktur'];
+        if(nota) s.items[barang].notas.add(nota);
+        const d = toDate(r['Tgl']);
+        if(d) s.items[barang].dates.add(d.toISOString().slice(0,10));
+      }
+      if(r['Salesman']) s.salesNames.add(r['Salesman']);
+    });
+    bspStores = stores;
+    renderBSPDashboard(stores);
+    setStatus(`✅ Dashboard BSP dimuat (${Object.keys(stores).length} toko, ${rows.length} baris).`, 'ok');
+  }catch(err){
+    bspStores = {};
+    renderBSPDashboard({});
+    setStatus(`❌ GAGAL memuat data BSP: ${err.message}`, 'error');
+  }
+}
+
+function renderBSPDashboard(stores){
+  const table = document.getElementById('dashboardTable');
+  table.innerHTML = '<caption>Dashboard BSP (Hilo Tradisional + NS Tradisional)</caption>';
+  const thead = table.insertRow(-1);
+  thead.innerHTML = '<th>Nama Toko</th><th>Nama Sales</th><th>Omzet Tradisional</th>';
+  const keys = Object.keys(stores).sort((a,b)=> stores[b].omzet - stores[a].omzet);
+  if(!keys.length){
+    const row = table.insertRow(-1);
+    row.innerHTML = '<td colspan="3">(belum ada data BSP, silakan upload file di atas)</td>';
+    return;
+  }
+  keys.forEach(k=>{
+    const s = stores[k];
+    const salesNames = Array.from(s.salesNames).join(', ');
+    const row = table.insertRow(-1);
+    row.innerHTML = `<td class="nama" style="cursor:pointer; text-decoration:underline;" onclick="openBSPModal('${k.replace(/'/g,"\\'")}')">${s.nama}</td><td>${salesNames}</td><td style="white-space:nowrap; font-weight:bold;">${fmtRp(s.omzet)}</td>`;
+  });
+}
+
+function openBSPModal(tokoKey){
+  const s = bspStores[tokoKey];
+  if(!s) return;
+  const rows = itemRowsSortedByOmzet(s.items);
+  document.getElementById('tokoModalTitle').textContent = s.nama;
+  document.getElementById('tokoModalBody').innerHTML = `
+    <input type="text" id="tokoItemSearch" placeholder="Cari item..." oninput="filterTokoModalItems(this.value)"
+      style="width:100%; padding:8px; margin-bottom:12px; border:1px solid #ccc; border-radius:4px; box-sizing:border-box;">
+    <table style="width:100%; margin-top:6px;"><tr><th>Nama Item</th><th>Omzet</th><th>Jumlah PO</th><th>Tanggal</th></tr>${rows || '<tr><td colspan="4">(tidak ada)</td></tr>'}</table>`;
+  document.getElementById('tokoModalOverlay').classList.remove('hidden');
 }
 
 function buildStoreStats(cloudRows, filterFn){
@@ -1101,6 +1224,9 @@ function switchBranch(branch){
   });
   const btnMT = document.getElementById('btn-tokoMT');
   if(btnMT) btnMT.classList.remove('branch-active');
+  const btnBSP = document.getElementById('btn-BSP');
+  if(btnBSP) btnBSP.classList.remove('branch-active');
+  document.getElementById('bspUploadRow').classList.add('hidden');
   if(currentMode === 'dashboard'){
     loadDashboardBranch(branch);
     return;
