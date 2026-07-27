@@ -105,6 +105,7 @@
   <button id="btn-Makassar" onclick="switchBranch('Makassar')">Makassar</button>
   <button id="btn-Bulukumba" onclick="switchBranch('Bulukumba')">Bulukumba</button>
   <button id="btn-Gorontalo" onclick="switchBranch('Gorontalo')">Gorontalo</button>
+  <button id="btn-tokoMT" class="hidden" onclick="toggleTokoMTFilter()" style="background:#888;">Toko MT</button>
 </div>
 
 <table id="mainTable">
@@ -195,6 +196,12 @@ const LOGIN_CONFIG = {
 };
 
 const BRANCH_CLOUD_OWNER = { Makassar:'Irfan', Bulukumba:'Irfan', Gorontalo:'Teddy' };
+
+const TOKO_MT_LIST = {
+  Gorontalo: ["KARSA UTAMA LESTARI","MAKRO","MURAA SUPERMARKET 1","MURAA SUPERMARKET 2","DK MART","GELAEL","HYPERMART"],
+  Bulukumba: ["SEJAHTERA","TERNATE SINJAI","MISI PASARAYA"]
+};
+let tokoMTFilterActive = false;
 let currentMode = 'insentif';
 
 function logout(){
@@ -227,6 +234,9 @@ async function login(user){
   document.getElementById('fileInput').classList.toggle('hidden', isDashboard);
   document.querySelector('button[onclick="processFile()"]').classList.toggle('hidden', isDashboard);
   document.querySelector('button[onclick="exportToExcel()"]').classList.toggle('hidden', isDashboard);
+  tokoMTFilterActive = false;
+  document.getElementById('btn-tokoMT').classList.toggle('hidden', !isDashboard);
+  document.getElementById('btn-tokoMT').classList.remove('branch-active');
 
   // tampilkan hanya tombol toggle cabang yang diizinkan untuk user ini
   const allBranches = ['Makassar','Bulukumba','Gorontalo'];
@@ -497,7 +507,25 @@ let dashboardStores = {};
 
 function fmtRp(n){ return 'Rp ' + Math.round(n).toLocaleString('id-ID'); }
 
-function renderDashboardToko(stores){
+function toggleTokoMTFilter(){
+  tokoMTFilterActive = !tokoMTFilterActive;
+  document.getElementById('btn-tokoMT').classList.toggle('branch-active', tokoMTFilterActive);
+  renderDashboardToko(dashboardStores);
+}
+
+function filterStoresForMT(stores){
+  const list = TOKO_MT_LIST[currentBranch];
+  if(!tokoMTFilterActive || !list) return stores;
+  const filtered = {};
+  Object.keys(stores).forEach(k=>{
+    const namaUpper = stores[k].nama.toUpperCase();
+    if(list.some(mtName => namaUpper.includes(mtName))){ filtered[k] = stores[k]; }
+  });
+  return filtered;
+}
+
+function renderDashboardToko(storesInput){
+  const stores = filterStoresForMT(storesInput);
   const table = document.getElementById('dashboardTable');
   table.innerHTML = '<caption>Dashboard Toko</caption>';
   const thead = table.insertRow(-1);
