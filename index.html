@@ -568,9 +568,9 @@ function renderTokoMTDashboard(bulukumbaStores, gorontaloStores){
 
 function renderTokoMTSection(table, branchName, stores){
   const branchHead = table.insertRow(-1);
-  branchHead.innerHTML = `<th colspan="5" style="background:#073d24;">${branchName}</th>`;
+  branchHead.innerHTML = `<th colspan="6" style="background:#073d24;">${branchName}</th>`;
   const thead = table.insertRow(-1);
-  thead.innerHTML = '<th>Nama Toko</th><th>Omzet Tradisional</th><th>Omzet Non-Tradisional</th><th>Omzet Total</th><th>Target</th>';
+  thead.innerHTML = '<th>Nama Toko</th><th>Target</th><th>Omzet Tradisional</th><th>Omzet Non-Tradisional</th><th>Omzet Total</th><th>%Ach</th>';
   const keys = Object.keys(stores).sort((a,b)=>{
     const totalA = stores[a].omzetTradisional + stores[a].omzetNonTradisional;
     const totalB = stores[b].omzetTradisional + stores[b].omzetNonTradisional;
@@ -578,7 +578,7 @@ function renderTokoMTSection(table, branchName, stores){
   });
   if(!keys.length){
     const row = table.insertRow(-1);
-    row.innerHTML = '<td colspan="5">(tidak ada data)</td>';
+    row.innerHTML = '<td colspan="6">(tidak ada data)</td>';
     return;
   }
   keys.forEach(k=>{
@@ -586,8 +586,10 @@ function renderTokoMTSection(table, branchName, stores){
     const total = s.omzetTradisional + s.omzetNonTradisional;
     const targetKey = s.nama.toUpperCase();
     const targetVal = tokoMTTargets[targetKey] || 0;
+    const p_ = pct(total, targetVal);
+    const width = Math.max(0, Math.min(p_, 100));
     const row = table.insertRow(-1);
-    row.innerHTML = `<td class="nama" style="cursor:pointer; text-decoration:underline;" onclick="openTokoModal('${k.replace(/'/g,"\\'")}')">${s.nama}</td><td>${fmtRp(s.omzetTradisional)}</td><td>${fmtRp(s.omzetNonTradisional)}</td><td style="font-weight:bold;">${fmtRp(total)}</td><td><input type="number" class="target-input" value="${targetVal}" onchange="saveTokoMTTarget('${targetKey.replace(/'/g,"\\'")}', this.value)"></td>`;
+    row.innerHTML = `<td class="nama" style="cursor:pointer; text-decoration:underline;" onclick="openTokoModal('${k.replace(/'/g,"\\'")}')">${s.nama}</td><td><input type="number" class="target-input" style="width:110px;" value="${targetVal}" onchange="saveTokoMTTarget('${targetKey.replace(/'/g,"\\'")}', this.value)"></td><td>${fmtRp(s.omzetTradisional)}</td><td>${fmtRp(s.omzetNonTradisional)}</td><td style="font-weight:bold;">${fmtRp(total)}</td><td class="bar-cell"><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:${width}%"></div></div><span class="bar-label">${p_}%</span></div></td>`;
   });
 }
 
