@@ -208,6 +208,127 @@ const TOKO_MT_LIST = {
   Bulukumba: ["(PR) TERNATE/ PSR SINJAI","MISI PASAR RAYA/JNP","(PR) PT CITRA SULAWESI SEJAHTERA"]
 };
 
+const BSP_TARGETS = [
+  { nama: 'INTI CAKRAWALA CITRA  PT', target: 70350000 },
+  { nama: 'SATU SAMA JAYA ABADI PT', target: 17900000 },
+  { nama: '460  TOKO', target: 15850000 },
+  { nama: 'IMA STAND 44', target: 15350000 },
+  { nama: 'SATU SAMA JAYA ABADI HERTASNING  PT', target: 14150000 },
+  { nama: 'SATU SAMA JAYA ABADI PERINTIS  PT', target: 13800000 },
+  { nama: 'ALAM JAYA  TK', target: 13400000 },
+  { nama: 'TOKO ALENG', target: 13400000 },
+  { nama: 'LOTTE SHOPPING INDONESIA', target: 12400000 },
+  { nama: 'HARAPAN BERKAH  TK', target: 10700000 },
+  { nama: 'AL-BAROKAH  TK', target: 9650000 },
+  { nama: 'GRAND TOSERBA', target: 9400000 },
+  { nama: 'PT. MEGAH DAYA INTI HARAPAN', target: 9350000 },
+  { nama: 'SHERINA  TK', target: 8800000 },
+  { nama: 'NASRAH  TK', target: 8500000 },
+  { nama: 'GOLCI SUKSES MULIA  TK', target: 8450000 },
+  { nama: 'BENTENG BARU PRIMA PERKASA  PT', target: 7950000 },
+  { nama: 'EKATAMA JAYA ABADI  CV', target: 7400000 },
+  { nama: 'STAND AH DRINK  TOKO', target: 7350000 },
+  { nama: 'MAURAGA  TK', target: 7350000 },
+  { nama: 'HENGKY TRANKU  MM', target: 7300000 },
+  { nama: 'RESKY JAYA  TK', target: 6850000 },
+  { nama: 'GRAND MALL', target: 6650000 },
+  { nama: 'NUTRIFOOD INDONESIA  PT', target: 6550000 },
+  { nama: 'PT. PRIMA NASIONAL GEMILANG', target: 6400000 },
+  { nama: 'CV. AWAL INTI MANDIRI', target: 6200000 },
+  { nama: 'GRAND TOSERBA HERTASNING', target: 6150000 },
+  { nama: 'GRAND MODE', target: 6000000 },
+  { nama: 'SATU-SATU JAYA  TOKO', target: 5700000 },
+  { nama: 'INDO MODE  MM', target: 4800000 },
+  { nama: 'SINAR SIDRAP  TK', target: 4800000 },
+  { nama: 'ABIDZAR  TK', target: 4650000 },
+  { nama: 'ANEKA JAYA  TOKO', target: 4500000 },
+  { nama: 'SINAR UTAMA  TK', target: 4450000 },
+  { nama: 'CV. TOP MODE PERINTIS', target: 4450000 },
+  { nama: 'CV. DUA TUJUH JAYA SENTOSA', target: 4300000 },
+  { nama: 'SEDERHANA  TK', target: 4250000 },
+  { nama: 'CAHAYA SURYA  TOKO', target: 4150000 },
+  { nama: 'UTAMA MAKMUR,TK', target: 4100000 },
+  { nama: 'BONE JAYA  TOKO', target: 4050000 },
+  { nama: 'MERY  TK', target: 4000000 },
+  { nama: 'FAIQ  TK', target: 3950000 },
+  { nama: 'STAND ANJU TOKO', target: 3950000 },
+  { nama: 'MUSDALIFAH TK', target: 3900000 },
+  { nama: 'MASSEMPO  TK', target: 3900000 },
+  { nama: 'MEGA REMPAH  TOKO', target: 3850000 },
+  { nama: 'SURYA TOMBOLO TOKO', target: 3850000 },
+  { nama: 'MEGA INDAH SARI TIMOR  PT', target: 3750000 },
+  { nama: 'SATU SAMA KAREBOSI LINK', target: 3700000 },
+  { nama: 'EKTONG.UD', target: 3700000 },
+  { nama: 'JUSMA GROSIR  TK', target: 3700000 },
+  { nama: 'GRAND TOSERBA DAYA', target: 3650000 },
+  { nama: 'AGUSTAN  TOKO', target: 3650000 },
+  { nama: 'KA MART', target: 3600000 },
+  { nama: 'CAHAYA SUBUR  TOKO', target: 3550000 },
+  { nama: 'PUTRA TUNGGAL  MM', target: 3500000 },
+  { nama: 'AL MAIDAH TOKO', target: 3500000 },
+  { nama: 'SURYA ABADI, TOKO', target: 3500000 },
+  { nama: 'MERY  TOKO', target: 3450000 },
+  { nama: 'BUR JAYA  TOKO', target: 3450000 },
+  { nama: 'HANA  TOKO', target: 3400000 },
+  { nama: 'STT 22 HALIJAH', target: 3200000 },
+  { nama: 'BERKAH  TK', target: 3100000 },
+  { nama: 'NASRUL  TK', target: 2950000 },
+  { nama: 'BUDI  TK', target: 2950000 },
+  { nama: 'SAHABAT  TOKO', target: 2950000 },
+  { nama: 'PUTRA  TK', target: 2850000 },
+  { nama: 'BARU  TOKO', target: 2800000 },
+  { nama: 'RESKI  TK', target: 2800000 },
+  { nama: 'RESO TEMANGIGI  TK', target: 2800000 },
+  { nama: '87  TOKO', target: 2750000 },
+  { nama: 'RAHMAT  TOKO', target: 2750000 },
+  { nama: 'RAJA PLASTIK  TK', target: 2700000 },
+  { nama: 'HILYAH  TK', target: 2650000 },
+  { nama: 'HASNI  TOKO', target: 2650000 },
+  { nama: 'TIP TOP  TOKO', target: 2600000 },
+  { nama: 'SUMBER JAYA/JOHAN W, TOKO', target: 2500000 },
+  { nama: 'SINAR YASIN CELL', target: 2500000 },
+  { nama: 'DIAMOND / PT. KAGE DWIJAYA', target: 2500000 },
+  { nama: 'TOP MURAH GRAND TOSERBA  CV', target: 2450000 },
+  { nama: 'MAJU SEJAHTERA  TK', target: 2450000 },
+  { nama: 'ANDI BASO, TOKO', target: 2400000 },
+  { nama: 'TRIPLE M  MM', target: 2400000 },
+  { nama: 'HATI MURNI  TOKO', target: 2400000 },
+  { nama: 'EKA JAYA TOKO', target: 2400000 },
+  { nama: 'FARHAN  TK', target: 2350000 },
+  { nama: 'PRIMA MIX FROZEN FOOD  TK', target: 2350000 },
+  { nama: 'ASWAR  TOKO', target: 2300000 },
+  { nama: 'RISMA  TOKO', target: 2250000 },
+  { nama: 'CAHAYA SURYA', target: 2250000 },
+  { nama: 'UTAMA JAYA, TOKO', target: 2250000 },
+  { nama: 'MARLINA  TOKO', target: 2200000 },
+  { nama: 'ARYA REZKY,TOKO', target: 2150000 },
+  { nama: 'CITRA COSMETIC & SWALAYAN  MM', target: 2150000 },
+  { nama: 'RISWAN  TK', target: 2100000 },
+  { nama: 'SUMBER JAYA  TK', target: 2100000 },
+  { nama: 'STAND HANAFIA', target: 2100000 },
+  { nama: 'MAKMUR JAYA TOKO', target: 2100000 },
+  { nama: 'SYUKUR  TOKO', target: 2050000 },
+  { nama: 'FIRMAN JAYA  TOKO', target: 2000000 },
+  { nama: 'PANCIRO JAYA, TOKO', target: 2000000 },
+  { nama: 'KING QUEEN MART PERINTIS', target: 2000000 },
+  { nama: 'KHAIDIR  TK', target: 1950000 },
+  { nama: 'ABIDAH  TK', target: 1950000 },
+  { nama: 'MIRZHA FROZEN  TK', target: 1950000 },
+  { nama: 'SURYA 21  TOKO', target: 1900000 },
+  { nama: 'HOKI JAYA  TK', target: 1900000 },
+  { nama: 'AQILAH HARTACO  TOKO', target: 1900000 },
+  { nama: 'H. OLA  TOKO', target: 1900000 },
+  { nama: 'STAND IDHAR', target: 1900000 },
+  { nama: 'BERKAH CAHAYA  TOKO', target: 1900000 },
+  { nama: 'KARUWISI JAYA  TOKO', target: 1900000 },
+  { nama: 'MIA  TK', target: 1900000 },
+  { nama: 'SEJAHTERA  TK', target: 1850000 },
+  { nama: 'AULIA/SYAHRUL  TOKO', target: 1850000 },
+  { nama: 'MAULIDA  TK', target: 1850000 },
+  { nama: 'PELITA FROZEN FOOD  TK', target: 1800000 },
+  { nama: 'CV. CAHAYA SEJAHTERA MANDIRI', target: 1800000 }
+];
+
 const TOKO_TARGETS = {
   Makassar: [
   { nama: '(PR) PT.INDOMARCO PRISMATAMA - PALOPO', target: 209450000 },
@@ -860,22 +981,48 @@ async function showBSPDashboard(){
   }
 }
 
+function normWords(s){
+  return String(s || '').toUpperCase().replace(/[^A-Z0-9 ]/g, ' ').split(/\s+/).filter(w=>w.length > 0);
+}
+
+function wordsSubsetMatch(a, b){
+  const wa = new Set(normWords(a));
+  const wb = new Set(normWords(b));
+  if(!wa.size || !wb.size) return false;
+  const smaller = wa.size <= wb.size ? wa : wb;
+  const larger = wa.size <= wb.size ? wb : wa;
+  let matchCount = 0;
+  smaller.forEach(w=>{ if(larger.has(w)) matchCount++; });
+  return matchCount >= Math.ceil(smaller.size * 0.6);
+}
+
+function findBSPMatchingStore(stores, targetNama){
+  for(const key of Object.keys(stores)){
+    if(wordsSubsetMatch(stores[key].nama, targetNama)) return { key, store: stores[key] };
+  }
+  return null;
+}
+
 function renderBSPDashboard(stores){
   const table = document.getElementById('dashboardTable');
   table.innerHTML = '<caption>Dashboard BSP (Hilo Tradisional + NS Tradisional)</caption>';
   const thead = table.insertRow(-1);
-  thead.innerHTML = '<th>Nama Toko</th><th>Nama Sales</th><th>Omzet Tradisional</th>';
-  const keys = Object.keys(stores).sort((a,b)=> stores[b].omzet - stores[a].omzet);
-  if(!keys.length){
+  thead.innerHTML = '<th>Nama Toko</th><th>Nama Sales</th><th>Target</th><th>Omzet Tradisional</th><th>%Ach</th>';
+  const targets = [...BSP_TARGETS].sort((a,b)=> b.target - a.target);
+  if(!targets.length){
     const row = table.insertRow(-1);
-    row.innerHTML = '<td colspan="3">(belum ada data BSP, silakan upload file di atas)</td>';
+    row.innerHTML = '<td colspan="5">(belum ada daftar target BSP)</td>';
     return;
   }
-  keys.forEach(k=>{
-    const s = stores[k];
-    const salesNames = Array.from(s.salesNames).join(', ');
+  targets.forEach(t=>{
+    const match = findBSPMatchingStore(stores, t.nama);
+    const omzet = match ? match.store.omzet : 0;
+    const salesNames = match ? Array.from(match.store.salesNames).join(', ') : '';
+    const p_ = pct(omzet, t.target);
+    const width = Math.max(0, Math.min(p_, 100));
     const row = table.insertRow(-1);
-    row.innerHTML = `<td class="nama" style="cursor:pointer; text-decoration:underline;" onclick="openBSPModal('${k.replace(/'/g,"\\'")}')">${s.nama}</td><td>${salesNames}</td><td style="white-space:nowrap; font-weight:bold;">${fmtRp(s.omzet)}</td>`;
+    const clickAttr = match ? ` style="cursor:pointer; text-decoration:underline;" onclick="openBSPModal('${match.key.replace(/'/g,"\\'")}')"` : '';
+    row.innerHTML = `<td class="nama"${clickAttr}>${t.nama}</td><td>${salesNames}</td><td style="white-space:nowrap;">${fmtRp(t.target)}</td><td style="white-space:nowrap; font-weight:bold;">${fmtRp(omzet)}</td><td class="bar-cell"><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:${width}%"></div></div><span class="bar-label">${p_}%</span></div></td>`;
   });
 }
 
