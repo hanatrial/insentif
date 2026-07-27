@@ -201,6 +201,180 @@ const TOKO_MT_LIST = {
   Gorontalo: ["KARSA UTAMA LESTARI","MURAA 2 / JL. KALIMANTAN","MURAA SUPERMARKET/JL AHMAD A WAHAB","MAKRO / JLN. KARTINI","PT.GELAEL INDOTIM","HYPERMART GORONTALO","DK /JL.RAYA LIMBOTO"],
   Bulukumba: ["(PR) TERNATE/ PSR SINJAI","MISI PASAR RAYA/JNP","(PR) PT CITRA SULAWESI SEJAHTERA"]
 };
+
+const TOKO_TARGETS = {
+  Makassar: [
+  { nama: '(PR) PT.INDOMARCO PRISMATAMA - PALOPO', target: 209450000 },
+  { nama: 'PT. SUMBER ALFARIA TRIJAYA, TBK', target: 158800000 },
+  { nama: 'PT. NUTRIFOOD INDONESIA', target: 33450000 },
+  { nama: 'PT. INTI CAKRAWALA CITRA', target: 29900000 },
+  { nama: '(PR) NURBAYA ( TK.CAKALANG 30 )', target: 11100000 },
+  { nama: '(PR) PT. SATU SAMA JAYA ABADI / JL LANDAK', target: 10200000 },
+  { nama: '(PR) SATU SAMA JAYA ABADI PERINTIS', target: 9550000 },
+  { nama: '(PR) PT. SATU SAMA JAYA ABADI', target: 9400000 },
+  { nama: 'TK. 460/JL SWADAYA 6 NO.8', target: 8200000 },
+  { nama: '(PR) GRAND TOSERBA/ KOMPLEK RUKO MIRAH (TOSERBA) J', target: 7600000 },
+  { nama: 'AL MAIDAH 189 MART', target: 7550000 },
+  { nama: 'PT BENTENG BARU PRIMA PERKASA', target: 7300000 },
+  { nama: 'BAJI PAMAI/ RANGGONG MAKASSAR', target: 6250000 },
+  { nama: 'SUKMAWATI (TIM PROMOSI NFI)', target: 6100000 },
+  { nama: '(PR) GRAND BINTANG LESTARI', target: 5950000 },
+  { nama: 'TOKO UTAMA JAYA', target: 5850000 },
+  { nama: '(PR) INDO MODE/S.ALAUDDIN', target: 5600000 },
+  { nama: 'TOKO MAURAGA / TUMAMPUA NO. 41 RT. 002 RW. 002', target: 5450000 },
+  { nama: 'UNGGAS JAYA TOKO / KOMPLEKS PASAR SENTRAL', target: 5250000 },
+  { nama: 'MISI PASAR RAYA/JL. POROS MALINO (KURANG LEBIH 100', target: 5200000 },
+  { nama: '(PR) GRAND MALL / JL POROS MAKASSAR MAROS NO 53', target: 5150000 },
+  { nama: 'TK. PUTRA TUNGGAL/JL. POROS PALLANGGA', target: 4850000 },
+  { nama: 'TK.ALAM/PASAR CIDU DEKAT TK NABILA NO 27 RT 001 RW', target: 4650000 },
+  { nama: '(PR) GRAND MODE/JL. CENDRAWASIH NO.', target: 4650000 },
+  { nama: 'ZAFARI FROZEN', target: 4400000 },
+  { nama: '(PR) CV TOP MODE/ P KEMERDEKAAN MAKASSAR', target: 4250000 },
+  { nama: 'TOKO RESKY JAYA', target: 4150000 },
+  { nama: 'HARAPAN BERKAH', target: 4000000 },
+  { nama: 'PT.LOTTE SHOPPING INDONESIA/JL SULTAN ALAUDDIN NO', target: 3850000 },
+  { nama: 'TOKO ANGGI/BELOKALLONG JENEPONTO', target: 3750000 },
+  { nama: 'TK SINAR SIDRAP', target: 3650000 },
+  { nama: 'NASRAH / JL NASRUN AMRULLAH RT. 03 RW. 04', target: 3450000 },
+  { nama: 'HARAPAN BERKAT/JL SAM RATULANGI NO.13', target: 3250000 },
+  { nama: 'RITEL ABADI NUSANTARA', target: 3200000 },
+  { nama: 'PT. KAGE DWIJAYA/JL BOULEVARD NO. 33 DALAM MALL PA', target: 3150000 },
+  { nama: 'TOKO ALBAROQAH/JL TERONG (SAMPING TOKO JAM) NO 1 R', target: 3100000 },
+  { nama: '(PR) CV. EKATAMA JAYA ABADI/JL TODDOPULI RAYA RUKO', target: 3000000 },
+  { nama: 'BUR JAYA. TK/JL. ABU BAKAR LAMBOGO II NO.', target: 2850000 },
+  { nama: 'HASAN MART/JL ANDI PETTARANI NO 9 RT 01 RW 01', target: 2800000 },
+  { nama: 'PRIMA NASIONAL GEMILANG/JL.KUBIS NO.38/40', target: 2750000 },
+  { nama: 'TK SUMBER TELUR/JALAN JENDERAL SUDIRMAN', target: 2650000 },
+  { nama: 'SUMBER JAYA/ PASAR SENTRAL', target: 2650000 },
+  { nama: 'TK RINA CAHAYA SURYA/PERUMNAS ANTANG NO.', target: 2400000 },
+  { nama: 'GRAND TOSERBA/JL. METRO TANJUNG BUNGA KAV EMERALD', target: 2400000 },
+  { nama: 'KOPKAR POLRI / JLN MERPATI', target: 2350000 },
+  { nama: 'PT MEGA INDAH SARI/ ANTANG RAYA/ 49 A MAKASSAR', target: 2300000 },
+  { nama: 'CV. AWAL INTI MANDIRI', target: 2300000 },
+  { nama: '(PR) SURYA TOMBOLO/JL. BENTENG SOMBA OPU', target: 2250000 },
+  { nama: 'EKTONG', target: 2250000 },
+  { nama: 'CV. TRIPLE M', target: 2200000 },
+  { nama: 'PT.INDOMARCO PRISMATAMA - PALOPO IDM KLIK', target: 2200000 },
+  { nama: 'TK KAMI/PASAR SENTRAL BANTAENG-+20M DARI TOKO ANEK', target: 2150000 },
+  { nama: 'CV. DUA TUJUH JAYA SENTOSA/JL TAMANGAPA RAYA NO 20', target: 2150000 },
+  { nama: 'RAHMAT IHSAN/JLN GOA RIA PONDOK ASRI NO.', target: 2100000 },
+  { nama: 'TK UD IRING/JL. ST ALAUDDIN NO.', target: 1950000 },
+  { nama: 'LAZUNA CHICKEN', target: 1950000 },
+  { nama: 'PT.SINAR ALAM KARUNIA CEMERLANG', target: 1900000 },
+  { nama: 'SUMBER REZKY TOKO/JL DRSAMRATULAGI KOMPLEKS PASAR', target: 1900000 },
+  { nama: 'CV.MITRA BELANJA SEJAHTERA/JLN.POROS BTP BLOK C NO', target: 1900000 },
+  { nama: 'TOKO MASEMPO / JL. KANJILO. POROS BAROMBONG SAMPIN', target: 1800000 },
+  { nama: 'TOKO AQILA', target: 1800000 },
+  { nama: 'ANEKA JAYA/ JL GAGAK', target: 1800000 },
+  { nama: 'NIAR/ JL WONGISIDI KOMP PASAR SENTRAL', target: 1750000 },
+  { nama: 'STAND IMA/JL. PANAMPU PASAR PANAMPU STAND D 13', target: 1750000 },
+  { nama: '(PR) WANG MART/JL USMAN SALENGKE NO', target: 1750000 },
+  { nama: 'LUCKY /JL  RAJAWALI 1 NO  109', target: 1750000 },
+  { nama: 'TK. BUR 2/JL RAPPOCINI RAYA NO. 24D', target: 1700000 },
+  { nama: 'TK BONE JAYA/PERUMNAS ANTANG NO. BLOK', target: 1650000 },
+  { nama: '88 MART/JL KALAMPETO NO RT 03 RW', target: 1650000 },
+  { nama: 'SAMA JAYA/ MANGGIS 34 BANTAENG', target: 1650000 },
+  { nama: 'ZULFIKAR', target: 1650000 },
+  { nama: 'CAHAYA SUBUR. TK/JL. KANGKUNG TIMUR NO.', target: 1600000 },
+  { nama: 'STAND SEBELAS JAYA ABADI PT', target: 1600000 },
+  { nama: 'TK MERRY/JL RAPPOKALLING RAYA NO', target: 1600000 },
+  { nama: 'M MART/ MANGGIS BANTAENG', target: 1600000 },
+  { nama: 'CV. TRIPLE M/JL. ABDUL MUTHALIB DG NARANG NO. 100', target: 1550000 },
+  { nama: 'TOKO SEDERHANA / MAPPASAILE SETELAH TOKO SINAR MUL', target: 1550000 },
+  { nama: 'TOKO FAJAR/JL. BONTO DAENG IRATE NO.', target: 1550000 },
+  { nama: 'TOKO KHAIDIR/PASAR DAYA (PAS SAMPING TOKO TIGA PUT', target: 1550000 },
+  { nama: 'LANTI H/ PSR SENT JPT', target: 1500000 },
+  { nama: 'KING QUEEN MART', target: 1500000 },
+  { nama: '(PR) CV.CAHAYA SEJAHTERA MANDIRI/KEMAKMURAN', target: 1500000 },
+  { nama: 'ARDY JAYA/ JL BULU SARAUNG', target: 1500000 },
+  { nama: 'HOKI JAYA', target: 1500000 },
+  { nama: 'TK ABIDZAR/CENDRAWASI DEPAN PASAR PAMOS', target: 1450000 },
+  { nama: 'FATMA H/ KOMP PASAR BIKERU', target: 1450000 },
+  { nama: 'SUMBER BAHAGIA/ TINUMBU', target: 1450000 },
+  { nama: 'HJ. RAHMA TOKO / KOMPLEKS PASAR SENTRAL', target: 1450000 },
+  { nama: 'CITRA COSMETIK DAN SWALAYAN', target: 1400000 },
+  { nama: 'TK KEMBAR /JL. PELABUHAN (SAMPING PINTU', target: 1400000 },
+  { nama: 'ILHAM JAYA', target: 1400000 },
+  { nama: 'ODANG/BANYORANG', target: 1350000 },
+  { nama: 'R 8 MART/ JL TALLASALAPANG BLOK M 1/ 1 MAKASSAR', target: 1350000 },
+  { nama: 'TOKO SINAR UTAMA/JL. POROS KARIANGO NO.', target: 1300000 },
+  { nama: 'TK HERMANSYAH/ JL KEMAKMURAN', target: 1250000 },
+  { nama: 'TOKO FADWAN', target: 1250000 },
+  { nama: 'TK AL MAIDAH/JL BABUSSALAM', target: 1250000 },
+  { nama: 'TK. MEGAH REMPAH/JL. DAENG TATA.KOMP', target: 1250000 },
+  { nama: 'RITEL ABADI NUSANTARA/JL DIPONEGORO NO.115 RT. 03', target: 1250000 },
+  { nama: 'STAND ANJU/PASAR DAYA BLOK H NO', target: 1250000 },
+  { nama: 'TOKO KING/JL. AZALEA MAROS ( SAMPING TK.SAMIR )', target: 1250000 },
+  { nama: 'SINAR REMPAH 1 / JL LINGKAR DPN KANTOR', target: 1200000 },
+  { nama: 'TAQWA/S.PARMAN', target: 1200000 }
+  ],
+  Bulukumba: [
+  { nama: '(PR) TERNATE/ PSR SINJAI', target: 19100000 },
+  { nama: 'TK AMANAGAPPA FROZEN / JL. BALANGNIPA SINJAI UTARA', target: 4800000 },
+  { nama: '(PR) HIDAYAH/JALAN POROS BIRA BULUKUMBA', target: 3850000 },
+  { nama: 'SUMBER KARYA/ DR RATULANGI BULUKUMBA', target: 3150000 },
+  { nama: 'LOSARI/ PASAR SINJAI', target: 2400000 },
+  { nama: 'STAND 13/ PASAR SENTRAL BULUKUMBA', target: 2350000 },
+  { nama: 'UJUNG LOE/ JL UJUNG LOE', target: 1550000 },
+  { nama: 'RAGAM PESONA/ S PARMAN BULUKUMBA', target: 1550000 },
+  { nama: 'STAND 19/ PASAR SINJAI', target: 1450000 },
+  { nama: 'TK. BINTANG UTAMA/JALAN DATO TIRO', target: 1400000 },
+  { nama: 'TK ULZA JAYA/ DEPAN PASAR TANETE', target: 1400000 },
+  { nama: 'TAMIMI/JL POROS BULUKUMBA-SINJAI RT. 01 RW. 02', target: 1300000 },
+  { nama: 'TOKO TAUFIK NUR/TERMINAL BULUKUMBA', target: 1300000 },
+  { nama: 'RISWAN/ MATAHARI BULUKUMBA', target: 1300000 },
+  { nama: 'MAHARANI/ SANGIASSERI', target: 1250000 },
+  { nama: 'BARAKKA/JL. KUSUMA BANGSA CAILE PAS DEPAN JL MASU', target: 1250000 },
+  { nama: '(PR) PT CITRA SULAWESI SEJAHTERA', target: 28000000 },
+  { nama: 'MISI PASAR RAYA/JNP', target: 2000000 }
+  ],
+  Gorontalo: [
+  { nama: 'KARSA UTAMA LESTARI', target: 124150000 },
+  { nama: 'PT. INTI CAKRAWALA CITRA', target: 122650000 },
+  { nama: 'PT.SUMBER ALFARIA TRIJAYA,TBK DEPO GORONTALO(DGTO)', target: 106950000 },
+  { nama: 'MAKRO / JLN. KARTINI NO.26', target: 30450000 },
+  { nama: 'HYPERMART GORONTALO', target: 18700000 },
+  { nama: 'TK. PLASTIK GAJAH / JL HOS. COKROAMINOTO NO.100X N', target: 15100000 },
+  { nama: 'MURAA SUPERMARKET/JL AHMAD A WAHAB NONO7 NO 96181', target: 12050000 },
+  { nama: 'MURAA 2 / JL. KALIMANTAN/JL. KALIMANTAN NO.NO.94', target: 10650000 },
+  { nama: 'PT.GELAEL INDOTIM/JL.KH.AGUS SALIM NO.51 LIMBA U D', target: 9550000 },
+  { nama: 'PT. NUTRIFOOD INDONESIA', target: 8350000 },
+  { nama: 'PICE / PSR CENTRAL', target: 6950000 },
+  { nama: 'BISMILLAH TOKO/JL.MARISA 6', target: 6650000 },
+  { nama: 'TK DK KWANDANG/JL. TRANS SULAWESI', target: 6300000 },
+  { nama: 'YUYUN KIOS/JL. SUWAWA', target: 5950000 },
+  { nama: 'TIM PROMOSI NUTRIFOOD', target: 5800000 },
+  { nama: 'DK /JL.RAYA LIMBOTO', target: 5500000 },
+  { nama: 'CV. AGUNG BERKAT JAYA / JL. PIERE TENDEAN', target: 5450000 },
+  { nama: 'ROMY/JL. PALU SAMPING KIOS', target: 4450000 },
+  { nama: 'INTI MART/JALAN TIPANIPI KOMPLEKS JEMBATAN RUMAH S', target: 4150000 },
+  { nama: 'NURMART JAYA', target: 3550000 },
+  { nama: 'TK.AMANG/JLN JEMBATAN MERAH NO 665 RT 01 RW 01', target: 3250000 },
+  { nama: 'SUKSES GEMILANG MART', target: 3100000 },
+  { nama: 'CV.SABASS MANDIRI/JL. TRANS SULAWESI', target: 2950000 },
+  { nama: 'CV.ORNAMEN MARISA', target: 2900000 },
+  { nama: 'HERCE / JL TRANS SULAWESI DKT PERTIGAAN DS MOUTONG', target: 2700000 },
+  { nama: 'CV. HOKKY MAKMUR SEJAHTERA', target: 2650000 },
+  { nama: 'ILOPONU / PSR. CENTRAL', target: 2350000 },
+  { nama: 'DAPURKU/JLN RAYA MARISA, DEPAN MESJID AL-MUNARWAH', target: 2200000 },
+  { nama: 'HYMART EXPRESS/JL SULTAN BOTUTIHE KEL WOODU RT.002', target: 2150000 },
+  { nama: 'TOKO ALVINA/JL. SAM RATULANGI', target: 2000000 },
+  { nama: 'TOKO ANEKA JAYA', target: 1950000 },
+  { nama: 'APOTEK HARAPAN KITA', target: 1650000 },
+  { nama: 'IRA STATIONERY/JL.IMAM BONJOL', target: 1600000 },
+  { nama: 'TOKO YUSUF LIMBOTO', target: 1600000 },
+  { nama: 'TOKO SEKAWAN/JL. GORONTALO 1 NO 332', target: 1600000 },
+  { nama: 'WATI / PSR. CENTRAL', target: 1500000 },
+  { nama: 'RAGAM JAYA / JL. BENGAWAN SOLO', target: 1450000 },
+  { nama: 'TOKO RIZKY / LIMBA U I NO. 03 RT. 02 RW. 01', target: 1450000 },
+  { nama: 'SH PANDI/JLN. BANDENG', target: 1350000 },
+  { nama: 'LESTARI/JL. DURIAN', target: 1250000 },
+  { nama: 'INAYAH/JL. PROF DRS SAHMINA NU', target: 1250000 },
+  { nama: 'TOKO RAMA/LIMEHE TIMUR NO 03 RT 01 RW 02', target: 1200000 },
+  { nama: 'TK ROSNA/JL AISYA TANGAHU', target: 1200000 }
+  ]
+};
+
 let currentMode = 'insentif';
 
 function logout(){
@@ -465,21 +639,50 @@ async function loadDashboardBranch(branch){
   setStatus(`⏳ Memuat Dashboard Toko ${branch} dari cloud...`, 'pending');
   try{
     const cloudRows = await loadDataFromCloud(owner);
-    if(!cloudRows.length){
-      renderDashboardToko({});
-      setStatus(`⚠️ Belum ada data cloud untuk ${branch}.`, 'error');
-      return;
-    }
     const salesList = BRANCH_SALES[branch];
     const stores = buildStoreStats(cloudRows, r => salesList.includes(normSales(field(r, 'Nama Sales', 'NamaSales'))));
     dashboardStores = stores;
-    renderDashboardToko(stores);
-    setStatus(`✅ Dashboard Toko ${branch} dimuat (${Object.keys(stores).length} toko).`, 'ok');
+    renderTokoTargetDashboard(branch, stores);
+    setStatus(`✅ Dashboard Toko ${branch} dimuat (${Object.keys(stores).length} toko transaksi, ${(TOKO_TARGETS[branch]||[]).length} toko target).`, 'ok');
   }catch(err){
     dashboardStores = {};
-    renderDashboardToko({});
+    renderTokoTargetDashboard(branch, {});
     setStatus(`❌ GAGAL memuat Dashboard Toko: ${err.message}`, 'error');
   }
+}
+
+function findMatchingStore(stores, targetUpper){
+  for(const key of Object.keys(stores)){
+    const s = stores[key];
+    const nameUpper = s.nama.toUpperCase();
+    if(nameUpper.startsWith(targetUpper) || targetUpper.startsWith(nameUpper)){
+      return { key, store: s };
+    }
+  }
+  return null;
+}
+
+function renderTokoTargetDashboard(branch, stores){
+  const table = document.getElementById('dashboardTable');
+  table.innerHTML = '<caption>Dashboard Toko</caption>';
+  const thead = table.insertRow(-1);
+  thead.innerHTML = '<th>Nama Toko</th><th>Nama Sales</th><th>Target</th><th>Omzet</th><th>%Ach</th>';
+  const targets = [...(TOKO_TARGETS[branch] || [])].sort((a,b)=> b.target - a.target);
+  if(!targets.length){
+    const row = table.insertRow(-1);
+    row.innerHTML = '<td colspan="5">(belum ada daftar target untuk cabang ini)</td>';
+    return;
+  }
+  targets.forEach(t=>{
+    const match = findMatchingStore(stores, t.nama.toUpperCase());
+    const omzet = match ? (match.store.omzetTradisional + match.store.omzetNonTradisional) : 0;
+    const salesNames = match ? Array.from(match.store.salesNames).join(', ') : '';
+    const p_ = pct(omzet, t.target);
+    const width = Math.max(0, Math.min(p_, 100));
+    const row = table.insertRow(-1);
+    const clickAttr = match ? ` style="cursor:pointer; text-decoration:underline;" onclick="openTokoModal('${match.key.replace(/'/g,"\\'")}')"` : '';
+    row.innerHTML = `<td class="nama"${clickAttr}>${t.nama}</td><td>${salesNames}</td><td style="white-space:nowrap;">${fmtRp(t.target)}</td><td style="white-space:nowrap;">${fmtRp(omzet)}</td><td class="bar-cell"><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:${width}%"></div></div><span class="bar-label">${p_}%</span></div></td>`;
+  });
 }
 
 let dashboardStores = {};
@@ -578,7 +781,7 @@ function buildStoreStats(cloudRows, filterFn){
     const group1 = String(field(r, 'Group1Barang') || '').trim().toUpperCase();
     const nominal = parseFloat(field(r, 'DPP')) || 0;
     if(!stores[tokoKey]){
-      stores[tokoKey] = { nama: namaToko, omzetTradisional:0, omzetNonTradisional:0, itemsTradisional:{}, itemsModern:{} };
+      stores[tokoKey] = { nama: namaToko, omzetTradisional:0, omzetNonTradisional:0, itemsTradisional:{}, itemsModern:{}, salesNames:new Set() };
     }
     const s = stores[tokoKey];
     const bucket = (group1 === 'TRADITIONAL') ? 'itemsTradisional' : 'itemsModern';
@@ -590,6 +793,8 @@ function buildStoreStats(cloudRows, filterFn){
     if(nota) item.notas.add(nota);
     const d = toDate(field(r, 'Tgl'));
     if(d) item.dates.add(d.toISOString().slice(0,10));
+    const salesName = normSales(field(r, 'Nama Sales', 'NamaSales'));
+    if(salesName) s.salesNames.add(salesName);
   });
   return stores;
 }
