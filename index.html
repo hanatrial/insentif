@@ -65,6 +65,7 @@
   <h2>Pilih Cabang</h2>
   <button class="login-option" onclick="login('Irfan')">Irfan (Makassar)</button>
   <button class="login-option" onclick="login('Teddy')">Teddy (Gorontalo)</button>
+  <button class="login-option" onclick="login('MPO')">MPO</button>
   <div id="loginError"></div>
 </div>
 
@@ -87,6 +88,10 @@
 
 <table id="mainTable">
 <caption>Program Insentif Juli</caption>
+</table>
+
+<table id="dashboardTable" class="hidden">
+<caption>Dashboard Toko</caption>
 </table>
 
 </div>
@@ -154,15 +159,25 @@ const BRANCH_SALES = {
 
 const LOGIN_CONFIG = {
   Irfan: { password:'1', branches:['Makassar','Bulukumba'] },
-  Teddy: { password:'1', branches:['Gorontalo'] }
+  Teddy: { password:'1', branches:['Gorontalo'] },
+  MPO: { password:'194040', branches:['Makassar','Bulukumba','Gorontalo'], mode:'dashboard' }
 };
+
+const BRANCH_CLOUD_OWNER = { Makassar:'Irfan', Bulukumba:'Irfan', Gorontalo:'Teddy' };
+let currentMode = 'insentif';
 
 function logout(){
   rawData = [];
+  currentMode = 'insentif';
   document.getElementById('fileInput').value = '';
   document.getElementById('appWrap').classList.add('hidden');
   document.getElementById('loginScreen').classList.remove('hidden');
   document.getElementById('loginError').textContent = '';
+  document.getElementById('mainTable').classList.remove('hidden');
+  document.getElementById('dashboardTable').classList.add('hidden');
+  document.getElementById('fileInput').classList.remove('hidden');
+  document.querySelector('button[onclick="processFile()"]').classList.remove('hidden');
+  document.querySelector('button[onclick="exportToExcel()"]').classList.remove('hidden');
 }
 
 let currentUser = null;
@@ -178,6 +193,14 @@ async function login(user){
   document.getElementById('loginScreen').classList.add('hidden');
   document.getElementById('appWrap').classList.remove('hidden');
   currentUser = user;
+  currentMode = cfg.mode || 'insentif';
+
+  const isDashboard = currentMode === 'dashboard';
+  document.getElementById('mainTable').classList.toggle('hidden', isDashboard);
+  document.getElementById('dashboardTable').classList.toggle('hidden', !isDashboard);
+  document.getElementById('fileInput').classList.toggle('hidden', isDashboard);
+  document.querySelector('button[onclick="processFile()"]').classList.toggle('hidden', isDashboard);
+  document.querySelector('button[onclick="exportToExcel()"]').classList.toggle('hidden', isDashboard);
 
   // tampilkan hanya tombol toggle cabang yang diizinkan untuk user ini
   const allBranches = ['Makassar','Bulukumba','Gorontalo'];
@@ -190,7 +213,12 @@ async function login(user){
     const btn = document.getElementById('btn-' + b);
     if(btn) btn.classList.toggle('branch-active', b === currentBranch);
   });
-  await loadUserFromCloud(currentUser);
+
+  if(isDashboard){
+    await loadDashboardBranch(currentBranch);
+  } else {
+    await loadUserFromCloud(currentUser);
+  }
 }
 let currentBranch = 'Makassar';
 function getSalesList(){ return BRANCH_SALES[currentBranch]; }
@@ -395,6 +423,54 @@ async function loadUserFromCloud(user){
     render({ea5:{},nstea:{},matcha:{},swiss:{}}, {}, {});
     setStatus(`❌ GAGAL memuat data cloud: ${err.message}`, 'error');
   }
+}
+
+async function loadDashboardBranch(branch){
+  const owner = BRANCH_CLOUD_OWNER[branch];
+  setStatus(`⏳ Memuat Dashboard Toko ${branch} dari cloud...`, 'pending');
+  try{
+    const cloudRows = await loadDataFromCloud(owner);
+    if(!cloudRows.length){
+      renderDashboardToko({});
+      setStatus(`⚠️ Belum ada data cloud untuk ${branch}.`, 'error');
+      return;
+    }
+    const salesList = BRANCH_SALES[branch];
+    const stores = {};
+    cloudRows.forEach(r=>{
+      const sales = normSales(field(r, 'Nama Sales', 'NamaSales'));
+      if(!salesList.includes(sales)) return;
+      const barang = field(r, 'Nama Barang', 'NamaBarang');
+      if(!barang) return;
+      const shipTo = field(r, 'Ship To', 'ShipTo');
+      const perusahaan = field(r, 'Perusahaan');
+      const namaToko = perusahaan || shipTo || '(tanpa nama)';
+      const tokoKey = shipTo || perusahaan;
+      const group1 = String(field(r, 'Group1Barang') || '').trim().toUpperCase();
+      if(!stores[tokoKey]){ stores[tokoKey] = { nama: namaToko, tradisional:0, nonTradisional:0, items: new Set() }; }
+      if(group1 === 'TRADITIONAL'){ stores[tokoKey].tradisional++; } else { stores[tokoKey].nonTradisional++; }
+      stores[tokoKey].items.add(barang);
+    });
+    renderDashboardToko(stores);
+    setStatus(`✅ Dashboard Toko ${branch} dimuat (${Object.keys(stores).length} toko).`, 'ok');
+  }catch(err){
+    renderDashboardToko({});
+    setStatus(`❌ GAGAL memuat Dashboard Toko: ${err.message}`, 'error');
+  }
+}
+
+function renderDashboardToko(stores){
+  const table = document.getElementById('dashboardTable');
+  table.innerHTML = '<caption>Dashboard Toko</caption>';
+  const thead = table.insertRow(-1);
+  thead.innerHTML = '<th>Nama Toko</th><th>Pengambilan Tradisional</th><th>Pengambilan Non-Tradisional</th><th>Item yang Diambil</th>';
+  const keys = Object.keys(stores).sort((a,b)=> stores[a].nama.localeCompare(stores[b].nama));
+  keys.forEach(k=>{
+    const s = stores[k];
+    const row = table.insertRow(-1);
+    const itemList = Array.from(s.items).sort().join(', ');
+    row.innerHTML = `<td class="nama">${s.nama}</td><td>${s.tradisional}</td><td>${s.nonTradisional}</td><td style="text-align:left;">${itemList}</td>`;
+  });
 }
 
 function compute(){
@@ -614,6 +690,10 @@ function switchBranch(branch){
     const btn = document.getElementById('btn-' + b);
     if(btn) btn.classList.toggle('branch-active', b === branch);
   });
+  if(currentMode === 'dashboard'){
+    loadDashboardBranch(branch);
+    return;
+  }
   if(rawData.length) compute();
   else render({ea5:{},nstea:{},matcha:{},swiss:{}}, {}, {});
 }
