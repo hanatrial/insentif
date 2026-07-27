@@ -84,17 +84,9 @@
 
 <div class="login-screen" id="loginScreen">
   <h2>Pilih Cabang</h2>
-  <button class="login-option" onclick="showPasswordPrompt('Irfan')">Irfan (Makassar)</button>
-  <button class="login-option" onclick="showPasswordPrompt('Teddy')">Teddy (Gorontalo)</button>
-  <button class="login-option" onclick="showPasswordPrompt('RKA')">RKA</button>
-  <div id="passwordPrompt" class="hidden" style="margin-top:14px; text-align:left;">
-    <label id="passwordPromptLabel" style="font-size:13px; font-weight:bold; display:block; margin-bottom:6px;"></label>
-    <input type="password" id="passwordInput" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px; box-sizing:border-box; margin-bottom:8px;" onkeydown="if(event.key==='Enter') submitLogin();">
-    <div style="display:flex; gap:8px;">
-      <button class="login-option" style="margin:0;" onclick="submitLogin()">Masuk</button>
-      <button class="login-option" style="margin:0; background:#888;" onclick="cancelPasswordPrompt()">Batal</button>
-    </div>
-  </div>
+  <button class="login-option" onclick="login('Irfan')">Irfan (Makassar)</button>
+  <button class="login-option" onclick="login('Teddy')">Teddy (Gorontalo)</button>
+  <button class="login-option" onclick="login('RKA')">RKA</button>
   <div id="loginError"></div>
 </div>
 
@@ -220,35 +212,9 @@ function logout(){
 }
 
 let currentUser = null;
-let pendingLoginUser = null;
 
-function showPasswordPrompt(user){
-  pendingLoginUser = user;
-  document.getElementById('loginError').textContent = '';
-  document.getElementById('passwordPromptLabel').textContent = 'Masukkan password untuk ' + user + ':';
-  document.getElementById('passwordInput').value = '';
-  document.getElementById('passwordPrompt').classList.remove('hidden');
-  document.getElementById('passwordInput').focus();
-}
-
-function cancelPasswordPrompt(){
-  pendingLoginUser = null;
-  document.getElementById('passwordPrompt').classList.add('hidden');
-  document.getElementById('loginError').textContent = '';
-}
-
-function submitLogin(){
-  const pw = document.getElementById('passwordInput').value;
-  if(pendingLoginUser) login(pendingLoginUser, pw);
-}
-
-async function login(user, pw){
+async function login(user){
   const cfg = LOGIN_CONFIG[user];
-  if(pw !== cfg.password){
-    document.getElementById('loginError').textContent = 'Password salah, coba lagi.';
-    return;
-  }
-  document.getElementById('passwordPrompt').classList.add('hidden');
   document.getElementById('loginError').textContent = '';
   document.getElementById('loginScreen').classList.add('hidden');
   document.getElementById('appWrap').classList.remove('hidden');
