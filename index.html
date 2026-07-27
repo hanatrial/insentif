@@ -502,7 +502,11 @@ function renderDashboardToko(stores){
   table.innerHTML = '<caption>Dashboard Toko</caption>';
   const thead = table.insertRow(-1);
   thead.innerHTML = '<th>Nama Toko</th><th>Omzet Tradisional</th><th>Omzet Non-Tradisional</th><th>Omzet Total</th>';
-  const keys = Object.keys(stores).sort((a,b)=> stores[a].nama.localeCompare(stores[b].nama));
+  const keys = Object.keys(stores).sort((a,b)=>{
+    const totalA = stores[a].omzetTradisional + stores[a].omzetNonTradisional;
+    const totalB = stores[b].omzetTradisional + stores[b].omzetNonTradisional;
+    return totalB - totalA;
+  });
   keys.forEach(k=>{
     const s = stores[k];
     const total = s.omzetTradisional + s.omzetNonTradisional;
@@ -511,26 +515,39 @@ function renderDashboardToko(stores){
   });
 }
 
+function itemRowsSortedByOmzet(itemMap){
+  return Object.keys(itemMap)
+    .sort((a,b)=> itemMap[b] - itemMap[a])
+    .map(name=>`<tr><td data-name="${name.toUpperCase()}" style="text-align:left;">${name}</td><td style="text-align:right;">${fmtRp(itemMap[name])}</td></tr>`)
+    .join('');
+}
+
 function openTokoModal(tokoKey){
   const s = dashboardStores[tokoKey];
   if(!s) return;
-  const tradList = Object.keys(s.itemsTradisional).sort().map(name=>`<li data-name="${name.toUpperCase()}">${name} — ${fmtRp(s.itemsTradisional[name])}</li>`).join('');
-  const modernList = Object.keys(s.itemsModern).sort().map(name=>`<li data-name="${name.toUpperCase()}">${name} — ${fmtRp(s.itemsModern[name])}</li>`).join('');
+  const tradRows = itemRowsSortedByOmzet(s.itemsTradisional);
+  const modernRows = itemRowsSortedByOmzet(s.itemsModern);
   document.getElementById('tokoModalTitle').textContent = s.nama;
   document.getElementById('tokoModalBody').innerHTML = `
     <input type="text" id="tokoItemSearch" placeholder="Cari item..." oninput="filterTokoModalItems(this.value)"
       style="width:100%; padding:8px; margin-bottom:12px; border:1px solid #ccc; border-radius:4px; box-sizing:border-box;">
     <div style="display:flex; gap:24px; flex-wrap:wrap;">
-      <div><b>Item Tradisional:</b><ul id="tokoListTradisional">${tradList || '<li>(tidak ada)</li>'}</ul></div>
-      <div><b>Item Non-Tradisional (Modern):</b><ul id="tokoListModern">${modernList || '<li>(tidak ada)</li>'}</ul></div>
+      <div>
+        <b>Item Tradisional:</b>
+        <table style="width:100%; margin-top:6px;"><tr><th>Nama Item</th><th>Omzet</th></tr>${tradRows || '<tr><td colspan="2">(tidak ada)</td></tr>'}</table>
+      </div>
+      <div>
+        <b>Item Non-Tradisional (Modern):</b>
+        <table style="width:100%; margin-top:6px;"><tr><th>Nama Item</th><th>Omzet</th></tr>${modernRows || '<tr><td colspan="2">(tidak ada)</td></tr>'}</table>
+      </div>
     </div>`;
   document.getElementById('tokoModalOverlay').classList.remove('hidden');
 }
 
 function filterTokoModalItems(query){
   const q = query.trim().toUpperCase();
-  document.querySelectorAll('#tokoModalBody li[data-name]').forEach(li=>{
-    li.style.display = li.dataset.name.includes(q) ? '' : 'none';
+  document.querySelectorAll('#tokoModalBody td[data-name]').forEach(td=>{
+    td.closest('tr').style.display = td.dataset.name.includes(q) ? '' : 'none';
   });
 }
 
