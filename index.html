@@ -518,22 +518,53 @@ async function showTokoMTDashboard(){
       loadDataFromCloud('Irfan'),
       loadDataFromCloud('Teddy')
     ]);
-    const allRows = irfanRows.concat(teddyRows);
-    const combinedList = [...TOKO_MT_LIST.Gorontalo, ...TOKO_MT_LIST.Bulukumba];
-    const stores = buildStoreStats(allRows, r=>{
+    const matchesList = (r, list) => {
       const perusahaan = field(r, 'Perusahaan') || '';
       const shipTo = field(r, 'Ship To', 'ShipTo') || '';
       const namaUpper = (perusahaan || shipTo).toUpperCase();
-      return combinedList.some(mtName => namaUpper.includes(mtName));
-    });
-    dashboardStores = stores;
-    renderDashboardToko(stores);
-    setStatus(`✅ Dashboard Toko MT dimuat (${Object.keys(stores).length} toko).`, 'ok');
+      return list.some(mtName => namaUpper.includes(mtName));
+    };
+    const bulukumbaStores = buildStoreStats(irfanRows, r => matchesList(r, TOKO_MT_LIST.Bulukumba));
+    const gorontaloStores = buildStoreStats(teddyRows, r => matchesList(r, TOKO_MT_LIST.Gorontalo));
+    dashboardStores = Object.assign({}, bulukumbaStores, gorontaloStores);
+    renderTokoMTDashboard(bulukumbaStores, gorontaloStores);
+    const total = Object.keys(bulukumbaStores).length + Object.keys(gorontaloStores).length;
+    setStatus(`✅ Dashboard Toko MT dimuat (${total} toko).`, 'ok');
   }catch(err){
     dashboardStores = {};
-    renderDashboardToko({});
+    renderTokoMTDashboard({}, {});
     setStatus(`❌ GAGAL memuat Dashboard Toko MT: ${err.message}`, 'error');
   }
+}
+
+function renderTokoMTDashboard(bulukumbaStores, gorontaloStores){
+  const table = document.getElementById('dashboardTable');
+  table.innerHTML = '<caption>Dashboard Toko MT</caption>';
+  renderTokoMTSection(table, 'Bulukumba', bulukumbaStores);
+  renderTokoMTSection(table, 'Gorontalo', gorontaloStores);
+}
+
+function renderTokoMTSection(table, branchName, stores){
+  const branchHead = table.insertRow(-1);
+  branchHead.innerHTML = `<th colspan="4" style="background:#073d24;">${branchName}</th>`;
+  const thead = table.insertRow(-1);
+  thead.innerHTML = '<th>Nama Toko</th><th>Omzet Tradisional</th><th>Omzet Non-Tradisional</th><th>Omzet Total</th>';
+  const keys = Object.keys(stores).sort((a,b)=>{
+    const totalA = stores[a].omzetTradisional + stores[a].omzetNonTradisional;
+    const totalB = stores[b].omzetTradisional + stores[b].omzetNonTradisional;
+    return totalB - totalA;
+  });
+  if(!keys.length){
+    const row = table.insertRow(-1);
+    row.innerHTML = '<td colspan="4">(tidak ada data)</td>';
+    return;
+  }
+  keys.forEach(k=>{
+    const s = stores[k];
+    const total = s.omzetTradisional + s.omzetNonTradisional;
+    const row = table.insertRow(-1);
+    row.innerHTML = `<td class="nama" style="cursor:pointer; text-decoration:underline;" onclick="openTokoModal('${k.replace(/'/g,"\\'")}')">${s.nama}</td><td>${fmtRp(s.omzetTradisional)}</td><td>${fmtRp(s.omzetNonTradisional)}</td><td style="font-weight:bold;">${fmtRp(total)}</td>`;
+  });
 }
 
 function buildStoreStats(cloudRows, filterFn){
