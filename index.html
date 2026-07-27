@@ -589,7 +589,7 @@ function renderTokoMTSection(table, branchName, stores){
     const p_ = pct(total, targetVal);
     const width = Math.max(0, Math.min(p_, 100));
     const row = table.insertRow(-1);
-    row.innerHTML = `<td class="nama" style="cursor:pointer; text-decoration:underline;" onclick="openTokoModal('${k.replace(/'/g,"\\'")}')">${s.nama}</td><td><input type="number" class="target-input" style="width:110px;" value="${targetVal}" onchange="saveTokoMTTarget('${targetKey.replace(/'/g,"\\'")}', this.value)"></td><td>${fmtRp(s.omzetTradisional)}</td><td>${fmtRp(s.omzetNonTradisional)}</td><td style="font-weight:bold;">${fmtRp(total)}</td><td class="bar-cell"><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:${width}%"></div></div><span class="bar-label">${p_}%</span></div></td>`;
+    row.innerHTML = `<td class="nama" style="cursor:pointer; text-decoration:underline;" onclick="openTokoModal('${k.replace(/'/g,"\\'")}')">${s.nama}</td><td><input type="number" class="target-input" value="${targetVal}" onchange="saveTokoMTTarget('${targetKey.replace(/'/g,"\\'")}', this.value)"></td><td style="white-space:nowrap;">${fmtRp(s.omzetTradisional)}</td><td style="white-space:nowrap;">${fmtRp(s.omzetNonTradisional)}</td><td style="font-weight:bold; white-space:nowrap;">${fmtRp(total)}</td><td class="bar-cell"><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:${width}%"></div></div><span class="bar-label">${p_}%</span></div></td>`;
   });
 }
 
