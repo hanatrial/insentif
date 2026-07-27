@@ -105,7 +105,7 @@
   <button id="btn-Makassar" onclick="switchBranch('Makassar')">Makassar</button>
   <button id="btn-Bulukumba" onclick="switchBranch('Bulukumba')">Bulukumba</button>
   <button id="btn-Gorontalo" onclick="switchBranch('Gorontalo')">Gorontalo</button>
-  <button id="btn-tokoMT" class="hidden" onclick="toggleTokoMTFilter()" style="background:#888;">Toko MT</button>
+  <button id="btn-tokoMT" class="hidden" onclick="showTokoMTDashboard()" style="background:#888;">Toko MT</button>
 </div>
 
 <table id="mainTable">
@@ -201,7 +201,6 @@ const TOKO_MT_LIST = {
   Gorontalo: ["KARSA UTAMA LESTARI","MAKRO","MURAA SUPERMARKET 1","MURAA SUPERMARKET 2","DK MART","GELAEL","HYPERMART"],
   Bulukumba: ["SEJAHTERA","TERNATE SINJAI","MISI PASARAYA"]
 };
-let tokoMTFilterActive = false;
 let currentMode = 'insentif';
 
 function logout(){
@@ -234,7 +233,6 @@ async function login(user){
   document.getElementById('fileInput').classList.toggle('hidden', isDashboard);
   document.querySelector('button[onclick="processFile()"]').classList.toggle('hidden', isDashboard);
   document.querySelector('button[onclick="exportToExcel()"]').classList.toggle('hidden', isDashboard);
-  tokoMTFilterActive = false;
   document.getElementById('btn-tokoMT').classList.toggle('hidden', !isDashboard);
   document.getElementById('btn-tokoMT').classList.remove('branch-active');
 
@@ -507,25 +505,61 @@ let dashboardStores = {};
 
 function fmtRp(n){ return 'Rp ' + Math.round(n).toLocaleString('id-ID'); }
 
-function toggleTokoMTFilter(){
-  tokoMTFilterActive = !tokoMTFilterActive;
-  document.getElementById('btn-tokoMT').classList.toggle('branch-active', tokoMTFilterActive);
-  renderDashboardToko(dashboardStores);
-}
-
-function filterStoresForMT(stores){
-  const list = TOKO_MT_LIST[currentBranch];
-  if(!tokoMTFilterActive || !list) return stores;
-  const filtered = {};
-  Object.keys(stores).forEach(k=>{
-    const namaUpper = stores[k].nama.toUpperCase();
-    if(list.some(mtName => namaUpper.includes(mtName))){ filtered[k] = stores[k]; }
+async function showTokoMTDashboard(){
+  currentBranch = 'TokoMT';
+  ['Makassar','Bulukumba','Gorontalo'].forEach(b=>{
+    const btn = document.getElementById('btn-' + b);
+    if(btn) btn.classList.remove('branch-active');
   });
-  return filtered;
+  document.getElementById('btn-tokoMT').classList.add('branch-active');
+  setStatus('⏳ Memuat Dashboard Toko MT...', 'pending');
+  try{
+    const [irfanRows, teddyRows] = await Promise.all([
+      loadDataFromCloud('Irfan'),
+      loadDataFromCloud('Teddy')
+    ]);
+    const allRows = irfanRows.concat(teddyRows);
+    const combinedList = [...TOKO_MT_LIST.Gorontalo, ...TOKO_MT_LIST.Bulukumba];
+    const stores = buildStoreStats(allRows, r=>{
+      const perusahaan = field(r, 'Perusahaan') || '';
+      const shipTo = field(r, 'Ship To', 'ShipTo') || '';
+      const namaUpper = (perusahaan || shipTo).toUpperCase();
+      return combinedList.some(mtName => namaUpper.includes(mtName));
+    });
+    dashboardStores = stores;
+    renderDashboardToko(stores);
+    setStatus(`✅ Dashboard Toko MT dimuat (${Object.keys(stores).length} toko).`, 'ok');
+  }catch(err){
+    dashboardStores = {};
+    renderDashboardToko({});
+    setStatus(`❌ GAGAL memuat Dashboard Toko MT: ${err.message}`, 'error');
+  }
 }
 
-function renderDashboardToko(storesInput){
-  const stores = filterStoresForMT(storesInput);
+function buildStoreStats(cloudRows, filterFn){
+  const stores = {};
+  cloudRows.forEach(r=>{
+    const barang = field(r, 'Nama Barang', 'NamaBarang');
+    if(!barang) return;
+    if(filterFn && !filterFn(r)) return;
+    const shipTo = field(r, 'Ship To', 'ShipTo');
+    const perusahaan = field(r, 'Perusahaan');
+    const namaToko = perusahaan || shipTo || '(tanpa nama)';
+    const tokoKey = shipTo || perusahaan;
+    const group1 = String(field(r, 'Group1Barang') || '').trim().toUpperCase();
+    const nominal = parseFloat(field(r, 'DPP')) || 0;
+    if(!stores[tokoKey]){
+      stores[tokoKey] = { nama: namaToko, omzetTradisional:0, omzetNonTradisional:0, itemsTradisional:{}, itemsModern:{} };
+    }
+    const s = stores[tokoKey];
+    const bucket = (group1 === 'TRADITIONAL') ? 'itemsTradisional' : 'itemsModern';
+    if(group1 === 'TRADITIONAL'){ s.omzetTradisional += nominal; } else { s.omzetNonTradisional += nominal; }
+    s[bucket][barang] = (s[bucket][barang] || 0) + nominal;
+  });
+  return stores;
+}
+
+function renderDashboardToko(stores){
   const table = document.getElementById('dashboardTable');
   table.innerHTML = '<caption>Dashboard Toko</caption>';
   const thead = table.insertRow(-1);
@@ -800,6 +834,8 @@ function switchBranch(branch){
     const btn = document.getElementById('btn-' + b);
     if(btn) btn.classList.toggle('branch-active', b === branch);
   });
+  const btnMT = document.getElementById('btn-tokoMT');
+  if(btnMT) btnMT.classList.remove('branch-active');
   if(currentMode === 'dashboard'){
     loadDashboardBranch(branch);
     return;
