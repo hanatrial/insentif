@@ -64,7 +64,7 @@
   }
   #tokoModalOverlay.hidden { display:none; }
   #tokoModalBox {
-    background:#fff; border-radius:8px; max-width:700px; width:90%; max-height:80vh;
+    background:#fff; border-radius:8px; max-width:900px; width:90%; max-height:85vh;
     overflow-y:auto; padding:0;
   }
   #tokoModalHeader {
@@ -471,26 +471,7 @@ async function loadDashboardBranch(branch){
       return;
     }
     const salesList = BRANCH_SALES[branch];
-    const stores = {};
-    cloudRows.forEach(r=>{
-      const sales = normSales(field(r, 'Nama Sales', 'NamaSales'));
-      if(!salesList.includes(sales)) return;
-      const barang = field(r, 'Nama Barang', 'NamaBarang');
-      if(!barang) return;
-      const shipTo = field(r, 'Ship To', 'ShipTo');
-      const perusahaan = field(r, 'Perusahaan');
-      const namaToko = perusahaan || shipTo || '(tanpa nama)';
-      const tokoKey = shipTo || perusahaan;
-      const group1 = String(field(r, 'Group1Barang') || '').trim().toUpperCase();
-      const nominal = parseFloat(field(r, 'DPP')) || 0;
-      if(!stores[tokoKey]){
-        stores[tokoKey] = { nama: namaToko, omzetTradisional:0, omzetNonTradisional:0, itemsTradisional:{}, itemsModern:{} };
-      }
-      const s = stores[tokoKey];
-      const bucket = (group1 === 'TRADITIONAL') ? 'itemsTradisional' : 'itemsModern';
-      if(group1 === 'TRADITIONAL'){ s.omzetTradisional += nominal; } else { s.omzetNonTradisional += nominal; }
-      s[bucket][barang] = (s[bucket][barang] || 0) + nominal;
-    });
+    const stores = buildStoreStats(cloudRows, r => salesList.includes(normSales(field(r, 'Nama Sales', 'NamaSales'))));
     dashboardStores = stores;
     renderDashboardToko(stores);
     setStatus(`✅ Dashboard Toko ${branch} dimuat (${Object.keys(stores).length} toko).`, 'ok');
@@ -611,7 +592,13 @@ function buildStoreStats(cloudRows, filterFn){
     const s = stores[tokoKey];
     const bucket = (group1 === 'TRADITIONAL') ? 'itemsTradisional' : 'itemsModern';
     if(group1 === 'TRADITIONAL'){ s.omzetTradisional += nominal; } else { s.omzetNonTradisional += nominal; }
-    s[bucket][barang] = (s[bucket][barang] || 0) + nominal;
+    if(!s[bucket][barang]) s[bucket][barang] = { omzet:0, notas:new Set(), dates:new Set() };
+    const item = s[bucket][barang];
+    item.omzet += nominal;
+    const nota = field(r, 'Kode Nota', 'KodeNota');
+    if(nota) item.notas.add(nota);
+    const d = toDate(field(r, 'Tgl'));
+    if(d) item.dates.add(d.toISOString().slice(0,10));
   });
   return stores;
 }
@@ -647,8 +634,12 @@ function renderDashboardToko(stores){
 
 function itemRowsSortedByOmzet(itemMap){
   return Object.keys(itemMap)
-    .sort((a,b)=> itemMap[b] - itemMap[a])
-    .map(name=>`<tr><td data-name="${name.toUpperCase()}" style="text-align:left;">${name}</td><td style="text-align:right;">${fmtRp(itemMap[name])}</td></tr>`)
+    .sort((a,b)=> itemMap[b].omzet - itemMap[a].omzet)
+    .map(name=>{
+      const item = itemMap[name];
+      const datesSorted = Array.from(item.dates).sort().reverse();
+      return `<tr><td data-name="${name.toUpperCase()}" style="text-align:left;">${name}</td><td style="text-align:right; white-space:nowrap;">${fmtRp(item.omzet)}</td><td style="text-align:center;">${item.notas.size}</td><td style="text-align:left;">${datesSorted.join(', ')}</td></tr>`;
+    })
     .join('');
 }
 
@@ -661,14 +652,14 @@ function openTokoModal(tokoKey){
   document.getElementById('tokoModalBody').innerHTML = `
     <input type="text" id="tokoItemSearch" placeholder="Cari item..." oninput="filterTokoModalItems(this.value)"
       style="width:100%; padding:8px; margin-bottom:12px; border:1px solid #ccc; border-radius:4px; box-sizing:border-box;">
-    <div style="display:flex; gap:24px; flex-wrap:wrap;">
+    <div style="display:flex; flex-direction:column; gap:20px;">
       <div>
         <b>Item Tradisional:</b>
-        <table style="width:100%; margin-top:6px;"><tr><th>Nama Item</th><th>Omzet</th></tr>${tradRows || '<tr><td colspan="2">(tidak ada)</td></tr>'}</table>
+        <table style="width:100%; margin-top:6px;"><tr><th>Nama Item</th><th>Omzet</th><th>Jumlah PO</th><th>Tanggal</th></tr>${tradRows || '<tr><td colspan="4">(tidak ada)</td></tr>'}</table>
       </div>
       <div>
         <b>Item Non-Tradisional (Modern):</b>
-        <table style="width:100%; margin-top:6px;"><tr><th>Nama Item</th><th>Omzet</th></tr>${modernRows || '<tr><td colspan="2">(tidak ada)</td></tr>'}</table>
+        <table style="width:100%; margin-top:6px;"><tr><th>Nama Item</th><th>Omzet</th><th>Jumlah PO</th><th>Tanggal</th></tr>${modernRows || '<tr><td colspan="4">(tidak ada)</td></tr>'}</table>
       </div>
     </div>`;
   document.getElementById('tokoModalOverlay').classList.remove('hidden');
