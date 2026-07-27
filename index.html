@@ -524,8 +524,8 @@ async function showTokoMTDashboard(){
       const namaUpper = (perusahaan || shipTo).toUpperCase();
       return list.some(mtName => namaUpper.includes(mtName));
     };
-    const bulukumbaStores = buildStoreStats(irfanRows, r => matchesList(r, TOKO_MT_LIST.Bulukumba));
-    const gorontaloStores = buildStoreStats(teddyRows, r => matchesList(r, TOKO_MT_LIST.Gorontalo));
+    const bulukumbaStores = fillMissingMTStores(buildStoreStats(irfanRows, r => matchesList(r, TOKO_MT_LIST.Bulukumba)), TOKO_MT_LIST.Bulukumba);
+    const gorontaloStores = fillMissingMTStores(buildStoreStats(teddyRows, r => matchesList(r, TOKO_MT_LIST.Gorontalo)), TOKO_MT_LIST.Gorontalo);
     dashboardStores = Object.assign({}, bulukumbaStores, gorontaloStores);
     renderTokoMTDashboard(bulukumbaStores, gorontaloStores);
     const total = Object.keys(bulukumbaStores).length + Object.keys(gorontaloStores).length;
@@ -586,6 +586,17 @@ function buildStoreStats(cloudRows, filterFn){
     const bucket = (group1 === 'TRADITIONAL') ? 'itemsTradisional' : 'itemsModern';
     if(group1 === 'TRADITIONAL'){ s.omzetTradisional += nominal; } else { s.omzetNonTradisional += nominal; }
     s[bucket][barang] = (s[bucket][barang] || 0) + nominal;
+  });
+  return stores;
+}
+
+function fillMissingMTStores(stores, mtList){
+  const existingNames = Object.values(stores).map(s=>s.nama.toUpperCase());
+  mtList.forEach(mtName=>{
+    const already = existingNames.some(n=>n.includes(mtName));
+    if(!already){
+      stores[mtName] = { nama: mtName, omzetTradisional:0, omzetNonTradisional:0, itemsTradisional:{}, itemsModern:{} };
+    }
   });
   return stores;
 }
