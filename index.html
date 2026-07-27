@@ -505,6 +505,27 @@ let dashboardStores = {};
 
 function fmtRp(n){ return 'Rp ' + Math.round(n).toLocaleString('id-ID'); }
 
+let tokoMTTargets = {};
+
+async function loadTokoMTTargets(){
+  try{
+    const snap = await db.collection('tokoMTTargets').doc('targets').get();
+    tokoMTTargets = snap.exists ? (snap.data().targets || {}) : {};
+  }catch(err){
+    tokoMTTargets = {};
+  }
+}
+
+async function saveTokoMTTarget(storeName, value){
+  const num = parseFloat(value) || 0;
+  tokoMTTargets[storeName] = num;
+  try{
+    await db.collection('tokoMTTargets').doc('targets').set({ targets: tokoMTTargets });
+  }catch(err){
+    alert('Gagal simpan target ke cloud: ' + err.message);
+  }
+}
+
 async function showTokoMTDashboard(){
   currentBranch = 'TokoMT';
   ['Makassar','Bulukumba','Gorontalo'].forEach(b=>{
@@ -518,6 +539,7 @@ async function showTokoMTDashboard(){
       loadDataFromCloud('Irfan'),
       loadDataFromCloud('Teddy')
     ]);
+    await loadTokoMTTargets();
     const matchesList = (r, list) => {
       const perusahaan = field(r, 'Perusahaan') || '';
       const shipTo = field(r, 'Ship To', 'ShipTo') || '';
@@ -546,9 +568,9 @@ function renderTokoMTDashboard(bulukumbaStores, gorontaloStores){
 
 function renderTokoMTSection(table, branchName, stores){
   const branchHead = table.insertRow(-1);
-  branchHead.innerHTML = `<th colspan="4" style="background:#073d24;">${branchName}</th>`;
+  branchHead.innerHTML = `<th colspan="5" style="background:#073d24;">${branchName}</th>`;
   const thead = table.insertRow(-1);
-  thead.innerHTML = '<th>Nama Toko</th><th>Omzet Tradisional</th><th>Omzet Non-Tradisional</th><th>Omzet Total</th>';
+  thead.innerHTML = '<th>Nama Toko</th><th>Omzet Tradisional</th><th>Omzet Non-Tradisional</th><th>Omzet Total</th><th>Target</th>';
   const keys = Object.keys(stores).sort((a,b)=>{
     const totalA = stores[a].omzetTradisional + stores[a].omzetNonTradisional;
     const totalB = stores[b].omzetTradisional + stores[b].omzetNonTradisional;
@@ -556,14 +578,16 @@ function renderTokoMTSection(table, branchName, stores){
   });
   if(!keys.length){
     const row = table.insertRow(-1);
-    row.innerHTML = '<td colspan="4">(tidak ada data)</td>';
+    row.innerHTML = '<td colspan="5">(tidak ada data)</td>';
     return;
   }
   keys.forEach(k=>{
     const s = stores[k];
     const total = s.omzetTradisional + s.omzetNonTradisional;
+    const targetKey = s.nama.toUpperCase();
+    const targetVal = tokoMTTargets[targetKey] || 0;
     const row = table.insertRow(-1);
-    row.innerHTML = `<td class="nama" style="cursor:pointer; text-decoration:underline;" onclick="openTokoModal('${k.replace(/'/g,"\\'")}')">${s.nama}</td><td>${fmtRp(s.omzetTradisional)}</td><td>${fmtRp(s.omzetNonTradisional)}</td><td style="font-weight:bold;">${fmtRp(total)}</td>`;
+    row.innerHTML = `<td class="nama" style="cursor:pointer; text-decoration:underline;" onclick="openTokoModal('${k.replace(/'/g,"\\'")}')">${s.nama}</td><td>${fmtRp(s.omzetTradisional)}</td><td>${fmtRp(s.omzetNonTradisional)}</td><td style="font-weight:bold;">${fmtRp(total)}</td><td><input type="number" class="target-input" value="${targetVal}" onchange="saveTokoMTTarget('${targetKey.replace(/'/g,"\\'")}', this.value)"></td>`;
   });
 }
 
