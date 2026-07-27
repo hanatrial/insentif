@@ -486,26 +486,18 @@ let dashboardStores = {};
 
 function fmtRp(n){ return 'Rp ' + Math.round(n).toLocaleString('id-ID'); }
 
-let tokoMTTargets = {};
-
-async function loadTokoMTTargets(){
-  try{
-    const snap = await db.collection('tokoMTTargets').doc('targets').get();
-    tokoMTTargets = snap.exists ? (snap.data().targets || {}) : {};
-  }catch(err){
-    tokoMTTargets = {};
-  }
-}
-
-async function saveTokoMTTarget(storeName, value){
-  const num = parseFloat(value) || 0;
-  tokoMTTargets[storeName] = num;
-  try{
-    await db.collection('tokoMTTargets').doc('targets').set({ targets: tokoMTTargets });
-  }catch(err){
-    alert('Gagal simpan target ke cloud: ' + err.message);
-  }
-}
+const tokoMTTargets = {
+  "(PR) PT CITRA SULAWESI SEJAHTERA": 35000,
+  "MISI PASAR RAYA/JNP": 50000,
+  "(PR) TERNATE/ PSR SINJAI": 10000,
+  "KARSA UTAMA LESTARI": 12000,
+  "HYPERMART GORONTALO": 17500,
+  "MAKRO / JLN. KARTINI NO.26": 25000,
+  "MURAA SUPERMARKET/JL AHMAD A WAHAB NONO7 NO 96181": 15000,
+  "PT.GELAEL INDOTIM/JL.KH.AGUS SALIM NO.51 LIMBA U D": 15000,
+  "MURAA 2 / JL. KALIMANTAN/JL. KALIMANTAN NO.NO.94": 12000,
+  "DK /JL.RAYA LIMBOTO": 40000
+};
 
 async function showTokoMTDashboard(){
   currentBranch = 'TokoMT';
@@ -520,7 +512,6 @@ async function showTokoMTDashboard(){
       loadDataFromCloud('Irfan'),
       loadDataFromCloud('Teddy')
     ]);
-    await loadTokoMTTargets();
     const matchesList = (r, list) => {
       const perusahaan = field(r, 'Perusahaan') || '';
       const shipTo = field(r, 'Ship To', 'ShipTo') || '';
@@ -570,7 +561,7 @@ function renderTokoMTSection(table, branchName, stores){
     const p_ = pct(total, targetVal);
     const width = Math.max(0, Math.min(p_, 100));
     const row = table.insertRow(-1);
-    row.innerHTML = `<td class="nama" style="cursor:pointer; text-decoration:underline;" onclick="openTokoModal('${k.replace(/'/g,"\\'")}')">${s.nama}</td><td><input type="number" class="target-input" value="${targetVal}" onchange="saveTokoMTTarget('${targetKey.replace(/'/g,"\\'")}', this.value)"></td><td style="white-space:nowrap;">${fmtRp(s.omzetTradisional)}</td><td style="white-space:nowrap;">${fmtRp(s.omzetNonTradisional)}</td><td style="font-weight:bold; white-space:nowrap;">${fmtRp(total)}</td><td class="bar-cell"><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:${width}%"></div></div><span class="bar-label">${p_}%</span></div></td>`;
+    row.innerHTML = `<td class="nama" style="cursor:pointer; text-decoration:underline;" onclick="openTokoModal('${k.replace(/'/g,"\\'")}')">${s.nama}</td><td style="white-space:nowrap;">${fmtRp(targetVal)}</td><td style="white-space:nowrap;">${fmtRp(s.omzetTradisional)}</td><td style="white-space:nowrap;">${fmtRp(s.omzetNonTradisional)}</td><td style="font-weight:bold; white-space:nowrap;">${fmtRp(total)}</td><td class="bar-cell"><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:${width}%"></div></div><span class="bar-label">${p_}%</span></div></td>`;
   });
 }
 
