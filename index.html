@@ -918,11 +918,17 @@ function renderTokoMTSection(table, branchName, stores, mtList){
   });
 }
 
+function cleanBSPOutletName(raw){
+  if(!raw) return raw;
+  const m = String(raw).match(/\(([^)]+)\)\s*$/);
+  return m ? m[1].trim() : String(raw).trim();
+}
+
 function slimBSPRow(r){
   return {
     'Tgl': r['Tgl Faktur'],
     'Nomor Faktur': r['Nomor Faktur'],
-    'Nama Toko': r['Outlet'] || r['Nama Customer'],
+    'Nama Toko': cleanBSPOutletName(r['Outlet'] || r['Nama Customer']),
     'Nama Barang': r['Nama Barang'],
     'Sub Group Barang': r['Sub Group Barang'],
     'Salesman': r['Salesman'],
