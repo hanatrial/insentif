@@ -997,19 +997,25 @@ async function showBSPDashboard(){
   }
 }
 
-function normWords(s){
-  return String(s || '').toUpperCase().replace(/[^A-Z0-9 ]/g, ' ').split(/\s+/).filter(w=>w.length > 0);
+const NAME_STOPWORDS = new Set(['TK','TOKO','MM','PT','CV','MART','UD','TP','GROSIR','SWALAYAN','KIOS','STAND']);
+
+function normWords(s, dropStopwords){
+  const words = String(s || '').toUpperCase().replace(/[^A-Z0-9 ]/g, ' ').split(/\s+/).filter(w=>w.length > 0);
+  return dropStopwords ? words.filter(w=>!NAME_STOPWORDS.has(w)) : words;
 }
 
 function wordsSubsetMatch(a, b){
-  const wa = new Set(normWords(a));
-  const wb = new Set(normWords(b));
+  let wa = new Set(normWords(a, true));
+  let wb = new Set(normWords(b, true));
+  if(!wa.size) wa = new Set(normWords(a, false));
+  if(!wb.size) wb = new Set(normWords(b, false));
   if(!wa.size || !wb.size) return false;
   const smaller = wa.size <= wb.size ? wa : wb;
   const larger = wa.size <= wb.size ? wb : wa;
+  if(smaller.size / larger.size < 0.6) return false;
   let matchCount = 0;
   smaller.forEach(w=>{ if(larger.has(w)) matchCount++; });
-  return matchCount >= Math.ceil(smaller.size * 0.6);
+  return matchCount === smaller.size;
 }
 
 function findBSPMatchingStore(stores, targetNama){
