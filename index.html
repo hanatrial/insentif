@@ -118,6 +118,13 @@
 <caption>Program Insentif Juli</caption>
 </table>
 
+<div id="achSliderRow" class="toolbar hidden">
+  <span style="font-size:13px; font-weight:bold;">Tampilkan toko dengan %Ach di bawah:</span>
+  <input type="range" id="achSlider" min="0" max="100" value="100" step="1" oninput="filterByAch(this.value)" style="width:200px;">
+  <span id="achSliderLabel" style="font-size:13px; font-weight:bold;">100%</span>
+  <button onclick="document.getElementById('achSlider').value=100; filterByAch(100);" style="background:#888;">Reset</button>
+</div>
+
 <table id="dashboardTable" class="hidden">
 <caption>Dashboard Toko</caption>
 </table>
@@ -456,6 +463,7 @@ function logout(){
   document.querySelector('button[onclick="exportToExcel()"]').classList.remove('hidden');
   document.getElementById('btn-BSP').classList.add('hidden');
   document.getElementById('bspUploadRow').classList.add('hidden');
+  hideAchSlider();
 }
 
 let currentUser = null;
@@ -474,6 +482,7 @@ async function login(user){
   document.getElementById('fileInput').classList.toggle('hidden', isDashboard);
   document.querySelector('button[onclick="processFile()"]').classList.toggle('hidden', isDashboard);
   document.querySelector('button[onclick="exportToExcel()"]').classList.toggle('hidden', isDashboard);
+  if(!isDashboard) hideAchSlider();
   document.getElementById('btn-tokoMT').classList.toggle('hidden', !isDashboard);
   document.getElementById('btn-tokoMT').classList.remove('branch-active');
   document.getElementById('btn-BSP').classList.toggle('hidden', !isDashboard);
@@ -751,8 +760,29 @@ function renderTokoTargetDashboard(branch, stores){
     const p_ = pct(omzet, t.target);
     const width = Math.max(0, Math.min(p_, 100));
     const row = table.insertRow(-1);
+    row.dataset.pct = p_;
     const clickAttr = match ? ` style="cursor:pointer; text-decoration:underline;" onclick="openTokoModal('${match.key.replace(/'/g,"\\'")}')"` : '';
     row.innerHTML = `<td class="nama"${clickAttr}>${t.nama}</td><td>${salesNames}</td><td style="white-space:nowrap;">${fmtRp(t.target)}</td><td style="white-space:nowrap;">${fmtRp(omzet)}</td><td class="bar-cell"><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:${width}%"></div></div><span class="bar-label">${p_}%</span></div></td>`;
+  });
+  showAchSlider();
+}
+
+function showAchSlider(){
+  document.getElementById('achSliderRow').classList.remove('hidden');
+  document.getElementById('achSlider').value = 100;
+  document.getElementById('achSliderLabel').textContent = '100%';
+}
+
+function hideAchSlider(){
+  document.getElementById('achSliderRow').classList.add('hidden');
+}
+
+function filterByAch(threshold){
+  document.getElementById('achSliderLabel').textContent = threshold + '%';
+  const rows = document.querySelectorAll('#dashboardTable tr[data-pct]');
+  rows.forEach(row=>{
+    const p = parseFloat(row.dataset.pct);
+    row.style.display = (p < threshold) ? '' : 'none';
   });
 }
 
@@ -812,6 +842,7 @@ function renderTokoMTDashboard(bulukumbaStores, gorontaloStores){
   table.innerHTML = '<caption>Dashboard Toko MT</caption>';
   renderTokoMTSection(table, 'Bulukumba', bulukumbaStores, TOKO_MT_LIST.Bulukumba);
   renderTokoMTSection(table, 'Gorontalo', gorontaloStores, TOKO_MT_LIST.Gorontalo);
+  showAchSlider();
 }
 
 function renderTokoMTSection(table, branchName, stores, mtList){
@@ -838,6 +869,7 @@ function renderTokoMTSection(table, branchName, stores, mtList){
     const p_ = pct(total, targetVal);
     const width = Math.max(0, Math.min(p_, 100));
     const row = table.insertRow(-1);
+    row.dataset.pct = p_;
     row.innerHTML = `<td class="nama" style="cursor:pointer; text-decoration:underline;" onclick="openTokoModal('${k.replace(/'/g,"\\'")}')">${s.nama}</td><td style="white-space:nowrap;">${fmtRp(targetVal)}</td><td style="white-space:nowrap;">${fmtRp(s.omzetTradisional)}</td><td style="white-space:nowrap;">${fmtRp(s.omzetNonTradisional)}</td><td style="font-weight:bold; white-space:nowrap;">${fmtRp(total)}</td><td class="bar-cell"><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:${width}%"></div></div><span class="bar-label">${p_}%</span></div></td>`;
   });
 }
@@ -961,9 +993,11 @@ function renderBSPDashboard(stores){
     const p_ = pct(omzet, t.target);
     const width = Math.max(0, Math.min(p_, 100));
     const row = table.insertRow(-1);
+    row.dataset.pct = p_;
     const clickAttr = match ? ` style="cursor:pointer; text-decoration:underline;" onclick="openBSPModal('${match.key.replace(/'/g,"\\'")}')"` : '';
     row.innerHTML = `<td class="nama"${clickAttr}>${t.nama}</td><td>${salesNames}</td><td style="white-space:nowrap;">${fmtRp(t.target)}</td><td style="white-space:nowrap; font-weight:bold;">${fmtRp(omzet)}</td><td class="bar-cell"><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:${width}%"></div></div><span class="bar-label">${p_}%</span></div></td>`;
   });
+  showAchSlider();
 }
 
 function openBSPModal(tokoKey){
