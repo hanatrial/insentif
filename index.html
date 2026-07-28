@@ -125,6 +125,12 @@
   <button onclick="document.getElementById('achSlider').value=100; filterByAch(100);" style="background:#888;">Reset</button>
 </div>
 
+<div id="salesFilterRow" class="toolbar hidden">
+  <span style="font-size:13px; font-weight:bold;">Cari Nama Sales:</span>
+  <input type="text" id="salesFilterInput" oninput="filterBySales(this.value)" placeholder="Ketik nama sales..." style="padding:6px; border:1px solid #ccc; border-radius:4px; width:220px;">
+  <button onclick="document.getElementById('salesFilterInput').value=''; filterBySales('');" style="background:#888;">Reset</button>
+</div>
+
 <table id="dashboardTable" class="hidden">
 <caption>Dashboard Toko</caption>
 </table>
@@ -4803,7 +4809,7 @@ function logout(){
   document.querySelector('button[onclick="exportToExcel()"]').classList.remove('hidden');
   document.getElementById('btn-BSP').classList.add('hidden');
   document.getElementById('bspUploadRow').classList.add('hidden');
-  hideAchSlider();
+  hideAchSlider(); hideSalesFilter();
 }
 
 let currentUser = null;
@@ -4822,7 +4828,7 @@ async function login(user){
   document.getElementById('fileInput').classList.toggle('hidden', isDashboard);
   document.querySelector('button[onclick="processFile()"]').classList.toggle('hidden', isDashboard);
   document.querySelector('button[onclick="exportToExcel()"]').classList.toggle('hidden', isDashboard);
-  if(!isDashboard) hideAchSlider();
+  if(!isDashboard){ hideAchSlider(); hideSalesFilter(); }
   document.getElementById('btn-tokoMT').classList.toggle('hidden', !isDashboard);
   document.getElementById('btn-tokoMT').classList.remove('branch-active');
   document.getElementById('btn-BSP').classList.toggle('hidden', !isDashboard);
@@ -5103,10 +5109,12 @@ function renderTokoTargetDashboard(branch, stores){
     const width = Math.max(0, Math.min(p_, 100));
     const row = table.insertRow(-1);
     row.dataset.pct = p_;
+    row.dataset.sales = salesNames;
     const clickAttr = match ? ` style="cursor:pointer; text-decoration:underline;" onclick="openTokoModal('${match.key.replace(/'/g,"\\'")}')"` : '';
     row.innerHTML = `<td class="nama"${clickAttr}>${t.nama}</td><td>${salesNames}</td><td style="white-space:nowrap;">${fmtRp(t.target)}</td><td style="white-space:nowrap;">${fmtRp(omzet)}</td><td class="bar-cell"><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:${width}%"></div></div><span class="bar-label">${p_}%</span></div></td>`;
   });
   showAchSlider();
+  showSalesFilter();
 }
 
 function findOfficialBCPSalesman(targetNama){
@@ -5120,18 +5128,46 @@ function showAchSlider(){
   document.getElementById('achSliderRow').classList.remove('hidden');
   document.getElementById('achSlider').value = 100;
   document.getElementById('achSliderLabel').textContent = '100%';
+  currentAchThreshold = 100;
 }
 
 function hideAchSlider(){
   document.getElementById('achSliderRow').classList.add('hidden');
 }
 
+function showSalesFilter(){
+  document.getElementById('salesFilterRow').classList.remove('hidden');
+  document.getElementById('salesFilterInput').value = '';
+  currentSalesQuery = '';
+}
+
+function hideSalesFilter(){
+  document.getElementById('salesFilterRow').classList.add('hidden');
+  currentSalesQuery = '';
+}
+
+let currentAchThreshold = 100;
+let currentSalesQuery = '';
+
 function filterByAch(threshold){
   document.getElementById('achSliderLabel').textContent = threshold + '%';
+  currentAchThreshold = parseFloat(threshold);
+  applyDashboardFilters();
+}
+
+function filterBySales(query){
+  currentSalesQuery = query.trim().toUpperCase();
+  applyDashboardFilters();
+}
+
+function applyDashboardFilters(){
   const rows = document.querySelectorAll('#dashboardTable tr[data-pct]');
   rows.forEach(row=>{
     const p = parseFloat(row.dataset.pct);
-    row.style.display = (p < threshold) ? '' : 'none';
+    const achOk = p < currentAchThreshold;
+    const salesText = (row.dataset.sales || '').toUpperCase();
+    const salesOk = !currentSalesQuery || salesText.includes(currentSalesQuery);
+    row.style.display = (achOk && salesOk) ? '' : 'none';
   });
 }
 
@@ -5231,6 +5267,7 @@ function renderTokoMTDashboard(bulukumbaStores, gorontaloStores){
   renderTokoMTSection(table, 'Bulukumba', bulukumbaStores, TOKO_MT_LIST.Bulukumba);
   renderTokoMTSection(table, 'Gorontalo', gorontaloStores, TOKO_MT_LIST.Gorontalo);
   showAchSlider();
+  hideSalesFilter();
 }
 
 function renderTokoMTSection(table, branchName, stores, mtList){
@@ -5402,10 +5439,12 @@ function renderBSPDashboard(stores){
     const width = Math.max(0, Math.min(p_, 100));
     const row = table.insertRow(-1);
     row.dataset.pct = p_;
+    row.dataset.sales = salesNames;
     const clickAttr = match ? ` style="cursor:pointer; text-decoration:underline;" onclick="openBSPModal('${match.key.replace(/'/g,"\\'")}')"` : '';
     row.innerHTML = `<td class="nama"${clickAttr}>${t.nama}</td><td>${salesNames}</td><td style="white-space:nowrap;">${fmtRp(t.target)}</td><td style="white-space:nowrap; font-weight:bold;">${fmtRp(omzet)}</td><td class="bar-cell"><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:${width}%"></div></div><span class="bar-label">${p_}%</span></div></td>`;
   });
   showAchSlider();
+  showSalesFilter();
 }
 
 function openBSPModal(tokoKey){
