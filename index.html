@@ -746,7 +746,7 @@ function renderTokoTargetDashboard(branch, stores){
   const table = document.getElementById('dashboardTable');
   table.innerHTML = '<caption>Dashboard Toko</caption>';
   const thead = table.insertRow(-1);
-  thead.innerHTML = '<th>Nama Toko</th><th>Nama Sales</th><th>Target</th><th>Omzet</th><th>%Ach</th>';
+  thead.innerHTML = '<th>Nama Toko</th><th style="cursor:pointer;" onclick="sortDashboardTable(1)">Nama Sales</th><th style="cursor:pointer;" onclick="sortDashboardTable(2)">Target</th><th>Omzet</th><th>%Ach</th>';
   const targets = [...(TOKO_TARGETS[branch] || [])].sort((a,b)=> b.target - a.target);
   if(!targets.length){
     const row = table.insertRow(-1);
@@ -784,6 +784,45 @@ function filterByAch(threshold){
     const p = parseFloat(row.dataset.pct);
     row.style.display = (p < threshold) ? '' : 'none';
   });
+}
+
+let dashSortCol = null;
+let dashSortAsc = true;
+
+function sortCellValue(cell){
+  if(!cell) return '';
+  const text = cell.textContent.trim();
+  if(text.startsWith('Rp')){
+    const num = parseFloat(text.replace(/[^0-9-]/g, '')) || 0;
+    return num;
+  }
+  return text.toUpperCase();
+}
+
+function sortDashboardTable(colIndex){
+  if(dashSortCol === colIndex){ dashSortAsc = !dashSortAsc; } else { dashSortCol = colIndex; dashSortAsc = true; }
+  const table = document.getElementById('dashboardTable');
+  const rows = Array.from(table.rows);
+  let i = 0;
+  while(i < rows.length){
+    if(rows[i].dataset.pct !== undefined){
+      let j = i;
+      while(j < rows.length && rows[j].dataset.pct !== undefined) j++;
+      const block = rows.slice(i, j);
+      block.sort((a, b)=>{
+        const va = sortCellValue(a.cells[colIndex]);
+        const vb = sortCellValue(b.cells[colIndex]);
+        let cmp;
+        if(typeof va === 'number' && typeof vb === 'number'){ cmp = va - vb; }
+        else { cmp = String(va).localeCompare(String(vb)); }
+        return dashSortAsc ? cmp : -cmp;
+      });
+      block.forEach(r=> table.appendChild(r));
+      i = j;
+    } else {
+      i++;
+    }
+  }
 }
 
 let dashboardStores = {};
@@ -849,7 +888,7 @@ function renderTokoMTSection(table, branchName, stores, mtList){
   const branchHead = table.insertRow(-1);
   branchHead.innerHTML = `<th colspan="6" style="background:#073d24;">${branchName}</th>`;
   const thead = table.insertRow(-1);
-  thead.innerHTML = '<th>Nama Toko</th><th>Target</th><th>Omzet Tradisional</th><th>Omzet Non-Tradisional</th><th>Omzet Total</th><th>%Ach</th>';
+  thead.innerHTML = '<th>Nama Toko</th><th style="cursor:pointer;" onclick="sortDashboardTable(1)">Target</th><th>Omzet Tradisional</th><th>Omzet Non-Tradisional</th><th>Omzet Total</th><th>%Ach</th>';
   const keys = Object.keys(stores).sort((a,b)=>{
     const totalA = stores[a].omzetTradisional + stores[a].omzetNonTradisional;
     const totalB = stores[b].omzetTradisional + stores[b].omzetNonTradisional;
@@ -979,7 +1018,7 @@ function renderBSPDashboard(stores){
   const table = document.getElementById('dashboardTable');
   table.innerHTML = '<caption>Dashboard BSP (Hilo Tradisional + NS Tradisional)</caption>';
   const thead = table.insertRow(-1);
-  thead.innerHTML = '<th>Nama Toko</th><th>Nama Sales</th><th>Target</th><th>Omzet Tradisional</th><th>%Ach</th>';
+  thead.innerHTML = '<th>Nama Toko</th><th style="cursor:pointer;" onclick="sortDashboardTable(1)">Nama Sales</th><th style="cursor:pointer;" onclick="sortDashboardTable(2)">Target</th><th>Omzet Tradisional</th><th>%Ach</th>';
   const targets = [...BSP_TARGETS].sort((a,b)=> b.target - a.target);
   if(!targets.length){
     const row = table.insertRow(-1);
