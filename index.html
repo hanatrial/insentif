@@ -6125,7 +6125,7 @@ function computeKompetisi(){
     const toko = field(r, 'Ship To', 'ShipTo') || field(r, 'Perusahaan');
     const barang = field(r, 'Nama Barang', 'NamaBarang');
     const tgl = field(r, 'Tgl');
-    const nota = field(r, 'No Referensi', 'NoReferensi', 'No Nota', 'NoNota') || field(r, 'Ship To', 'ShipTo');
+    const nota = field(r, 'Kode Nota', 'KodeNota');
     if(!sales || !barang) return;
     if(!inPeriod(tgl, range)) return;
 
