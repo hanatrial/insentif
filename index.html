@@ -4854,8 +4854,9 @@ async function login(user){
     const btn = document.getElementById('btn-' + b);
     if(btn) btn.classList.toggle('hidden', !cfg.branches.includes(b));
   });
+  currentUserBranches = cfg.branches.slice();
   const btnKOMPETISI = document.getElementById('btn-KOMPETISI');
-  if(btnKOMPETISI) btnKOMPETISI.classList.toggle('hidden', !(cfg.branches.includes('Makassar') && cfg.branches.includes('Bulukumba')));
+  if(btnKOMPETISI) btnKOMPETISI.classList.toggle('hidden', isDashboard || cfg.branches.length < 1);
   currentBranch = cfg.branches[0];
   ['Makassar','Bulukumba','Gorontalo','KOMPETISI'].forEach(b=>{
     const btn = document.getElementById('btn-' + b);
@@ -4869,8 +4870,15 @@ async function login(user){
   }
 }
 let currentBranch = 'Makassar';
+let currentUserBranches = [];
+function branchOfSales(sales){
+  for(const b of ['Makassar','Bulukumba','Gorontalo']){
+    if(BRANCH_SALES[b] && BRANCH_SALES[b].includes(sales)) return b;
+  }
+  return null;
+}
 function getSalesList(){
-  if(currentBranch === 'KOMPETISI') return [...BRANCH_SALES.Makassar, ...BRANCH_SALES.Bulukumba];
+  if(currentBranch === 'KOMPETISI') return currentUserBranches.flatMap(b=>BRANCH_SALES[b] || []);
   return BRANCH_SALES[currentBranch];
 }
 const ALL_SALES = [...BRANCH_SALES.Makassar, ...BRANCH_SALES.Bulukumba, ...BRANCH_SALES.Gorontalo];
@@ -4976,6 +4984,69 @@ function itemGroup5(name, branch){
   if(n.includes('JERUK NIPIS')) return 'NIPIS';
   if(n.startsWith('NS ANGGUR PLS')) return 'ANGGUR';
   return null;
+}
+const KOMPETISI_VARIAN_THRESHOLD = { Makassar: 6, Bulukumba: 7, Gorontalo: 6 };
+const KOMPETISI_TARGET_TOKO = 50;
+function itemGroupKompetisi(name, branch){
+  const n = name.toUpperCase();
+  if(branch === 'Bulukumba'){
+    if(n.includes('JERUK PERAS')) return 'JERUK_PERAS';
+    if(n.includes('SWEET MANGO')) return 'MANGO';
+    if(n.includes('LEMON TEA')) return 'LEMON_TEA';
+    if(n.includes('AMERICAN SWEET ORANGE')) return 'ASO';
+    if(n.includes('JERUK NIPIS')) return 'NIPIS';
+    if(n.includes('ANGGUR')) return 'ANGGUR';
+    if(n.includes('JERUK') && n.includes('MANIS')) return 'JERUK_MANIS';
+    if(n.includes('JERUK PONTIANAK')) return 'PONTIANAK';
+    if(n.includes('BLACKCURRANT') && n.includes('TEA')) return 'BLACKCURRANT';
+    if(n.includes('LYCHEE TEA')) return 'LYCHEE_TEA';
+    if(n.includes('MILKY ORANGE')) return 'MILKY';
+    if(n.includes('MARKISA')) return 'MARKISA';
+    if(n.includes('STRAWBERRY')) return 'STRAWBERRY';
+    return null;
+  }
+  if(branch === 'Gorontalo'){
+    if(n.includes('JERUK PERAS')) return 'JERUK_PERAS';
+    if(n.includes('JERUK') && n.includes('MANIS')) return 'JERUK_MANIS';
+    if(n.includes('JERUK NIPIS')) return 'NIPIS';
+    if(n.includes('LEMON TEA')) return 'LEMON_TEA';
+    if(n.includes('MILKY ORANGE')) return 'MILKY';
+    if(n.includes('BLACKCURRANT') && n.includes('TEA')) return 'BLACKCURRANT';
+    if(n.includes('LYCHEE TEA')) return 'LYCHEE_TEA';
+    if(n.includes('JERUK PONTIANAK')) return 'PONTIANAK';
+    if(n.includes('NANAS')) return 'NANAS';
+    if(n.includes('JERUK MAROKO')) return 'JERUK_MAROKO';
+    if(n.includes('MELON')) return 'MELON';
+    if(n.includes('LECI')) return 'LECI';
+    return null;
+  }
+  // default: Makassar
+  if(n.includes('AMERICAN SWEET ORANGE')) return 'ASO';
+  if(n.includes('JERUK PONTIANAK')) return 'PONTIANAK';
+  if(n.includes('SWEET MANGO')) return 'MANGO';
+  if(n.includes('JERUK NIPIS')) return 'NIPIS';
+  if(n.includes('ANGGUR')) return 'ANGGUR';
+  if(n.includes('BLACKCURRANT') && n.includes('TEA')) return 'BLACKCURRANT';
+  if(n.includes('MILKY ORANGE')) return 'MILKY';
+  if(n.includes('STRAWBERRY')) return 'STRAWBERRY';
+  if(n.includes('MELON')) return 'MELON';
+  if(n.includes('SIRSAK')) return 'SIRSAK';
+  if(n.includes('SWEET GUAVA')) return 'GUAVA';
+  if(n.includes('NANAS')) return 'NANAS';
+  return null;
+}
+function isHiloEC(name){ const n = name.toUpperCase(); return n.includes('HILO') || n.includes('HI LO'); }
+function ecDayPoinHilo(rate){
+  if(rate > 4) return 50;
+  if(rate >= 3) return 40;
+  if(rate >= 2) return 30;
+  return 0;
+}
+function ecDayPoinMatcha(rate){
+  if(rate > 3) return 50;
+  if(rate >= 2) return 40;
+  if(rate >= 1) return 30;
+  return 0;
 }
 function isTea(name, merek){
   const n = name.toUpperCase();
@@ -5995,6 +6066,7 @@ function switchInsentifMonth(month){
   currentInsentifMonth = month;
   document.getElementById('btn-month-Juli').classList.toggle('branch-active', month === 'Juli');
   document.getElementById('btn-month-Agustus').classList.toggle('branch-active', month === 'Agustus');
+  if(currentBranch === 'KOMPETISI'){ computeKompetisi(); return; }
   if(rawData.length) compute();
   else if(month === 'Agustus') renderAgustus({}, {}, {}, {}, {});
   else render({ea5:{},nstea:{},matcha:{},swiss:{}}, {}, {});
@@ -6016,7 +6088,7 @@ function switchBranch(branch){
     return;
   }
   if(branch === 'KOMPETISI'){
-    renderKompetisiEmpty();
+    computeKompetisi();
     return;
   }
   if(rawData.length) compute();
@@ -6024,15 +6096,93 @@ function switchBranch(branch){
   else render({ea5:{},nstea:{},matcha:{},swiss:{}}, {}, {});
 }
 
-function renderKompetisiEmpty(){
+function computeKompetisi(){
   const salesList = getSalesList();
+  const table = document.getElementById('mainTable');
+  if(!rawData.length){
+    table.innerHTML = '<caption>Kompetisi</caption>';
+    const thead = table.insertRow(-1);
+    thead.innerHTML = '<th>Nama Salesman</th>';
+    salesList.forEach(sales=>{
+      const row = table.insertRow(-1);
+      row.innerHTML = `<td class="nama">${sales}</td>`;
+    });
+    return;
+  }
+
+  const periode = currentInsentifMonth === 'Agustus' ? 'Agustus' : 'Juli';
+  const range = periodRange(periode);
+  const today = new Date();
+  const cutoff = today < range[1] ? today : range[1];
+  const daysElapsed = Math.max(1, Math.floor((cutoff - range[0]) / 86400000) + 1);
+
+  const hiloNota = {}, matchaNota = {}, nsToko = {};
+  salesList.forEach(s=>{ hiloNota[s] = new Set(); matchaNota[s] = new Set(); nsToko[s] = {}; });
+
+  rawData.forEach(r=>{
+    const sales = normSales(field(r, 'Nama Sales', 'NamaSales'));
+    if(!salesList.includes(sales)) return;
+    const toko = field(r, 'Ship To', 'ShipTo') || field(r, 'Perusahaan');
+    const barang = field(r, 'Nama Barang', 'NamaBarang');
+    const tgl = field(r, 'Tgl');
+    const nota = field(r, 'No Referensi', 'NoReferensi', 'No Nota', 'NoNota') || field(r, 'Ship To', 'ShipTo');
+    if(!sales || !barang) return;
+    if(!inPeriod(tgl, range)) return;
+
+    if(isHiloEC(barang)) hiloNota[sales].add(sales + '|' + nota + '|' + tgl);
+    if(isMatcha(barang)) matchaNota[sales].add(sales + '|' + nota + '|' + tgl);
+
+    const branch = branchOfSales(sales);
+    const g = itemGroupKompetisi(barang, branch);
+    if(g){
+      const tokoKey = sales + '|' + toko;
+      if(!nsToko[sales][tokoKey]) nsToko[sales][tokoKey] = new Set();
+      nsToko[sales][tokoKey].add(g);
+    }
+  });
+
+  const rows = salesList.map(sales=>{
+    const branch = branchOfSales(sales);
+    const threshold = KOMPETISI_VARIAN_THRESHOLD[branch] || 6;
+    const ecHilo = hiloNota[sales].size / daysElapsed;
+    const ecMatcha = matchaNota[sales].size / daysElapsed;
+    const poinHilo = ecDayPoinHilo(ecHilo);
+    const poinMatcha = ecDayPoinMatcha(ecMatcha);
+    const eaNs = Object.values(nsToko[sales]).filter(set=>set.size >= threshold).length;
+    const pctNs = (eaNs / KOMPETISI_TARGET_TOKO) * 100;
+    const poinNs = pctNs;
+    const totalPoin = (poinHilo + poinMatcha + poinNs) / 2;
+    const insentif = totalPoin >= 70 ? 1000000 : null;
+    return { sales, branch, ecHilo, poinHilo, ecMatcha, poinMatcha, eaNs, pctNs, poinNs, totalPoin, insentif };
+  });
+
+  renderKompetisi(rows);
+  document.getElementById('status').textContent = `Selesai menghitung dari ${rawData.length} baris data.`;
+}
+
+function renderKompetisi(rows){
   const table = document.getElementById('mainTable');
   table.innerHTML = '<caption>Kompetisi</caption>';
   const thead = table.insertRow(-1);
-  thead.innerHTML = '<th>Nama Salesman</th>';
-  salesList.forEach(sales=>{
-    const row = table.insertRow(-1);
-    row.innerHTML = `<td class="nama">${sales}</td>`;
+  thead.innerHTML = '<th>Nama Salesman</th><th>EC/Day HiLo</th><th>Poin HiLo</th><th>EC/Day Matcha</th><th>Poin Matcha</th><th>EA NS (Toko)</th><th>%Ach NS</th><th>Poin NS</th><th>Total Poin</th><th>Insentif</th>';
+
+  const byBranch = {};
+  rows.forEach(r=>{ (byBranch[r.branch] = byBranch[r.branch] || []).push(r); });
+
+  Object.keys(byBranch).forEach(branch=>{
+    const group = byBranch[branch];
+    group.forEach(r=>{
+      const row = table.insertRow(-1);
+      row.innerHTML = `<td class="nama">${r.sales}</td>`
+        + `<td>${r.ecHilo.toFixed(2)}</td><td>${r.poinHilo}</td>`
+        + `<td>${r.ecMatcha.toFixed(2)}</td><td>${r.poinMatcha}</td>`
+        + `<td>${r.eaNs}</td><td>${r.pctNs.toFixed(0)}%</td><td>${r.poinNs.toFixed(0)}</td>`
+        + `<td><b>${r.totalPoin.toFixed(1)}</b></td>`
+        + `<td>${r.insentif ? 'Rp ' + r.insentif.toLocaleString('id-ID') : '-'}</td>`;
+    });
+    const avgTotal = group.reduce((a,r)=>a+r.totalPoin,0) / group.length;
+    const sumRow = table.insertRow(-1);
+    sumRow.innerHTML = `<td class="program" colspan="8">${branch} (${group.length} sales) - Rata-rata Poin</td><td><b>${avgTotal.toFixed(1)}</b></td><td></td>`;
   });
 }
 
