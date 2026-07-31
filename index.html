@@ -4979,7 +4979,7 @@ function isTea(name, merek){
 function isMatcha(name){ const n=name.toUpperCase(); return n.includes('MATCHA') && n.includes('PLS'); }
 function isSwiss(name){ return name.toUpperCase().includes('HILO SWISS CHOCOLATE PLS'); }
 function isSchool(name, group1){ return name.toUpperCase().includes('HILO SCHOOL') && String(group1 || '').trim().toUpperCase() === 'TRADITIONAL'; }
-function isHiloChocolate(name){ const n = name.toUpperCase(); return n.includes('HILO CHOCOLATE') && n.includes('PLS') && !n.includes('SWISS'); }
+function isHiloChocolate(name){ return name.toUpperCase().includes('HILO CHOCOLATE PLS'); }
 function isHiloChocomalt(name){ const n = name.toUpperCase(); return n.includes('CHOCO MALT') && n.includes('PLS'); }
 function toCtnQty(jml, satuan){
   const q = parseFloat(jml) || 0;
