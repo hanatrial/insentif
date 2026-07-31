@@ -4873,7 +4873,6 @@ const PROGRAMS = [
   { id:'ea5', title:'Insentif EA NS 5 Varian Maksasar dari Item Terpilih', periode:'Juli', insentif:'2,000,000', target:50 },
   { id:'nstea', title:'Insentif EA NS Tea', periode:'Juli', insentif:'250,000', target:40 },
   { id:'matcha', title:'Insentif EA Matcha', periode:'Juli', insentif:'250,000 jika cabang ach', target:30, targetByBranch:{ Gorontalo:60 } },
-  { id:'swiss', title:'Insentif EA Hilo Swiss', periode:'Juli - Agustus', insentif:'200,000', target:40 },
 ];
 
 let currentInsentifMonth = 'Juli';
@@ -5628,7 +5627,7 @@ function compute(){
   const rangeEa5 = periodRange(PROGRAMS.find(p=>p.id==='ea5').periode);
   const rangeTea = periodRange(PROGRAMS.find(p=>p.id==='nstea').periode);
   const rangeMatcha = periodRange(PROGRAMS.find(p=>p.id==='matcha').periode);
-  const rangeSwiss = periodRange(PROGRAMS.find(p=>p.id==='swiss').periode);
+  const rangeSwiss = periodRange('Juli - Agustus');
   const rangeSchool = periodRange('Juli');
 
   rawData.forEach(r=>{
@@ -5916,7 +5915,7 @@ function renderAgustus(results, matchaCtn, matchaNominal, matchaTierCounts, kpiC
     }
     html += `<td class="nama">${sales}</td>`;
     if(idx === 0){
-      html += `<td rowspan="${salesList.length}">Per nota: 3 ctn=40rb, 5 ctn=80rb, 10 ctn=200rb</td>`;
+      html += `<td rowspan="${salesList.length}">3 CTN = 40.000<br>5 CTN = 80.000<br>10 CTN = 200.000</td>`;
     }
     html += `<td>${tiers[3]}</td>`;
     html += `<td>${tiers[5]}</td>`;
