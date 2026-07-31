@@ -105,6 +105,7 @@
   <button id="btn-BSP" class="hidden" onclick="showBSPDashboard()" style="background:#888;">BSP</button>
   <button id="btn-Makassar" onclick="switchBranch('Makassar')">Makassar</button>
   <button id="btn-Bulukumba" onclick="switchBranch('Bulukumba')">Bulukumba</button>
+  <button id="btn-Semua" class="hidden" onclick="switchBranch('Semua')">Semua</button>
   <button id="btn-Gorontalo" onclick="switchBranch('Gorontalo')">Gorontalo</button>
   <button id="btn-tokoMT" class="hidden" onclick="showTokoMTDashboard()" style="background:#888;">Toko MT</button>
 </div>
@@ -4853,8 +4854,10 @@ async function login(user){
     const btn = document.getElementById('btn-' + b);
     if(btn) btn.classList.toggle('hidden', !cfg.branches.includes(b));
   });
+  const btnSemua = document.getElementById('btn-Semua');
+  if(btnSemua) btnSemua.classList.toggle('hidden', !(cfg.branches.includes('Makassar') && cfg.branches.includes('Bulukumba')));
   currentBranch = cfg.branches[0];
-  ['Makassar','Bulukumba','Gorontalo'].forEach(b=>{
+  ['Makassar','Bulukumba','Gorontalo','Semua'].forEach(b=>{
     const btn = document.getElementById('btn-' + b);
     if(btn) btn.classList.toggle('branch-active', b === currentBranch);
   });
@@ -4866,7 +4869,10 @@ async function login(user){
   }
 }
 let currentBranch = 'Makassar';
-function getSalesList(){ return BRANCH_SALES[currentBranch]; }
+function getSalesList(){
+  if(currentBranch === 'Semua') return [...BRANCH_SALES.Makassar, ...BRANCH_SALES.Bulukumba];
+  return BRANCH_SALES[currentBranch];
+}
 const ALL_SALES = [...BRANCH_SALES.Makassar, ...BRANCH_SALES.Bulukumba, ...BRANCH_SALES.Gorontalo];
 
 const PROGRAMS = [
@@ -5925,7 +5931,7 @@ function renderAgustus(results, matchaCtn, matchaNominal, matchaTierCounts, kpiC
   });
 
   AGUSTUS_PROGRAMS.forEach(p=>{
-    if(p.branches && !p.branches.includes(currentBranch)) return;
+    if(p.branches && currentBranch !== 'Semua' && !p.branches.includes(currentBranch)) return;
     const thead = table.insertRow(-1);
     thead.innerHTML = '<th>Program Insentif</th><th>Periode</th><th>Nama Salesman</th><th>Insentif</th><th>Target</th><th>Ach</th><th>%Ach</th>';
     salesList.forEach((sales, idx)=>{
@@ -5956,7 +5962,7 @@ function renderAgustus(results, matchaCtn, matchaNominal, matchaTierCounts, kpiC
     totals[sales] += matchaNominal[sales] || 0;
   });
   AGUSTUS_PROGRAMS.forEach(p=>{
-    if(p.branches && !p.branches.includes(currentBranch)) return;
+    if(p.branches && currentBranch !== 'Semua' && !p.branches.includes(currentBranch)) return;
     const amount = parseInsentifAmount(p.insentif);
     salesList.forEach(sales=>{
       const ach = (results[p.id] && results[p.id][sales]) || 0;
@@ -5996,7 +6002,7 @@ function switchInsentifMonth(month){
 
 function switchBranch(branch){
   currentBranch = branch;
-  ['Makassar','Bulukumba','Gorontalo'].forEach(b=>{
+  ['Makassar','Bulukumba','Gorontalo','Semua'].forEach(b=>{
     const btn = document.getElementById('btn-' + b);
     if(btn) btn.classList.toggle('branch-active', b === branch);
   });
