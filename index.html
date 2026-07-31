@@ -6103,10 +6103,13 @@ function switchBranch(branch){
     loadDashboardBranch(branch);
     return;
   }
+  const monthRow = document.getElementById('monthToggleRow');
   if(branch === 'KOMPETISI'){
+    if(monthRow) monthRow.classList.add('hidden');
     computeKompetisi();
     return;
   }
+  if(monthRow) monthRow.classList.remove('hidden');
   if(rawData.length) compute();
   else if(currentInsentifMonth === 'Agustus') renderAgustus({}, {}, {}, {}, {});
   else render({ea5:{},nstea:{},matcha:{},swiss:{}}, {}, {});
@@ -6201,24 +6204,19 @@ function renderKompetisi(rows){
   const thead = table.insertRow(-1);
   thead.innerHTML = '<th>Nama Salesman</th><th>EC/Day HiLo</th><th>Poin HiLo</th><th>EC/Day Matcha</th><th>Poin Matcha</th><th>EA NS (Toko)</th><th>%Ach NS</th><th>Poin NS</th><th>Total Poin</th><th>Insentif</th>';
 
-  const byBranch = {};
-  rows.forEach(r=>{ (byBranch[r.branch] = byBranch[r.branch] || []).push(r); });
-
-  Object.keys(byBranch).forEach(branch=>{
-    const group = byBranch[branch];
-    group.forEach(r=>{
-      const row = table.insertRow(-1);
-      row.innerHTML = `<td class="nama">${r.sales}</td>`
-        + `<td>${r.ecHilo.toFixed(2)}</td><td>${r.poinHilo}</td>`
-        + `<td>${r.ecMatcha.toFixed(2)}</td><td>${r.poinMatcha}</td>`
-        + `<td>${r.eaNs}</td><td>${r.pctNs.toFixed(0)}%</td><td>${r.poinNs.toFixed(0)}</td>`
-        + `<td><b>${r.totalPoin.toFixed(1)}</b></td>`
-        + `<td>${r.insentif ? 'Rp ' + r.insentif.toLocaleString('id-ID') : '-'}</td>`;
-    });
-    const avgTotal = group.reduce((a,r)=>a+r.totalPoin,0) / group.length;
-    const sumRow = table.insertRow(-1);
-    sumRow.innerHTML = `<td class="program" colspan="8">${branch} (${group.length} sales) - Rata-rata Poin</td><td><b>${avgTotal.toFixed(1)}</b></td><td></td>`;
+  rows.forEach(r=>{
+    const row = table.insertRow(-1);
+    row.innerHTML = `<td class="nama">${r.sales}</td>`
+      + `<td>${r.ecHilo.toFixed(2)}</td><td>${r.poinHilo}</td>`
+      + `<td>${r.ecMatcha.toFixed(2)}</td><td>${r.poinMatcha}</td>`
+      + `<td>${r.eaNs}</td><td>${r.pctNs.toFixed(0)}%</td><td>${r.poinNs.toFixed(0)}</td>`
+      + `<td><b>${r.totalPoin.toFixed(1)}</b></td>`
+      + `<td>${r.insentif ? 'Rp ' + r.insentif.toLocaleString('id-ID') : '-'}</td>`;
   });
+
+  const avgTotal = rows.reduce((a,r)=>a+r.totalPoin,0) / rows.length;
+  const sumRow = table.insertRow(-1);
+  sumRow.innerHTML = `<td class="program" colspan="8">Rata-rata Poin (${rows.length} sales)</td><td><b>${avgTotal.toFixed(1)}</b></td><td></td>`;
 }
 
 function updateTarget(id, val){
