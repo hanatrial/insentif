@@ -6128,8 +6128,28 @@ function computeKompetisi(){
 
   const range = periodRange('Agustus - September');
   const today = new Date();
-  const cutoff = today < range[1] ? today : range[1];
-  const daysElapsed = Math.max(1, countKompetisiWorkdays(range[0], cutoff));
+
+  let latestDataDate = null;
+  rawData.forEach(r=>{
+    const sales = normSales(field(r, 'Nama Sales', 'NamaSales'));
+    if(!salesList.includes(sales)) return;
+    const d = toDate(field(r, 'Tgl'));
+    if(d && d >= range[0] && d <= range[1] && (!latestDataDate || d > latestDataDate)) latestDataDate = d;
+  });
+
+  let daysElapsed;
+  const octStart = new Date(2026, 9, 1);
+  const sepStart = new Date(2026, 8, 1);
+  const augStart = new Date(2026, 7, 1);
+  if(today >= octStart){
+    daysElapsed = 50;
+  } else if(today >= sepStart){
+    const wd = countKompetisiWorkdays(sepStart, latestDataDate || sepStart);
+    daysElapsed = 24 + Math.max(0, wd - 2);
+  } else {
+    const wd = countKompetisiWorkdays(augStart, latestDataDate || augStart);
+    daysElapsed = Math.max(1, wd - 2);
+  }
 
   const hiloNota = {}, matchaNota = {}, nsToko = {};
   salesList.forEach(s=>{ hiloNota[s] = new Set(); matchaNota[s] = new Set(); nsToko[s] = {}; });
