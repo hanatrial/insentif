@@ -5036,6 +5036,22 @@ function itemGroupKompetisi(name, branch){
   return null;
 }
 function isHiloEC(name){ const n = name.toUpperCase(); return (n.includes('HILO') || n.includes('HI LO')) && n.includes('PLS'); }
+// Libur nasional Indonesia (SKB 3 Menteri), TIDAK termasuk cuti bersama
+const KOMPETISI_HOLIDAYS = ['2026-08-17', '2026-08-25'];
+function isKompetisiWorkday(d){
+  if(d.getDay() === 0) return false;
+  const ymd = d.toISOString().slice(0,10);
+  return !KOMPETISI_HOLIDAYS.includes(ymd);
+}
+function countKompetisiWorkdays(start, end){
+  let count = 0;
+  const d = new Date(start);
+  while(d <= end){
+    if(isKompetisiWorkday(d)) count++;
+    d.setDate(d.getDate() + 1);
+  }
+  return count;
+}
 function ecDayPoinHilo(rate){
   if(rate > 4) return 50;
   if(rate >= 3) return 40;
@@ -6110,11 +6126,10 @@ function computeKompetisi(){
     return;
   }
 
-  const periode = currentInsentifMonth === 'Agustus' ? 'Agustus' : 'Juli';
-  const range = periodRange(periode);
+  const range = periodRange('Agustus - September');
   const today = new Date();
   const cutoff = today < range[1] ? today : range[1];
-  const daysElapsed = Math.max(1, Math.floor((cutoff - range[0]) / 86400000) + 1);
+  const daysElapsed = Math.max(1, countKompetisiWorkdays(range[0], cutoff));
 
   const hiloNota = {}, matchaNota = {}, nsToko = {};
   salesList.forEach(s=>{ hiloNota[s] = new Set(); matchaNota[s] = new Set(); nsToko[s] = {}; });
