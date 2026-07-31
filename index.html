@@ -5716,12 +5716,17 @@ function computeAgustus(){
 
   const matchaCtn = {}; salesList.forEach(s=>matchaCtn[s]=0);
   const matchaNominal = {}; salesList.forEach(s=>matchaNominal[s]=0);
+  const matchaTierCounts = {}; salesList.forEach(s=>matchaTierCounts[s]={3:0,5:0,10:0});
   Object.keys(matchaCtnByNota).forEach(notaKey=>{
     const sales = matchaSalesByNota[notaKey];
     const ctn = matchaCtnByNota[notaKey];
     if(matchaCtn[sales] === undefined) return;
     matchaCtn[sales] += ctn;
-    matchaNominal[sales] += matchaDealingNominal(ctn);
+    const nominal = matchaDealingNominal(ctn);
+    matchaNominal[sales] += nominal;
+    if(ctn >= 10) matchaTierCounts[sales][10]++;
+    else if(ctn >= 5) matchaTierCounts[sales][5]++;
+    else if(ctn >= 3) matchaTierCounts[sales][3]++;
   });
 
   function countTransactions(transObj){
@@ -5737,7 +5742,7 @@ function computeAgustus(){
 
   const kpiCount = computeKpiMT(salesList);
 
-  renderAgustus(results, matchaCtn, matchaNominal, kpiCount);
+  renderAgustus(results, matchaCtn, matchaNominal, matchaTierCounts, kpiCount);
   document.getElementById('status').textContent = `Selesai menghitung dari ${rawData.length} baris data.`;
 }
 
@@ -5893,15 +5898,15 @@ function renderKpiMTSection(table, salesList, kpiCount){
   return kpiBranchCfg;
 }
 
-function renderAgustus(results, matchaCtn, matchaNominal, kpiCount){
+function renderAgustus(results, matchaCtn, matchaNominal, matchaTierCounts, kpiCount){
   const salesList = getSalesList();
   const table = document.getElementById('mainTable');
   table.innerHTML = '<caption>Program Insentif Agustus</caption>';
 
   const theadMatcha = table.insertRow(-1);
-  theadMatcha.innerHTML = '<th>Program Insentif</th><th>Periode</th><th>Nama Salesman</th><th>Insentif</th><th>Ach (Ctn)</th><th>Nominal Didapat</th>';
+  theadMatcha.innerHTML = '<th>Program Insentif</th><th>Periode</th><th>Nama Salesman</th><th>Insentif</th><th>EC 3 CTN</th><th>EC 5 CTN</th><th>EC 10 CTN</th><th>Nominal Insentif</th>';
   salesList.forEach((sales, idx)=>{
-    const ctn = Math.round((matchaCtn[sales] || 0) * 100) / 100;
+    const tiers = matchaTierCounts[sales] || {3:0,5:0,10:0};
     const nominal = matchaNominal[sales] || 0;
     const row = table.insertRow(-1);
     let html = '';
@@ -5913,7 +5918,9 @@ function renderAgustus(results, matchaCtn, matchaNominal, kpiCount){
     if(idx === 0){
       html += `<td rowspan="${salesList.length}">Per nota: 3 ctn=40rb, 5 ctn=80rb, 10 ctn=200rb</td>`;
     }
-    html += `<td>${ctn}</td>`;
+    html += `<td>${tiers[3]}</td>`;
+    html += `<td>${tiers[5]}</td>`;
+    html += `<td>${tiers[10]}</td>`;
     html += `<td style="font-weight:bold;">Rp ${nominal.toLocaleString('id-ID')}</td>`;
     row.innerHTML = html;
   });
@@ -5984,7 +5991,7 @@ function switchInsentifMonth(month){
   document.getElementById('btn-month-Juli').classList.toggle('branch-active', month === 'Juli');
   document.getElementById('btn-month-Agustus').classList.toggle('branch-active', month === 'Agustus');
   if(rawData.length) compute();
-  else if(month === 'Agustus') renderAgustus({}, {}, {}, {});
+  else if(month === 'Agustus') renderAgustus({}, {}, {}, {}, {});
   else render({ea5:{},nstea:{},matcha:{},swiss:{}}, {}, {});
 }
 
@@ -6004,7 +6011,7 @@ function switchBranch(branch){
     return;
   }
   if(rawData.length) compute();
-  else if(currentInsentifMonth === 'Agustus') renderAgustus({}, {}, {}, {});
+  else if(currentInsentifMonth === 'Agustus') renderAgustus({}, {}, {}, {}, {});
   else render({ea5:{},nstea:{},matcha:{},swiss:{}}, {}, {});
 }
 
