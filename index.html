@@ -5035,7 +5035,7 @@ function itemGroupKompetisi(name, branch){
   if(n.includes('NANAS')) return 'NANAS';
   return null;
 }
-function isHiloEC(name){ const n = name.toUpperCase(); return n.includes('HILO') || n.includes('HI LO'); }
+function isHiloEC(name){ const n = name.toUpperCase(); return (n.includes('HILO') || n.includes('HI LO')) && n.includes('PLS'); }
 function ecDayPoinHilo(rate){
   if(rate > 4) return 50;
   if(rate >= 3) return 40;
