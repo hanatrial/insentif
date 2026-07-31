@@ -109,6 +109,12 @@
   <button id="btn-tokoMT" class="hidden" onclick="showTokoMTDashboard()" style="background:#888;">Toko MT</button>
 </div>
 
+<div id="monthToggleRow" class="toolbar hidden">
+  <span style="font-size:13px; font-weight:bold;">Bulan:</span>
+  <button id="btn-month-Juli" onclick="switchInsentifMonth('Juli')">Juli</button>
+  <button id="btn-month-Agustus" onclick="switchInsentifMonth('Agustus')">Agustus</button>
+</div>
+
 <div id="bspUploadRow" class="toolbar hidden">
   <input type="file" id="bspFileInput" accept=".xlsx,.xls,.csv">
   <button onclick="processBSPFile()">Proses & Hitung BSP</button>
@@ -4809,6 +4815,8 @@ function logout(){
   document.querySelector('button[onclick="exportToExcel()"]').classList.remove('hidden');
   document.getElementById('btn-BSP').classList.add('hidden');
   document.getElementById('bspUploadRow').classList.add('hidden');
+  document.getElementById('monthToggleRow').classList.add('hidden');
+  currentInsentifMonth = 'Juli';
   hideAchSlider(); hideSalesFilter();
 }
 
@@ -4828,6 +4836,10 @@ async function login(user){
   document.getElementById('fileInput').classList.toggle('hidden', isDashboard);
   document.querySelector('button[onclick="processFile()"]').classList.toggle('hidden', isDashboard);
   document.querySelector('button[onclick="exportToExcel()"]').classList.toggle('hidden', isDashboard);
+  document.getElementById('monthToggleRow').classList.toggle('hidden', isDashboard);
+  currentInsentifMonth = 'Juli';
+  document.getElementById('btn-month-Juli').classList.add('branch-active');
+  document.getElementById('btn-month-Agustus').classList.remove('branch-active');
   if(!isDashboard){ hideAchSlider(); hideSalesFilter(); }
   document.getElementById('btn-tokoMT').classList.toggle('hidden', !isDashboard);
   document.getElementById('btn-tokoMT').classList.remove('branch-active');
@@ -4863,6 +4875,27 @@ const PROGRAMS = [
   { id:'matcha', title:'Insentif EA Matcha', periode:'Juli', insentif:'250,000 jika cabang ach', target:30, targetByBranch:{ Gorontalo:60 } },
   { id:'swiss', title:'Insentif EA Hilo Swiss', periode:'Juli - Agustus', insentif:'200,000', target:40 },
 ];
+
+let currentInsentifMonth = 'Juli';
+
+const AGUSTUS_PROGRAMS = [
+  { id:'hiloChocolate', title:'Insentif EA Hilo Chocolate', periode:'Agustus', insentif:'250,000', target:40, branches:['Bulukumba'] },
+  { id:'hiloChocomalt', title:'Insentif EA Hilo Chocomalt', periode:'Agustus', insentif:'250,000', target:40, branches:['Makassar','Bulukumba','Gorontalo'] },
+  { id:'swissRO', title:'Insentif RO Hilo Swiss', periode:'Juli - Agustus', insentif:'200,000', target:40, branches:['Makassar','Bulukumba','Gorontalo'] },
+];
+
+const MATCHA_DEALING = {
+  id:'matchaDealing',
+  title:'Insentif Dealing Matcha',
+  periode:'Agustus',
+  tiers:[ { qty:3, nominal:40000 }, { qty:5, nominal:80000 }, { qty:10, nominal:200000 } ]
+};
+
+function matchaDealingNominal(ctn){
+  let nominal = 0;
+  MATCHA_DEALING.tiers.forEach(t=>{ if(ctn >= t.qty) nominal = t.nominal; });
+  return nominal;
+}
 
 const KPI_MT = {
   title:'Insentif EA MT 5 Varian',
@@ -4946,6 +4979,14 @@ function isTea(name, merek){
 function isMatcha(name){ const n=name.toUpperCase(); return n.includes('MATCHA') && n.includes('PLS'); }
 function isSwiss(name){ return name.toUpperCase().includes('HILO SWISS CHOCOLATE PLS'); }
 function isSchool(name, group1){ return name.toUpperCase().includes('HILO SCHOOL') && String(group1 || '').trim().toUpperCase() === 'TRADITIONAL'; }
+function isHiloChocolate(name){ const n = name.toUpperCase(); return n.includes('HILO CHOCOLATE') && n.includes('PLS') && !n.includes('SWISS'); }
+function isHiloChocomalt(name){ const n = name.toUpperCase(); return n.includes('CHOCO MALT') && n.includes('PLS'); }
+function toCtnQty(jml, satuan){
+  const q = parseFloat(jml) || 0;
+  const s = String(satuan || '').toUpperCase();
+  if(s.includes('CTN') || s.includes('DUS') || s.includes('BOX')) return q;
+  return q / 8;
+}
 
 function itemGroupKPI(name){
   const n = name.toUpperCase();
@@ -5010,6 +5051,8 @@ function slimRow(r){
     'Merek': field(r, 'Merek'),
     'Group1Barang': field(r, 'Group 1Barang', 'Group1Barang'),
     'DPP': field(r, ' DPP ', 'DPP'),
+    'Jml': field(r, 'Jml'),
+    'Satuan': field(r, 'Satuan'),
     'Nama Sales': field(r, 'Nama Sales', 'NamaSales')
   };
 }
@@ -5574,6 +5617,7 @@ function closeTokoModal(){
 }
 
 function compute(){
+  if(currentInsentifMonth === 'Agustus'){ computeAgustus(); return; }
   const salesList = getSalesList();
   const trans5 = {};
   const transTea = {};
@@ -5633,6 +5677,53 @@ function compute(){
   const kpiCount = computeKpiMT(salesList);
 
   render(results, schoolCount, kpiCount);
+  document.getElementById('status').textContent = `Selesai menghitung dari ${rawData.length} baris data.`;
+}
+
+function computeAgustus(){
+  const salesList = getSalesList();
+  const transChocolate = {};
+  const transChocomalt = {};
+  const transSwissRO = {};
+  const matchaCtn = {}; salesList.forEach(s=>matchaCtn[s]=0);
+
+  const rangeChocolate = periodRange('Agustus');
+  const rangeChocomalt = periodRange('Agustus');
+  const rangeSwissRO = periodRange('Juli - Agustus');
+  const rangeMatchaDealing = periodRange('Agustus');
+
+  rawData.forEach(r=>{
+    const sales = normSales(field(r, 'Nama Sales', 'NamaSales'));
+    if(!salesList.includes(sales)) return;
+    const toko = field(r, 'Ship To', 'ShipTo') || field(r, 'Perusahaan');
+    const barang = field(r, 'Nama Barang', 'NamaBarang');
+    const tgl = field(r, 'Tgl');
+    if(!sales || !barang) return;
+    const tokoKey = sales + '|' + toko;
+
+    if(isHiloChocolate(barang) && inPeriod(tgl, rangeChocolate)){ transChocolate[tokoKey] = sales; }
+    if(isHiloChocomalt(barang) && inPeriod(tgl, rangeChocomalt)){ transChocomalt[tokoKey] = sales; }
+    if(isSwiss(barang) && inPeriod(tgl, rangeSwissRO)){ transSwissRO[tokoKey] = sales; }
+    if(isMatcha(barang) && inPeriod(tgl, rangeMatchaDealing)){
+      const ctn = toCtnQty(field(r, 'Jml'), field(r, 'Satuan'));
+      matchaCtn[sales] = (matchaCtn[sales] || 0) + ctn;
+    }
+  });
+
+  function countTransactions(transObj){
+    const res = {}; salesList.forEach(s=>res[s]=0);
+    Object.values(transObj).forEach(sales=>{ if(res[sales] !== undefined) res[sales]++; });
+    return res;
+  }
+  const chocolateCount = countTransactions(transChocolate);
+  const chocomaltCount = countTransactions(transChocomalt);
+  const swissROCount = countTransactions(transSwissRO);
+
+  const results = { hiloChocolate: chocolateCount, hiloChocomalt: chocomaltCount, swissRO: swissROCount };
+
+  const kpiCount = computeKpiMT(salesList);
+
+  renderAgustus(results, matchaCtn, kpiCount);
   document.getElementById('status').textContent = `Selesai menghitung dari ${rawData.length} baris data.`;
 }
 
@@ -5724,30 +5815,7 @@ function render(results, schoolCount, kpiCount){
     row.innerHTML = html;
   });
 
-  const kpiBranchCfg = KPI_MT.byBranch[currentBranch];
-  if(kpiBranchCfg){
-    const theadKpi = table.insertRow(-1);
-    theadKpi.innerHTML = '<th>Program Insentif</th><th>Periode</th><th>Nama Salesman</th><th>Insentif</th><th>Target</th><th>Ach</th><th>%Ach</th>';
-    salesList.forEach((sales, idx)=>{
-      const ach = (kpiCount && kpiCount[sales]) || 0;
-      const p_ = pct(ach, kpiBranchCfg.target);
-      const width = Math.max(0, Math.min(p_, 100));
-      const row = table.insertRow(-1);
-      let html = '';
-      if(idx === 0){
-        html += `<td class="program" rowspan="${salesList.length}">${KPI_MT.title}</td>`;
-        html += `<td rowspan="${salesList.length}">${KPI_MT.periode}</td>`;
-      }
-      html += `<td class="nama">${sales}</td>`;
-      if(idx === 0){
-        html += `<td rowspan="${salesList.length}">${kpiBranchCfg.insentif}</td>`;
-      }
-      html += `<td>${kpiBranchCfg.target}</td>`;
-      html += `<td>${ach}</td>`;
-      html += `<td class="bar-cell"><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:${width}%"></div></div><span class="bar-label">${p_}%</span></div></td>`;
-      row.innerHTML = html;
-    });
-  }
+  const kpiBranchCfg = renderKpiMTSection(table, salesList, kpiCount);
 
   const totals = {}; salesList.forEach(s=>totals[s]=0);
   PROGRAMS.forEach(p=>{
@@ -5784,6 +5852,129 @@ function render(results, schoolCount, kpiCount){
   });
 }
 
+function renderKpiMTSection(table, salesList, kpiCount){
+  const kpiBranchCfg = KPI_MT.byBranch[currentBranch];
+  if(!kpiBranchCfg) return null;
+  const theadKpi = table.insertRow(-1);
+  theadKpi.innerHTML = '<th>Program Insentif</th><th>Periode</th><th>Nama Salesman</th><th>Insentif</th><th>Target</th><th>Ach</th><th>%Ach</th>';
+  salesList.forEach((sales, idx)=>{
+    const ach = (kpiCount && kpiCount[sales]) || 0;
+    const p_ = pct(ach, kpiBranchCfg.target);
+    const width = Math.max(0, Math.min(p_, 100));
+    const row = table.insertRow(-1);
+    let html = '';
+    if(idx === 0){
+      html += `<td class="program" rowspan="${salesList.length}">${KPI_MT.title}</td>`;
+      html += `<td rowspan="${salesList.length}">${KPI_MT.periode}</td>`;
+    }
+    html += `<td class="nama">${sales}</td>`;
+    if(idx === 0){
+      html += `<td rowspan="${salesList.length}">${kpiBranchCfg.insentif}</td>`;
+    }
+    html += `<td>${kpiBranchCfg.target}</td>`;
+    html += `<td>${ach}</td>`;
+    html += `<td class="bar-cell"><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:${width}%"></div></div><span class="bar-label">${p_}%</span></div></td>`;
+    row.innerHTML = html;
+  });
+  return kpiBranchCfg;
+}
+
+function renderAgustus(results, matchaCtn, kpiCount){
+  const salesList = getSalesList();
+  const table = document.getElementById('mainTable');
+  table.innerHTML = '<caption>Program Insentif Agustus</caption>';
+
+  const theadMatcha = table.insertRow(-1);
+  theadMatcha.innerHTML = '<th>Program Insentif</th><th>Periode</th><th>Nama Salesman</th><th>Insentif</th><th>Ach (Ctn)</th><th>Nominal Didapat</th>';
+  salesList.forEach((sales, idx)=>{
+    const ctn = Math.round((matchaCtn[sales] || 0) * 100) / 100;
+    const nominal = matchaDealingNominal(ctn);
+    const row = table.insertRow(-1);
+    let html = '';
+    if(idx === 0){
+      html += `<td class="program" rowspan="${salesList.length}">${MATCHA_DEALING.title}</td>`;
+      html += `<td rowspan="${salesList.length}">${MATCHA_DEALING.periode}</td>`;
+    }
+    html += `<td class="nama">${sales}</td>`;
+    if(idx === 0){
+      html += `<td rowspan="${salesList.length}">3 ctn=40rb, 5 ctn=80rb, 10 ctn=200rb</td>`;
+    }
+    html += `<td>${ctn}</td>`;
+    html += `<td style="font-weight:bold;">Rp ${nominal.toLocaleString('id-ID')}</td>`;
+    row.innerHTML = html;
+  });
+
+  AGUSTUS_PROGRAMS.forEach(p=>{
+    if(p.branches && !p.branches.includes(currentBranch)) return;
+    const thead = table.insertRow(-1);
+    thead.innerHTML = '<th>Program Insentif</th><th>Periode</th><th>Nama Salesman</th><th>Insentif</th><th>Target</th><th>Ach</th><th>%Ach</th>';
+    salesList.forEach((sales, idx)=>{
+      const ach = (results[p.id] && results[p.id][sales]) || 0;
+      const p_ = pct(ach, p.target);
+      const width = Math.max(0, Math.min(p_, 100));
+      const row = table.insertRow(-1);
+      let html = '';
+      if(idx === 0){
+        html += `<td class="program" rowspan="${salesList.length}">${p.title}</td>`;
+        html += `<td rowspan="${salesList.length}">${p.periode}</td>`;
+      }
+      html += `<td class="nama">${sales}</td>`;
+      if(idx === 0){
+        html += `<td rowspan="${salesList.length}">${p.insentif}</td>`;
+      }
+      html += `<td><input class="target-input" type="number" value="${p.target}" onchange="updateTarget('${p.id}', this.value)"></td>`;
+      html += `<td>${ach}</td>`;
+      html += `<td class="bar-cell"><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:${width}%"></div></div><span class="bar-label">${p_}%</span></div></td>`;
+      row.innerHTML = html;
+    });
+  });
+
+  const kpiBranchCfg = renderKpiMTSection(table, salesList, kpiCount);
+
+  const totals = {}; salesList.forEach(s=>totals[s]=0);
+  salesList.forEach(sales=>{
+    const ctn = matchaCtn[sales] || 0;
+    totals[sales] += matchaDealingNominal(ctn);
+  });
+  AGUSTUS_PROGRAMS.forEach(p=>{
+    if(p.branches && !p.branches.includes(currentBranch)) return;
+    const amount = parseInsentifAmount(p.insentif);
+    salesList.forEach(sales=>{
+      const ach = (results[p.id] && results[p.id][sales]) || 0;
+      if(p.target && ach >= p.target){ totals[sales] += amount; }
+    });
+  });
+  if(kpiBranchCfg){
+    const kpiAmount = parseInsentifAmount(kpiBranchCfg.insentif);
+    salesList.forEach(sales=>{
+      const ach = (kpiCount && kpiCount[sales]) || 0;
+      if(kpiBranchCfg.target && ach >= kpiBranchCfg.target){ totals[sales] += kpiAmount; }
+    });
+  }
+
+  const theadTotal = table.insertRow(-1);
+  theadTotal.innerHTML = '<th colspan="2">Ringkasan</th><th>Nama Salesman</th><th colspan="4">Total Insentif</th>';
+  salesList.forEach((sales, idx)=>{
+    const row = table.insertRow(-1);
+    let html = '';
+    if(idx === 0){
+      html += `<td class="program" rowspan="${salesList.length}" colspan="2">Total Insentif per Salesman</td>`;
+    }
+    html += `<td class="nama">${sales}</td>`;
+    html += `<td colspan="4" style="text-align:right; font-weight:bold;">Rp ${totals[sales].toLocaleString('id-ID')}</td>`;
+    row.innerHTML = html;
+  });
+}
+
+function switchInsentifMonth(month){
+  currentInsentifMonth = month;
+  document.getElementById('btn-month-Juli').classList.toggle('branch-active', month === 'Juli');
+  document.getElementById('btn-month-Agustus').classList.toggle('branch-active', month === 'Agustus');
+  if(rawData.length) compute();
+  else if(month === 'Agustus') renderAgustus({}, {}, {});
+  else render({ea5:{},nstea:{},matcha:{},swiss:{}}, {}, {});
+}
+
 function switchBranch(branch){
   currentBranch = branch;
   ['Makassar','Bulukumba','Gorontalo'].forEach(b=>{
@@ -5800,11 +5991,12 @@ function switchBranch(branch){
     return;
   }
   if(rawData.length) compute();
+  else if(currentInsentifMonth === 'Agustus') renderAgustus({}, {}, {});
   else render({ea5:{},nstea:{},matcha:{},swiss:{}}, {}, {});
 }
 
 function updateTarget(id, val){
-  const p = PROGRAMS.find(p=>p.id===id);
+  const p = PROGRAMS.find(p=>p.id===id) || AGUSTUS_PROGRAMS.find(p=>p.id===id);
   if(p){
     const num = parseInt(val) || 0;
     if(p.targetByBranch && p.targetByBranch[currentBranch] !== undefined){
