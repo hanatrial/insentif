@@ -5685,7 +5685,8 @@ function computeAgustus(){
   const transChocolate = {};
   const transChocomalt = {};
   const transSwissRO = {};
-  const matchaCtn = {}; salesList.forEach(s=>matchaCtn[s]=0);
+  const matchaCtnByNota = {};
+  const matchaSalesByNota = {};
 
   const rangeChocolate = periodRange('Agustus');
   const rangeChocomalt = periodRange('Agustus');
@@ -5698,6 +5699,7 @@ function computeAgustus(){
     const toko = field(r, 'Ship To', 'ShipTo') || field(r, 'Perusahaan');
     const barang = field(r, 'Nama Barang', 'NamaBarang');
     const tgl = field(r, 'Tgl');
+    const nota = field(r, 'Kode Nota', 'KodeNota');
     if(!sales || !barang) return;
     const tokoKey = sales + '|' + toko;
 
@@ -5706,8 +5708,20 @@ function computeAgustus(){
     if(isSwiss(barang) && inPeriod(tgl, rangeSwissRO)){ transSwissRO[tokoKey] = sales; }
     if(isMatcha(barang) && inPeriod(tgl, rangeMatchaDealing)){
       const ctn = toCtnQty(field(r, 'Jml'), field(r, 'Satuan'));
-      matchaCtn[sales] = (matchaCtn[sales] || 0) + ctn;
+      const notaKey = sales + '|' + nota;
+      matchaCtnByNota[notaKey] = (matchaCtnByNota[notaKey] || 0) + ctn;
+      matchaSalesByNota[notaKey] = sales;
     }
+  });
+
+  const matchaCtn = {}; salesList.forEach(s=>matchaCtn[s]=0);
+  const matchaNominal = {}; salesList.forEach(s=>matchaNominal[s]=0);
+  Object.keys(matchaCtnByNota).forEach(notaKey=>{
+    const sales = matchaSalesByNota[notaKey];
+    const ctn = matchaCtnByNota[notaKey];
+    if(matchaCtn[sales] === undefined) return;
+    matchaCtn[sales] += ctn;
+    matchaNominal[sales] += matchaDealingNominal(ctn);
   });
 
   function countTransactions(transObj){
@@ -5723,7 +5737,7 @@ function computeAgustus(){
 
   const kpiCount = computeKpiMT(salesList);
 
-  renderAgustus(results, matchaCtn, kpiCount);
+  renderAgustus(results, matchaCtn, matchaNominal, kpiCount);
   document.getElementById('status').textContent = `Selesai menghitung dari ${rawData.length} baris data.`;
 }
 
@@ -5879,7 +5893,7 @@ function renderKpiMTSection(table, salesList, kpiCount){
   return kpiBranchCfg;
 }
 
-function renderAgustus(results, matchaCtn, kpiCount){
+function renderAgustus(results, matchaCtn, matchaNominal, kpiCount){
   const salesList = getSalesList();
   const table = document.getElementById('mainTable');
   table.innerHTML = '<caption>Program Insentif Agustus</caption>';
@@ -5888,7 +5902,7 @@ function renderAgustus(results, matchaCtn, kpiCount){
   theadMatcha.innerHTML = '<th>Program Insentif</th><th>Periode</th><th>Nama Salesman</th><th>Insentif</th><th>Ach (Ctn)</th><th>Nominal Didapat</th>';
   salesList.forEach((sales, idx)=>{
     const ctn = Math.round((matchaCtn[sales] || 0) * 100) / 100;
-    const nominal = matchaDealingNominal(ctn);
+    const nominal = matchaNominal[sales] || 0;
     const row = table.insertRow(-1);
     let html = '';
     if(idx === 0){
@@ -5897,7 +5911,7 @@ function renderAgustus(results, matchaCtn, kpiCount){
     }
     html += `<td class="nama">${sales}</td>`;
     if(idx === 0){
-      html += `<td rowspan="${salesList.length}">3 ctn=40rb, 5 ctn=80rb, 10 ctn=200rb</td>`;
+      html += `<td rowspan="${salesList.length}">Per nota: 3 ctn=40rb, 5 ctn=80rb, 10 ctn=200rb</td>`;
     }
     html += `<td>${ctn}</td>`;
     html += `<td style="font-weight:bold;">Rp ${nominal.toLocaleString('id-ID')}</td>`;
@@ -5933,8 +5947,7 @@ function renderAgustus(results, matchaCtn, kpiCount){
 
   const totals = {}; salesList.forEach(s=>totals[s]=0);
   salesList.forEach(sales=>{
-    const ctn = matchaCtn[sales] || 0;
-    totals[sales] += matchaDealingNominal(ctn);
+    totals[sales] += matchaNominal[sales] || 0;
   });
   AGUSTUS_PROGRAMS.forEach(p=>{
     if(p.branches && !p.branches.includes(currentBranch)) return;
@@ -5971,7 +5984,7 @@ function switchInsentifMonth(month){
   document.getElementById('btn-month-Juli').classList.toggle('branch-active', month === 'Juli');
   document.getElementById('btn-month-Agustus').classList.toggle('branch-active', month === 'Agustus');
   if(rawData.length) compute();
-  else if(month === 'Agustus') renderAgustus({}, {}, {});
+  else if(month === 'Agustus') renderAgustus({}, {}, {}, {});
   else render({ea5:{},nstea:{},matcha:{},swiss:{}}, {}, {});
 }
 
@@ -5991,7 +6004,7 @@ function switchBranch(branch){
     return;
   }
   if(rawData.length) compute();
-  else if(currentInsentifMonth === 'Agustus') renderAgustus({}, {}, {});
+  else if(currentInsentifMonth === 'Agustus') renderAgustus({}, {}, {}, {});
   else render({ea5:{},nstea:{},matcha:{},swiss:{}}, {}, {});
 }
 
