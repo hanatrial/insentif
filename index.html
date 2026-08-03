@@ -4895,6 +4895,7 @@ const AGUSTUS_PROGRAMS = [
   { id:'hiloChocolate', title:'Insentif EA Hilo Chocolate', periode:'Agustus', insentif:'250,000', target:40, branches:['Bulukumba'] },
   { id:'hiloChocomalt', title:'Insentif EA Hilo Chocomalt', periode:'Agustus', insentif:'250,000', target:40, branches:['Makassar','Bulukumba','Gorontalo'] },
   { id:'swissRO', title:'Insentif RO Hilo Swiss', periode:'Juli - Agustus', insentif:'200,000', target:40, branches:['Makassar','Bulukumba','Gorontalo'] },
+  { id:'tsDiabtxMilk', title:'Insentif EA TS Diabtx Milk', periode:'Agustus', insentif:'120,000', target:12, branches:['Gorontalo'] },
 ];
 
 const MATCHA_DEALING = {
@@ -5073,6 +5074,7 @@ function isSwiss(name){ return name.toUpperCase().includes('HILO SWISS CHOCOLATE
 function isSchool(name, group1){ return name.toUpperCase().includes('HILO SCHOOL') && String(group1 || '').trim().toUpperCase() === 'TRADITIONAL'; }
 function isHiloChocolate(name){ return name.toUpperCase().includes('HILO CHOCOLATE PLS'); }
 function isHiloChocomalt(name){ const n = name.toUpperCase(); return n.includes('CHOCO MALT') && n.includes('PLS'); }
+function isTsDiabtxMilk(name){ const n = name.toUpperCase(); return n.includes('DIABTX') && n.includes('MILK'); }
 function toCtnQty(jml, satuan){
   const q = parseFloat(jml) || 0;
   const s = String(satuan || '').toUpperCase();
@@ -5784,6 +5786,8 @@ function computeAgustus(){
   const rangeChocomalt = periodRange('Agustus');
   const rangeSwissRO = periodRange('Juli - Agustus');
   const rangeMatchaDealing = periodRange('Agustus');
+  const rangeTsDiabtxMilk = periodRange('Agustus');
+  const transTsDiabtxMilk = {};
 
   rawData.forEach(r=>{
     const sales = normSales(field(r, 'Nama Sales', 'NamaSales'));
@@ -5798,6 +5802,7 @@ function computeAgustus(){
     if(isHiloChocolate(barang) && inPeriod(tgl, rangeChocolate)){ transChocolate[tokoKey] = sales; }
     if(isHiloChocomalt(barang) && inPeriod(tgl, rangeChocomalt)){ transChocomalt[tokoKey] = sales; }
     if(isSwiss(barang) && inPeriod(tgl, rangeSwissRO)){ transSwissRO[tokoKey] = sales; }
+    if(isTsDiabtxMilk(barang) && inPeriod(tgl, rangeTsDiabtxMilk)){ transTsDiabtxMilk[tokoKey] = sales; }
     if(isMatcha(barang) && inPeriod(tgl, rangeMatchaDealing)){
       const ctn = toCtnQty(field(r, 'Jml'), field(r, 'Satuan'));
       const notaKey = sales + '|' + nota;
@@ -5829,8 +5834,9 @@ function computeAgustus(){
   const chocolateCount = countTransactions(transChocolate);
   const chocomaltCount = countTransactions(transChocomalt);
   const swissROCount = countTransactions(transSwissRO);
+  const tsDiabtxMilkCount = countTransactions(transTsDiabtxMilk);
 
-  const results = { hiloChocolate: chocolateCount, hiloChocomalt: chocomaltCount, swissRO: swissROCount };
+  const results = { hiloChocolate: chocolateCount, hiloChocomalt: chocomaltCount, swissRO: swissROCount, tsDiabtxMilk: tsDiabtxMilkCount };
 
   const kpiCount = computeKpiMT(salesList);
 
