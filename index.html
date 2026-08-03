@@ -6204,6 +6204,13 @@ function computeKompetisi(){
   document.getElementById('status').textContent = `Selesai menghitung dari ${rawData.length} baris data.`;
 }
 
+function poinColorStyle(val, max){
+  const ratio = Math.max(0, Math.min(1, val / max));
+  let r, g;
+  if(ratio < 0.5){ r = 255; g = Math.round(255 * (ratio / 0.5)); }
+  else { r = Math.round(255 * (1 - (ratio - 0.5) / 0.5)); g = 255; }
+  return `background-color: rgb(${r},${g},120); font-weight:bold;`;
+}
 function renderKompetisi(rows){
   const table = document.getElementById('mainTable');
   table.innerHTML = '<caption>Kompetisi</caption>';
@@ -6213,10 +6220,10 @@ function renderKompetisi(rows){
   rows.forEach(r=>{
     const row = table.insertRow(-1);
     row.innerHTML = `<td class="nama">${r.sales}</td>`
-      + `<td>${r.ecHilo.toFixed(2)}</td><td>${r.poinHilo}</td>`
-      + `<td>${r.ecMatcha.toFixed(2)}</td><td>${r.poinMatcha}</td>`
-      + `<td>${r.eaNs}</td><td>${r.pctNs.toFixed(0)}%</td><td>${r.poinNs.toFixed(0)}</td>`
-      + `<td><b>${r.totalPoin.toFixed(1)}</b></td>`
+      + `<td>${r.ecHilo.toFixed(2)}</td><td style="${poinColorStyle(r.poinHilo, 50)}">${r.poinHilo}</td>`
+      + `<td>${r.ecMatcha.toFixed(2)}</td><td style="${poinColorStyle(r.poinMatcha, 50)}">${r.poinMatcha}</td>`
+      + `<td>${r.eaNs}</td><td>${r.pctNs.toFixed(0)}%</td><td style="${poinColorStyle(r.poinNs, 100)}">${r.poinNs.toFixed(0)}</td>`
+      + `<td style="${poinColorStyle(r.totalPoin, 100)}">${r.totalPoin.toFixed(1)}</td>`
       + `<td>${r.insentif ? 'Rp ' + r.insentif.toLocaleString('id-ID') : '-'}</td>`;
   });
 
