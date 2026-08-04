@@ -4837,8 +4837,9 @@ async function login(user){
   document.getElementById('fileInput').classList.toggle('hidden', isDashboard);
   document.querySelector('button[onclick="processFile()"]').classList.toggle('hidden', isDashboard);
   document.querySelector('button[onclick="exportToExcel()"]').classList.toggle('hidden', isDashboard);
-  document.getElementById('monthToggleRow').classList.toggle('hidden', isDashboard);
+  document.getElementById('monthToggleRow').classList.remove('hidden');
   currentInsentifMonth = 'Juli';
+  currentDashboardMonth = 'Juli';
   document.getElementById('btn-month-Juli').classList.add('branch-active');
   document.getElementById('btn-month-Agustus').classList.remove('branch-active');
   if(!isDashboard){ hideAchSlider(); hideSalesFilter(); }
@@ -4890,6 +4891,13 @@ const PROGRAMS = [
 ];
 
 let currentInsentifMonth = 'Juli';
+let currentDashboardMonth = 'Juli';
+function inDashboardMonth(tgl){
+  const d = toDate(tgl);
+  if(!d) return false;
+  const range = periodRange(currentDashboardMonth);
+  return d >= range[0] && d <= range[1];
+}
 
 const AGUSTUS_PROGRAMS = [
   { id:'hiloChocolate', title:'Insentif EA Hilo Chocolate', periode:'Agustus', insentif:'250,000', target:40, branches:['Bulukumba'] },
@@ -5202,7 +5210,8 @@ async function loadDashboardBranch(branch){
   try{
     const cloudRows = await loadDataFromCloud(owner);
     const salesList = BRANCH_SALES[branch];
-    const filterFn = (branch === 'Gorontalo') ? null : (r => salesList.includes(normSales(field(r, 'Nama Sales', 'NamaSales'))));
+    const salesFilterFn = (branch === 'Gorontalo') ? null : (r => salesList.includes(normSales(field(r, 'Nama Sales', 'NamaSales'))));
+    const filterFn = r => inDashboardMonth(field(r, 'Tgl')) && (!salesFilterFn || salesFilterFn(r));
     const stores = buildStoreStats(cloudRows, filterFn);
     dashboardStores = stores;
     renderTokoTargetDashboard(branch, stores);
@@ -5383,7 +5392,7 @@ async function showTokoMTDashboard(){
       const perusahaan = field(r, 'Perusahaan') || '';
       const shipTo = field(r, 'Ship To', 'ShipTo') || '';
       const namaUpper = (perusahaan || shipTo).toUpperCase();
-      return list.some(mtName => namaUpper.includes(mtName));
+      return inDashboardMonth(field(r, 'Tgl')) && list.some(mtName => namaUpper.includes(mtName));
     };
     const bulukumbaStores = fillMissingMTStores(buildStoreStats(irfanRows, r => matchesList(r, TOKO_MT_LIST.Bulukumba)), TOKO_MT_LIST.Bulukumba);
     const gorontaloStores = fillMissingMTStores(buildStoreStats(teddyRows, r => matchesList(r, TOKO_MT_LIST.Gorontalo)), TOKO_MT_LIST.Gorontalo);
@@ -5495,6 +5504,7 @@ async function showBSPDashboard(){
     const rows = await loadDataFromCloud('BSP');
     const stores = {};
     rows.forEach(r=>{
+      if(!inDashboardMonth(r['Tgl'])) return;
       const toko = r['Nama Toko'] || '(tanpa nama)';
       const nominal = parseFloat(r['Netto']) || 0;
       if(!stores[toko]){ stores[toko] = { nama: toko, omzet:0, items:{}, salesNames:new Set() }; }
@@ -6085,9 +6095,18 @@ function renderAgustus(results, matchaCtn, matchaNominal, matchaTierCounts, kpiC
 }
 
 function switchInsentifMonth(month){
-  currentInsentifMonth = month;
   document.getElementById('btn-month-Juli').classList.toggle('branch-active', month === 'Juli');
   document.getElementById('btn-month-Agustus').classList.toggle('branch-active', month === 'Agustus');
+
+  if(currentMode === 'dashboard'){
+    currentDashboardMonth = month;
+    if(currentBranch === 'TokoMT') showTokoMTDashboard();
+    else if(currentBranch === 'BSP') showBSPDashboard();
+    else loadDashboardBranch(currentBranch);
+    return;
+  }
+
+  currentInsentifMonth = month;
   if(currentBranch === 'KOMPETISI'){ computeKompetisi(); return; }
   if(rawData.length) compute();
   else if(month === 'Agustus') renderAgustus({}, {}, {}, {}, {});
