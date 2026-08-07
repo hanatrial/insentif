@@ -210,7 +210,7 @@ async function loadDataFromCloud(branch){
 }
 
 const BRANCH_SALES = {
-  Makassar: ["DIAN FARADILA","JUSTANG","KAMELIA (NFI)","RINALDI","SYAHRUL (NFI)","WAHYUDDIN ABU","YOHANES BUDIYANTO"],
+  Makassar: ["DIAN FARADILA","JUSTANG","KAMELIA (NFI)","RINALDI","SYAHRUL (NFI)","WAHYUDDIN ABU","YOHANES BUDIYANTO","BAHARUDDIN TAMRIN"],
   Bulukumba: ["ERWIN SABAR","HABRIYANTO"],
   Gorontalo: ["RANDI HASAN","MOHAMAD FEBRIYANTO HAMID","MUHAMMAD SUGIARTO","ISMAIL KODJI"]
 };
@@ -5136,6 +5136,23 @@ function normSales(name){
   return SALES_ALIAS[trimmed] || trimmed;
 }
 
+// Alih tanggung jawab area Makassar Agustus 1-5: transaksi KAMELIA (NFI) dihitung sebagai
+// DIAN FARADILA, dan transaksi DIAN FARADILA (asli) dihitung sebagai BAHARUDDIN TAMRIN.
+// Berlaku untuk Insentif Agustus & KOMPETISI saja (bukan Juli/Dashboard).
+function resolveAgustusSales(rawName, tgl){
+  const sales = normSales(rawName);
+  const d = toDate(tgl);
+  if(d){
+    const cutoffStart = new Date(2026, 7, 1);
+    const cutoffEnd = new Date(2026, 7, 5, 23, 59, 59);
+    if(d >= cutoffStart && d <= cutoffEnd){
+      if(sales === 'KAMELIA (NFI)') return 'DIAN FARADILA';
+      if(sales === 'DIAN FARADILA') return 'BAHARUDDIN TAMRIN';
+    }
+  }
+  return sales;
+}
+
 function field(r, ...keys){
   for(const k of keys){
     if(r[k] !== undefined && r[k] !== null) return r[k];
@@ -5800,7 +5817,7 @@ function computeAgustus(){
   const transTsDiabtxMilk = {};
 
   rawData.forEach(r=>{
-    const sales = normSales(field(r, 'Nama Sales', 'NamaSales'));
+    const sales = resolveAgustusSales(field(r, 'Nama Sales', 'NamaSales'), field(r, 'Tgl'));
     if(!salesList.includes(sales)) return;
     const toko = field(r, 'Ship To', 'ShipTo') || field(r, 'Perusahaan');
     const barang = field(r, 'Nama Barang', 'NamaBarang');
@@ -6159,7 +6176,7 @@ function computeKompetisi(){
 
   let latestDataDate = null;
   rawData.forEach(r=>{
-    const sales = normSales(field(r, 'Nama Sales', 'NamaSales'));
+    const sales = resolveAgustusSales(field(r, 'Nama Sales', 'NamaSales'), field(r, 'Tgl'));
     if(!salesList.includes(sales)) return;
     const d = toDate(field(r, 'Tgl'));
     if(d && d >= range[0] && d <= range[1] && (!latestDataDate || d > latestDataDate)) latestDataDate = d;
@@ -6183,7 +6200,7 @@ function computeKompetisi(){
   salesList.forEach(s=>{ hiloNota[s] = new Set(); matchaNota[s] = new Set(); nsToko[s] = {}; });
 
   rawData.forEach(r=>{
-    const sales = normSales(field(r, 'Nama Sales', 'NamaSales'));
+    const sales = resolveAgustusSales(field(r, 'Nama Sales', 'NamaSales'), field(r, 'Tgl'));
     if(!salesList.includes(sales)) return;
     const toko = field(r, 'Ship To', 'ShipTo') || field(r, 'Perusahaan');
     const barang = field(r, 'Nama Barang', 'NamaBarang');
