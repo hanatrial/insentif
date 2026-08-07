@@ -6025,23 +6025,24 @@ function renderKpiMTSection(table, salesList, kpiCount){
 
 function renderAgustus(results, matchaCtn, matchaNominal, matchaTierCounts, kpiCount){
   const salesList = getSalesList();
+  const salesListNoKamelia = salesList.filter(s => s !== 'KAMELIA (NFI)');
   const table = document.getElementById('mainTable');
   table.innerHTML = '<caption>Program Insentif Agustus</caption>';
 
   const theadMatcha = table.insertRow(-1);
   theadMatcha.innerHTML = '<th>Program Insentif</th><th>Periode</th><th>Nama Salesman</th><th>Insentif</th><th>EC 3 CTN</th><th>EC 5 CTN</th><th>EC 10 CTN</th><th>Nominal Insentif</th>';
-  salesList.forEach((sales, idx)=>{
+  salesListNoKamelia.forEach((sales, idx)=>{
     const tiers = matchaTierCounts[sales] || {3:0,5:0,10:0};
     const nominal = matchaNominal[sales] || 0;
     const row = table.insertRow(-1);
     let html = '';
     if(idx === 0){
-      html += `<td class="program" rowspan="${salesList.length}">${MATCHA_DEALING.title}</td>`;
-      html += `<td rowspan="${salesList.length}">${MATCHA_DEALING.periode}</td>`;
+      html += `<td class="program" rowspan="${salesListNoKamelia.length}">${MATCHA_DEALING.title}</td>`;
+      html += `<td rowspan="${salesListNoKamelia.length}">${MATCHA_DEALING.periode}</td>`;
     }
     html += `<td class="nama">${sales}</td>`;
     if(idx === 0){
-      html += `<td rowspan="${salesList.length}">3 CTN = 40.000<br>5 CTN = 80.000<br>10 CTN = 200.000</td>`;
+      html += `<td rowspan="${salesListNoKamelia.length}">3 CTN = 40.000<br>5 CTN = 80.000<br>10 CTN = 200.000</td>`;
     }
     html += `<td>${tiers[3]}</td>`;
     html += `<td>${tiers[5]}</td>`;
@@ -6052,21 +6053,22 @@ function renderAgustus(results, matchaCtn, matchaNominal, matchaTierCounts, kpiC
 
   AGUSTUS_PROGRAMS.forEach(p=>{
     if(p.branches && !p.branches.includes(currentBranch)) return;
+    const list = p.id === 'swissRO' ? salesList : salesListNoKamelia;
     const thead = table.insertRow(-1);
     thead.innerHTML = '<th>Program Insentif</th><th>Periode</th><th>Nama Salesman</th><th>Insentif</th><th>Target</th><th>Ach</th><th>%Ach</th>';
-    salesList.forEach((sales, idx)=>{
+    list.forEach((sales, idx)=>{
       const ach = (results[p.id] && results[p.id][sales]) || 0;
       const p_ = pct(ach, p.target);
       const width = Math.max(0, Math.min(p_, 100));
       const row = table.insertRow(-1);
       let html = '';
       if(idx === 0){
-        html += `<td class="program" rowspan="${salesList.length}">${p.title}</td>`;
-        html += `<td rowspan="${salesList.length}">${p.periode}</td>`;
+        html += `<td class="program" rowspan="${list.length}">${p.title}</td>`;
+        html += `<td rowspan="${list.length}">${p.periode}</td>`;
       }
       html += `<td class="nama">${sales}</td>`;
       if(idx === 0){
-        html += `<td rowspan="${salesList.length}">${p.insentif}</td>`;
+        html += `<td rowspan="${list.length}">${p.insentif}</td>`;
       }
       html += `<td><input class="target-input" type="number" value="${p.target}" onchange="updateTarget('${p.id}', this.value)"></td>`;
       html += `<td>${ach}</td>`;
@@ -6078,13 +6080,14 @@ function renderAgustus(results, matchaCtn, matchaNominal, matchaTierCounts, kpiC
   const kpiBranchCfg = renderKpiMTSection(table, salesList, kpiCount);
 
   const totals = {}; salesList.forEach(s=>totals[s]=0);
-  salesList.forEach(sales=>{
+  salesListNoKamelia.forEach(sales=>{
     totals[sales] += matchaNominal[sales] || 0;
   });
   AGUSTUS_PROGRAMS.forEach(p=>{
     if(p.branches && !p.branches.includes(currentBranch)) return;
     const amount = parseInsentifAmount(p.insentif);
-    salesList.forEach(sales=>{
+    const list = p.id === 'swissRO' ? salesList : salesListNoKamelia;
+    list.forEach(sales=>{
       const ach = (results[p.id] && results[p.id][sales]) || 0;
       if(p.target && ach >= p.target){ totals[sales] += amount; }
     });
@@ -6158,7 +6161,7 @@ function switchBranch(branch){
 }
 
 function computeKompetisi(){
-  const salesList = getSalesList();
+  const salesList = getSalesList().filter(s => s !== 'KAMELIA (NFI)');
   const table = document.getElementById('mainTable');
   if(!rawData.length){
     table.innerHTML = '<caption>Kompetisi</caption>';
