@@ -5203,7 +5203,10 @@ function slimRow(r){
 }
 function isBonusRow(r){
   const b = field(r, 'Bonus');
-  return b === 1 || b === '1' || b === true;
+  if(b === 1 || b === '1' || b === true) return true;
+  const barang = String(field(r, 'Nama Barang', 'NamaBarang') || '').trim().toUpperCase();
+  if(barang.startsWith('B-')) return true;
+  return false;
 }
 
 function processFile(){
