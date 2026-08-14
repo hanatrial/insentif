@@ -6227,8 +6227,10 @@ function computeKompetisi(){
   const rows = salesList.map(sales=>{
     const branch = branchOfSales(sales);
     const threshold = KOMPETISI_VARIAN_THRESHOLD[branch] || 6;
+    // Gorontalo: item Matcha baru masuk, pembagi EC/Day Matcha dikurangi 6 hari
+    const daysElapsedMatcha = branch === 'Gorontalo' ? Math.max(1, daysElapsed - 6) : daysElapsed;
     const ecHilo = hiloNota[sales].size / daysElapsed;
-    const ecMatcha = matchaNota[sales].size / daysElapsed;
+    const ecMatcha = matchaNota[sales].size / daysElapsedMatcha;
     const poinHilo = ecDayPoinHilo(ecHilo);
     const poinMatcha = ecDayPoinMatcha(ecMatcha);
     const eaNs = Object.values(nsToko[sales]).filter(set=>set.size >= threshold).length;
