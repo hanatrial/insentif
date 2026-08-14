@@ -5172,8 +5172,13 @@ function slimRow(r){
     'DPP': field(r, ' DPP ', 'DPP'),
     'Jml': field(r, 'Jml'),
     'Satuan': field(r, 'Satuan'),
-    'Nama Sales': field(r, 'Nama Sales', 'NamaSales')
+    'Nama Sales': field(r, 'Nama Sales', 'NamaSales'),
+    'Bonus': field(r, 'Bonus')
   };
+}
+function isBonusRow(r){
+  const b = field(r, 'Bonus');
+  return b === 1 || b === '1' || b === true;
 }
 
 function processFile(){
@@ -6212,8 +6217,8 @@ function computeKompetisi(){
     if(!sales || !barang) return;
     if(!inPeriod(tgl, range)) return;
 
-    if(isHiloEC(barang)) hiloNota[sales].add(sales + '|' + nota + '|' + tgl);
-    if(isMatcha(barang)) matchaNota[sales].add(sales + '|' + nota + '|' + tgl);
+    if(isHiloEC(barang) && !isBonusRow(r)) hiloNota[sales].add(sales + '|' + nota + '|' + tgl);
+    if(isMatcha(barang) && !isBonusRow(r)) matchaNota[sales].add(sales + '|' + nota + '|' + tgl);
 
     const branch = branchOfSales(sales);
     const g = itemGroupKompetisi(barang, branch);
