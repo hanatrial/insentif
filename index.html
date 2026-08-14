@@ -121,6 +121,16 @@
   <button onclick="processBSPFile()">Proses & Hitung BSP</button>
 </div>
 
+<div id="kompetisiDivisorRow" class="toolbar hidden">
+  <span style="font-size:13px; font-weight:bold;">Pembagi EC/Day:</span>
+  <button id="btn-divisor-auto" class="branch-active" onclick="setKompetisiDivisorMode('auto')">Otomatis</button>
+  <button id="btn-divisor-manual" onclick="setKompetisiDivisorMode('manual')">Manual</button>
+  <span id="kompetisiManualInputs" class="hidden">
+    <label style="font-size:13px;">HiLo: <input type="number" id="inputDivisorHilo" min="1" value="1" style="width:60px;" onchange="updateKompetisiManualDivisor()"></label>
+    <label style="font-size:13px;">Matcha: <input type="number" id="inputDivisorMatcha" min="1" value="1" style="width:60px;" onchange="updateKompetisiManualDivisor()"></label>
+  </span>
+</div>
+
 <table id="mainTable">
 <caption>Program Insentif Juli</caption>
 </table>
@@ -4892,6 +4902,21 @@ const PROGRAMS = [
 
 let currentInsentifMonth = 'Juli';
 let currentDashboardMonth = 'Juli';
+let kompetisiDivisorMode = 'auto';
+let kompetisiManualDivisorHilo = 1;
+let kompetisiManualDivisorMatcha = 1;
+function setKompetisiDivisorMode(mode){
+  kompetisiDivisorMode = mode;
+  document.getElementById('btn-divisor-auto').classList.toggle('branch-active', mode === 'auto');
+  document.getElementById('btn-divisor-manual').classList.toggle('branch-active', mode === 'manual');
+  document.getElementById('kompetisiManualInputs').classList.toggle('hidden', mode !== 'manual');
+  if(currentBranch === 'KOMPETISI') computeKompetisi();
+}
+function updateKompetisiManualDivisor(){
+  kompetisiManualDivisorHilo = Math.max(1, parseFloat(document.getElementById('inputDivisorHilo').value) || 1);
+  kompetisiManualDivisorMatcha = Math.max(1, parseFloat(document.getElementById('inputDivisorMatcha').value) || 1);
+  if(currentBranch === 'KOMPETISI') computeKompetisi();
+}
 function inDashboardMonth(tgl){
   const d = toDate(tgl);
   if(!d) return false;
@@ -6154,12 +6179,15 @@ function switchBranch(branch){
     return;
   }
   const monthRow = document.getElementById('monthToggleRow');
+  const divisorRow = document.getElementById('kompetisiDivisorRow');
   if(branch === 'KOMPETISI'){
     if(monthRow) monthRow.classList.add('hidden');
+    if(divisorRow) divisorRow.classList.remove('hidden');
     computeKompetisi();
     return;
   }
   if(monthRow) monthRow.classList.remove('hidden');
+  if(divisorRow) divisorRow.classList.add('hidden');
   if(rawData.length) compute();
   else if(currentInsentifMonth === 'Agustus') renderAgustus({}, {}, {}, {}, {});
   else render({ea5:{},nstea:{},matcha:{},swiss:{}}, {}, {});
@@ -6203,6 +6231,11 @@ function computeKompetisi(){
     const wd = countKompetisiWorkdays(augStart, latestDataDate || augStart);
     daysElapsed = Math.max(1, wd - 2);
   }
+  let daysElapsedMatchaBase = daysElapsed;
+  if(kompetisiDivisorMode === 'manual'){
+    daysElapsed = Math.max(1, kompetisiManualDivisorHilo);
+    daysElapsedMatchaBase = Math.max(1, kompetisiManualDivisorMatcha);
+  }
 
   const hiloNota = {}, matchaNota = {}, nsToko = {};
   salesList.forEach(s=>{ hiloNota[s] = new Set(); matchaNota[s] = new Set(); nsToko[s] = {}; });
@@ -6232,8 +6265,8 @@ function computeKompetisi(){
   const rows = salesList.map(sales=>{
     const branch = branchOfSales(sales);
     const threshold = KOMPETISI_VARIAN_THRESHOLD[branch] || 6;
-    // Gorontalo: item Matcha baru masuk (mulai jual 9 Agustus), pembagi EC/Day Matcha dikurangi 5 hari
-    const daysElapsedMatcha = branch === 'Gorontalo' ? Math.max(1, daysElapsed - 5) : daysElapsed;
+    // Gorontalo: item Matcha baru masuk (mulai jual 9 Agustus), pembagi EC/Day Matcha dikurangi 5 hari (hanya saat mode Otomatis)
+    const daysElapsedMatcha = (kompetisiDivisorMode !== 'manual' && branch === 'Gorontalo') ? Math.max(1, daysElapsedMatchaBase - 5) : daysElapsedMatchaBase;
     const ecHilo = hiloNota[sales].size / daysElapsed;
     const ecMatcha = matchaNota[sales].size / daysElapsedMatcha;
     const poinHilo = ecDayPoinHilo(ecHilo);
