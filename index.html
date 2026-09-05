@@ -6425,6 +6425,7 @@ function switchInsentifMonth(month){
     currentDashboardMonth = month;
     if(currentBranch === 'TokoMT') showTokoMTDashboard();
     else if(currentBranch === 'BSP') showBSPDashboard();
+    else if(currentBranch === 'TotalTarget') showTotalTargetDashboard();
     else loadDashboardBranch(currentBranch);
     return;
   }
