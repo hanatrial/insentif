@@ -108,6 +108,7 @@
   <button id="btn-KOMPETISI" class="hidden" onclick="switchBranch('KOMPETISI')">KOMPETISI</button>
   <button id="btn-Gorontalo" onclick="switchBranch('Gorontalo')">Gorontalo</button>
   <button id="btn-tokoMT" class="hidden" onclick="showTokoMTDashboard()" style="background:#888;">Toko MT</button>
+  <button id="btn-totalTarget" class="hidden" onclick="showTotalTargetDashboard()" style="background:#888;">Total Target</button>
 </div>
 
 <div id="monthToggleRow" class="toolbar hidden">
@@ -237,6 +238,17 @@ const BRANCH_CLOUD_OWNER = { Makassar:'Irfan', Bulukumba:'Irfan', Gorontalo:'Ted
 const TOKO_MT_LIST = {
   Gorontalo: ["KARSA UTAMA LESTARI","MURAA 2 / JL. KALIMANTAN","MURAA SUPERMARKET/JL AHMAD A WAHAB","MAKRO / JLN. KARTINI","PT.GELAEL INDOTIM","HYPERMART GORONTALO","DK /JL.RAYA LIMBOTO"],
   Bulukumba: ["(PR) TERNATE/ PSR SINJAI","MISI PASAR RAYA/JNP","(PR) PT CITRA SULAWESI SEJAHTERA"]
+};
+
+// GT = nama barang mengandung "PLS", MT = selain itu (catch-all)
+function isGT(namaBarang){
+  return String(namaBarang || '').toUpperCase().includes('PLS');
+}
+const TOTAL_TARGET = {
+  'Makassar': { GT: 600000000 },
+  'Bulukumba': { GT: 125000000, MT: 60000000 },
+  'Gorontalo': { GT: 300000000, MT: 425000000 },
+  'BSP Makassar': { GT: 1050000000 }
 };
 
 const STORE_SALESMAN_MAP = [
@@ -4858,6 +4870,8 @@ async function login(user){
   document.getElementById('btn-tokoMT').classList.remove('branch-active');
   document.getElementById('btn-BSP').classList.toggle('hidden', !isDashboard);
   document.getElementById('btn-BSP').classList.remove('branch-active');
+  document.getElementById('btn-totalTarget').classList.toggle('hidden', !isDashboard);
+  document.getElementById('btn-totalTarget').classList.remove('branch-active');
   document.getElementById('bspUploadRow').classList.add('hidden');
 
   // tampilkan hanya tombol toggle cabang yang diizinkan untuk user ini
@@ -5452,6 +5466,7 @@ async function showTokoMTDashboard(){
     if(btn) btn.classList.remove('branch-active');
   });
   document.getElementById('btn-BSP').classList.remove('branch-active');
+  document.getElementById('btn-totalTarget').classList.remove('branch-active');
   document.getElementById('bspUploadRow').classList.add('hidden');
   document.getElementById('btn-tokoMT').classList.add('branch-active');
   setStatus('⏳ Memuat Dashboard Toko MT...', 'pending');
@@ -5569,6 +5584,7 @@ async function showBSPDashboard(){
     if(btn) btn.classList.remove('branch-active');
   });
   document.getElementById('btn-tokoMT').classList.remove('branch-active');
+  document.getElementById('btn-totalTarget').classList.remove('branch-active');
   document.getElementById('btn-BSP').classList.add('branch-active');
   document.getElementById('bspUploadRow').classList.remove('hidden');
   setStatus('⏳ Memuat data BSP dari cloud...', 'pending');
@@ -5601,6 +5617,91 @@ async function showBSPDashboard(){
     renderBSPDashboard({});
     setStatus(`❌ GAGAL memuat data BSP: ${err.message}`, 'error');
   }
+}
+
+async function showTotalTargetDashboard(){
+  currentBranch = 'TotalTarget';
+  ['Makassar','Bulukumba','Gorontalo'].forEach(b=>{
+    const btn = document.getElementById('btn-' + b);
+    if(btn) btn.classList.remove('branch-active');
+  });
+  document.getElementById('btn-tokoMT').classList.remove('branch-active');
+  document.getElementById('btn-BSP').classList.remove('branch-active');
+  document.getElementById('bspUploadRow').classList.add('hidden');
+  document.getElementById('btn-totalTarget').classList.add('branch-active');
+  setStatus('⏳ Memuat Dashboard Total Target...', 'pending');
+  try{
+    const [irfanRows, teddyRows, bspRows] = await Promise.all([
+      loadDataFromCloud('Irfan'),
+      loadDataFromCloud('Teddy'),
+      loadDataFromCloud('BSP')
+    ]);
+
+    function sumGTMT(rows, filterFn, barangKey, tglKey, nominalKey){
+      let gt = 0, mt = 0;
+      rows.forEach(r=>{
+        if(filterFn && !filterFn(r)) return;
+        if(!inDashboardMonth(r[tglKey])) return;
+        const barang = r[barangKey];
+        const nominal = parseFloat(r[nominalKey]) || 0;
+        if(isGT(barang)) gt += nominal; else mt += nominal;
+      });
+      return { gt, mt };
+    }
+
+    const makassarFilter = r => BRANCH_SALES.Makassar.includes(normSales(field(r, 'Nama Sales', 'NamaSales')));
+    const bulukumbaFilter = r => BRANCH_SALES.Bulukumba.includes(normSales(field(r, 'Nama Sales', 'NamaSales')));
+
+    const results = {
+      'Makassar': sumGTMT(irfanRows, makassarFilter, 'Nama Barang', 'Tgl', 'DPP'),
+      'Bulukumba': sumGTMT(irfanRows, bulukumbaFilter, 'Nama Barang', 'Tgl', 'DPP'),
+      'Gorontalo': sumGTMT(teddyRows, null, 'Nama Barang', 'Tgl', 'DPP'),
+      'BSP Makassar': sumGTMT(bspRows, null, 'Nama Barang', 'Tgl', 'Netto')
+    };
+
+    renderTotalTargetDashboard(results);
+    setStatus('✅ Dashboard Total Target dimuat.', 'ok');
+  }catch(err){
+    renderTotalTargetDashboard(null);
+    setStatus(`❌ GAGAL memuat Dashboard Total Target: ${err.message}`, 'error');
+  }
+}
+
+function renderTotalTargetDashboard(results){
+  const table = document.getElementById('dashboardTable');
+  table.innerHTML = '<caption>Dashboard Total Target (GT vs MT)</caption>';
+  const thead = table.insertRow(-1);
+  thead.innerHTML = '<th>Cabang</th><th>GT Target</th><th>GT Omzet</th><th>%Ach GT</th><th>MT Target</th><th>MT Omzet</th><th>%Ach MT</th>';
+  hideAchSlider();
+  hideSalesFilter();
+  if(!results){
+    const row = table.insertRow(-1);
+    row.innerHTML = '<td colspan="7">(gagal memuat data)</td>';
+    return;
+  }
+  Object.keys(TOTAL_TARGET).forEach(cabang=>{
+    const tgt = TOTAL_TARGET[cabang];
+    const res = results[cabang] || { gt:0, mt:0 };
+    const row = table.insertRow(-1);
+    let html = `<td class="nama">${cabang}</td>`;
+    if(tgt.GT !== undefined){
+      const p_ = pct(res.gt, tgt.GT);
+      const width = Math.max(0, Math.min(p_, 100));
+      html += `<td style="white-space:nowrap;">${fmtRp(tgt.GT)}</td><td style="white-space:nowrap;">${fmtRp(res.gt)}</td>`;
+      html += `<td class="bar-cell"><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:${width}%"></div></div><span class="bar-label">${p_}%</span></div></td>`;
+    } else {
+      html += '<td>-</td><td>-</td><td>-</td>';
+    }
+    if(tgt.MT !== undefined){
+      const p_ = pct(res.mt, tgt.MT);
+      const width = Math.max(0, Math.min(p_, 100));
+      html += `<td style="white-space:nowrap;">${fmtRp(tgt.MT)}</td><td style="white-space:nowrap;">${fmtRp(res.mt)}</td>`;
+      html += `<td class="bar-cell"><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:${width}%"></div></div><span class="bar-label">${p_}%</span></div></td>`;
+    } else {
+      html += '<td>-</td><td>-</td><td>-</td>';
+    }
+    row.innerHTML = html;
+  });
 }
 
 const NAME_STOPWORDS = new Set(['TK','TOKO','MM','PT','CV','MART','UD','TP','GROSIR','SWALAYAN','KIOS','STAND']);
@@ -6346,6 +6447,8 @@ function switchBranch(branch){
   if(btnMT) btnMT.classList.remove('branch-active');
   const btnBSP = document.getElementById('btn-BSP');
   if(btnBSP) btnBSP.classList.remove('branch-active');
+  const btnTotalTarget = document.getElementById('btn-totalTarget');
+  if(btnTotalTarget) btnTotalTarget.classList.remove('branch-active');
   document.getElementById('bspUploadRow').classList.add('hidden');
   if(currentMode === 'dashboard'){
     loadDashboardBranch(branch);
