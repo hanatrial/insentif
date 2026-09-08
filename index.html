@@ -5666,26 +5666,12 @@ async function showTotalTargetDashboard(){
       return { gt, mt: 0 };
     }
 
-    // Pakai kolom AREA (MAKASSAR/MAKASSAR GT/MAKASSAR MT vs BULUKUMBA) kalau ada di data --
-    // ini menangkap semua akun (termasuk Siti Hapsah/Syaiful Haris/Umum yang bukan di roster
-    // insentif tapi tetap kontribusi omzet cabang). Kalau file upload tidak punya kolom AREA,
-    // fallback ke roster nama sales seperti sebelumnya.
-    function areaMatchesBranch(area, branch){
-      const a = String(area || '').trim().toUpperCase();
-      if(branch === 'Makassar') return a === 'MAKASSAR' || a === 'MAKASSAR GT' || a === 'MAKASSAR MT';
-      if(branch === 'Bulukumba') return a === 'BULUKUMBA';
-      return false;
-    }
-    const makassarFilter = r => {
-      const area = r['AREA'];
-      if(area) return areaMatchesBranch(area, 'Makassar');
-      return BRANCH_SALES.Makassar.includes(normSales(field(r, 'Nama Sales', 'NamaSales')));
-    };
-    const bulukumbaFilter = r => {
-      const area = r['AREA'];
-      if(area) return areaMatchesBranch(area, 'Bulukumba');
-      return BRANCH_SALES.Bulukumba.includes(normSales(field(r, 'Nama Sales', 'NamaSales')));
-    };
+    // Data Irfan cuma berisi Makassar + Bulukumba. Bulukumba hanya 2 sales resmi
+    // (Erwin Sabar, Habriyanto) -- selain itu semua dihitung Makassar (termasuk akun
+    // non-roster seperti Siti Hapsah/Syaiful Haris/Umum yang tetap kontribusi omzet cabang).
+    const isBulukumbaSales = r => BRANCH_SALES.Bulukumba.includes(normSales(field(r, 'Nama Sales', 'NamaSales')));
+    const bulukumbaFilter = r => isBulukumbaSales(r);
+    const makassarFilter = r => !isBulukumbaSales(r);
 
     const results = {
       'Makassar': sumGTMT_BCP(irfanRows, makassarFilter, 'Tgl', 'DPP'),
