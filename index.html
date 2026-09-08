@@ -5255,13 +5255,18 @@ function processFile(){
     const ws = wb.Sheets[wb.SheetNames[0]];
     rawData = XLSX.utils.sheet_to_json(ws, {defval:null}).map(slimRow);
     setStatus(`⏳ Terbaca ${rawData.length} baris. Mengunggah ke cloud (mengganti data lama)...`, 'pending');
+    let saveError = null;
     try{
       await saveDataToCloud(currentUser, rawData);
-      setStatus(`✅ TERSIMPAN DI CLOUD — data ${currentUser} sudah diganti (${rawData.length} baris).`, 'ok');
     }catch(err){
-      setStatus(`❌ GAGAL SIMPAN KE CLOUD: ${err.message}. Data cuma ada di layar ini, akan hilang saat refresh!`, 'error');
+      saveError = err;
     }
     compute();
+    if(saveError){
+      setStatus(`❌ GAGAL SIMPAN KE CLOUD: ${saveError.message}. Data cuma ada di layar ini, akan hilang saat refresh!`, 'error');
+    } else {
+      setStatus(`✅ TERSIMPAN DI CLOUD — data ${currentUser} sudah diganti (${rawData.length} baris).`, 'ok');
+    }
   };
   reader.readAsArrayBuffer(f);
 }
