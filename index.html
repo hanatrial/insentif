@@ -5642,26 +5642,37 @@ async function showTotalTargetDashboard(){
       loadDataFromCloud('BSP')
     ]);
 
-    function sumGTMT(rows, filterFn, barangKey, tglKey, nominalKey){
+    // BCP (Irfan/Teddy): GT = Group1Barang TRADITIONAL (semua item), MT = Group1Barang MODERN (semua item)
+    function sumGTMT_BCP(rows, filterFn, tglKey, nominalKey){
       let gt = 0, mt = 0;
       rows.forEach(r=>{
         if(filterFn && !filterFn(r)) return;
         if(!inDashboardMonth(r[tglKey])) return;
-        const barang = r[barangKey];
+        const group1 = String(r['Group1Barang'] || '').trim().toUpperCase();
         const nominal = parseFloat(r[nominalKey]) || 0;
-        if(isGT(barang)) gt += nominal; else mt += nominal;
+        if(group1 === 'TRADITIONAL') gt += nominal;
+        else if(group1 === 'MODERN') mt += nominal;
       });
       return { gt, mt };
+    }
+    // BSP: sudah difilter Hilo Tradisional + NS Traditional saat upload, jadi semua dihitung GT
+    function sumGT_BSP(rows, tglKey, nominalKey){
+      let gt = 0;
+      rows.forEach(r=>{
+        if(!inDashboardMonth(r[tglKey])) return;
+        gt += parseFloat(r[nominalKey]) || 0;
+      });
+      return { gt, mt: 0 };
     }
 
     const makassarFilter = r => BRANCH_SALES.Makassar.includes(normSales(field(r, 'Nama Sales', 'NamaSales')));
     const bulukumbaFilter = r => BRANCH_SALES.Bulukumba.includes(normSales(field(r, 'Nama Sales', 'NamaSales')));
 
     const results = {
-      'Makassar': sumGTMT(irfanRows, makassarFilter, 'Nama Barang', 'Tgl', 'DPP'),
-      'Bulukumba': sumGTMT(irfanRows, bulukumbaFilter, 'Nama Barang', 'Tgl', 'DPP'),
-      'Gorontalo': sumGTMT(teddyRows, null, 'Nama Barang', 'Tgl', 'DPP'),
-      'BSP Makassar': sumGTMT(bspRows, null, 'Nama Barang', 'Tgl', 'Netto')
+      'Makassar': sumGTMT_BCP(irfanRows, makassarFilter, 'Tgl', 'DPP'),
+      'Bulukumba': sumGTMT_BCP(irfanRows, bulukumbaFilter, 'Tgl', 'DPP'),
+      'Gorontalo': sumGTMT_BCP(teddyRows, null, 'Tgl', 'DPP'),
+      'BSP Makassar': sumGT_BSP(bspRows, 'Tgl', 'Netto')
     };
 
     renderTotalTargetDashboard(results);
