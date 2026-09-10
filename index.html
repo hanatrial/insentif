@@ -5253,11 +5253,21 @@ function processFile(){
   const f = document.getElementById('fileInput').files[0];
   if(!f){ document.getElementById('status').textContent = 'Pilih file dulu.'; return; }
   const reader = new FileReader();
+  setStatus('⏳ Membaca file...', 'pending');
+  reader.onerror = function(){
+    setStatus(`❌ GAGAL MEMBACA FILE: ${reader.error ? reader.error.message : 'tidak diketahui'}`, 'error');
+  };
   reader.onload = async function(e){
-    const data = new Uint8Array(e.target.result);
-    const wb = XLSX.read(data, {type:'array', cellDates:true});
-    const ws = wb.Sheets[wb.SheetNames[0]];
-    rawData = XLSX.utils.sheet_to_json(ws, {defval:null}).map(slimRow);
+    await new Promise(resolve => setTimeout(resolve, 0)); // biar status "Membaca file..." kelihatan sebelum parsing berat
+    try{
+      const data = new Uint8Array(e.target.result);
+      const wb = XLSX.read(data, {type:'array', cellDates:true});
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      rawData = XLSX.utils.sheet_to_json(ws, {defval:null}).map(slimRow);
+    }catch(parseErr){
+      setStatus(`❌ GAGAL MEMBACA/PARSING FILE: ${parseErr.message}`, 'error');
+      return;
+    }
     setStatus(`⏳ Terbaca ${rawData.length} baris. Mengunggah ke cloud (mengganti data lama)...`, 'pending');
     let saveError = null;
     try{
