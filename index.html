@@ -4951,6 +4951,7 @@ const AGUSTUS_PROGRAMS = [
 const SEPTEMBER_PROGRAMS = [
   { id:'swissRO', title:'Insentif RO Hilo Swiss', periode:'Juli - September', insentif:'200,000', target:40, branches:['Makassar','Bulukumba','Gorontalo'] },
   { id:'eaHilo75', title:'Insentif EA Hilo', periode:'September', insentif:'500,000', target:75, branches:['Makassar','Bulukumba','Gorontalo'] },
+  { id:'tsDiabtxMilkSep', title:'Insentif EA TS Diabtx Milk', periode:'September', insentif:'120,000', target:12, branches:['Gorontalo','Bulukumba'] },
 ];
 
 const NS7_VARIAN = {
@@ -6066,11 +6067,13 @@ function computeSeptember(){
   const salesList = getSalesList();
   const transSwissRO = {};
   const transEaHilo = {};
+  const transTsDiabtxMilkSep = {};
   const nsVarianToko = {};
 
   const rangeSwissRO = periodRange('Juli - September');
   const rangeNsVarian = periodRange('September');
   const rangeEaHilo = periodRange('September');
+  const rangeTsDiabtxMilkSep = periodRange('September');
 
   rawData.forEach(r=>{
     const sales = resolveAgustusSales(field(r, 'Nama Sales', 'NamaSales'), field(r, 'Tgl'));
@@ -6085,6 +6088,7 @@ function computeSeptember(){
 
     if(isSwiss(barang) && inPeriod(tgl, rangeSwissRO)){ transSwissRO[tokoKey] = sales; }
     if(isHiloEC(barang) && !isBonusRow(r) && inPeriod(tgl, rangeEaHilo)){ transEaHilo[tokoKey] = sales; }
+    if(isTsDiabtxMilk(barang) && inPeriod(tgl, rangeTsDiabtxMilkSep)){ transTsDiabtxMilkSep[tokoKey] = sales; }
 
     const branch = branchOfSales(sales);
     if(NS7_VARIAN.branches.includes(branch) && merek === 'NUTRISARI' && String(group1 || '').trim().toUpperCase() === 'TRADITIONAL' && inPeriod(tgl, rangeNsVarian)){
@@ -6102,7 +6106,8 @@ function computeSeptember(){
   }
   const swissROCount = countTransactions(transSwissRO);
   const eaHiloCount = countTransactions(transEaHilo);
-  const results = { swissRO: swissROCount, eaHilo75: eaHiloCount };
+  const tsDiabtxMilkSepCount = countTransactions(transTsDiabtxMilkSep);
+  const results = { swissRO: swissROCount, eaHilo75: eaHiloCount, tsDiabtxMilkSep: tsDiabtxMilkSepCount };
 
   const ns7Count = {}; salesList.forEach(s=>ns7Count[s]=0);
   salesList.forEach(sales=>{
