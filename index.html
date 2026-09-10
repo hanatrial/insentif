@@ -181,27 +181,47 @@ const db = firebase.firestore();
 const CLOUD_CHUNK_SIZE = 1000;
 
 async function saveDataToCloud(branch, data){
+  // Tulis chunk baru DULU (ke ID sementara), baru hapus chunk lama setelah semua
+  // berhasil tertulis. Kalau proses gagal di tengah jalan (koneksi putus/timeout),
+  // data lama tetap aman dan tidak jadi "hilang".
   const colRef = db.collection('insentifData').doc(branch).collection('chunks');
+  const tmpPrefix = 'new_';
 
-  const existing = await colRef.get();
+  const chunks = [];
+  for(let i = 0; i < data.length; i += CLOUD_CHUNK_SIZE){ chunks.push(data.slice(i, i + CLOUD_CHUNK_SIZE)); }
+
+  // 1) tulis semua chunk baru dengan prefix sementara
   let batch = db.batch();
   let opCount = 0;
+  for(let idx = 0; idx < chunks.length; idx++){
+    const ref = colRef.doc(tmpPrefix + String(idx).padStart(5, '0'));
+    batch.set(ref, { rows: chunks[idx], updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
+    opCount++;
+    if(opCount >= 450){ await batch.commit(); batch = db.batch(); opCount = 0; }
+  }
+  if(opCount > 0){ await batch.commit(); }
+
+  // 2) hapus SEMUA chunk lama (baik nama lama tanpa prefix, maupun sisa "new_" dari upload gagal sebelumnya)
+  const existing = await colRef.get();
+  batch = db.batch();
+  opCount = 0;
   for(const doc of existing.docs){
+    if(doc.id.startsWith(tmpPrefix)) continue;
     batch.delete(doc.ref);
     opCount++;
     if(opCount >= 450){ await batch.commit(); batch = db.batch(); opCount = 0; }
   }
   if(opCount > 0){ await batch.commit(); }
 
-  const chunks = [];
-  for(let i = 0; i < data.length; i += CLOUD_CHUNK_SIZE){ chunks.push(data.slice(i, i + CLOUD_CHUNK_SIZE)); }
-
+  // 3) rename chunk baru ke nama final (copy ke ID final, hapus yang sementara)
   batch = db.batch();
   opCount = 0;
   for(let idx = 0; idx < chunks.length; idx++){
-    const ref = colRef.doc(String(idx).padStart(5, '0'));
-    batch.set(ref, { rows: chunks[idx], updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
-    opCount++;
+    const tmpRef = colRef.doc(tmpPrefix + String(idx).padStart(5, '0'));
+    const finalRef = colRef.doc(String(idx).padStart(5, '0'));
+    batch.set(finalRef, { rows: chunks[idx], updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
+    batch.delete(tmpRef);
+    opCount += 2;
     if(opCount >= 450){ await batch.commit(); batch = db.batch(); opCount = 0; }
   }
   if(opCount > 0){ await batch.commit(); }
