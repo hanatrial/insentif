@@ -5193,6 +5193,9 @@ function normSales(name){
 // Berlaku untuk Insentif Agustus & KOMPETISI saja (bukan Juli/Dashboard).
 function resolveAgustusSales(rawName, tgl){
   const sales = normSales(rawName);
+  // Thoriq Dg Ruppa sales baru; sementara pencapaiannya digabung ke Baharuddin Tamrin
+  // (untuk Insentif Agustus/September & KOMPETISI, bukan Dashboard Total Target)
+  if(sales === 'THORIQ DG RUPPA') return 'BAHARUDDIN TAMRIN';
   const d = toDate(tgl);
   if(d){
     const cutoffStart = new Date(2026, 7, 1);
