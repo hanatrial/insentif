@@ -5345,7 +5345,7 @@ function renderTokoTargetDashboard(branch, stores){
   targets.forEach(t=>{
     const match = findMatchingStore(stores, t.nama.toUpperCase());
     const omzet = match ? (match.store.omzetTradisional + match.store.omzetNonTradisional) : 0;
-    const officialSales = useBCPMap ? findOfficialBCPSalesman(t.nama) : null;
+    const officialSales = useBCPMap ? findOfficialBCPSalesman(t.nama) : (branch === 'Gorontalo' ? findOfficialGorontaloSalesman(t.nama) : null);
     const salesNames = officialSales || (match ? Array.from(match.store.salesNames).join(', ') : '');
     const p_ = pct(omzet, t.target);
     const width = Math.max(0, Math.min(p_, 100));
@@ -5357,6 +5357,56 @@ function renderTokoTargetDashboard(branch, stores){
   });
   showAchSlider();
   showSalesFilter();
+}
+
+const GORONTALO_STORE_SALESMAN_MAP = [
+  { nama: 'KARSA UTAMA LESTARI', sales: 'MOHAMAD FEBRIYANTO HAMID' },
+  { nama: 'PT. INTI CAKRAWALA CITRA', sales: 'OCTAVIANUS TEDDY KAMBEY' },
+  { nama: 'PT.SUMBER ALFARIA TRIJAYA,TBK DEPO GORONTALO(DGTO)', sales: 'OCTAVIANUS TEDDY KAMBEY' },
+  { nama: 'MAKRO / JLN. KARTINI NO.26', sales: 'MOHAMAD FEBRIYANTO HAMID' },
+  { nama: 'HYPERMART GORONTALO', sales: 'OCTAVIANUS TEDDY KAMBEY' },
+  { nama: 'TK. PLASTIK GAJAH / JL HOS. COKROAMINOTO NO.100X N', sales: 'MOHAMAD FEBRIYANTO HAMID' },
+  { nama: 'MURAA SUPERMARKET/JL AHMAD A WAHAB NONO7 NO 96181', sales: 'MOHAMAD FEBRIYANTO HAMID' },
+  { nama: 'MURAA 2 / JL. KALIMANTAN/JL. KALIMANTAN NO.NO.94', sales: 'MOHAMAD FEBRIYANTO HAMID' },
+  { nama: 'PT.GELAEL INDOTIM/JL.KH.AGUS SALIM NO.51 LIMBA U D', sales: 'MOHAMAD FEBRIYANTO HAMID' },
+  { nama: 'PICE / PSR CENTRAL', sales: 'RANDI HASAN' },
+  { nama: 'BISMILLAH TOKO/JL.MARISA 6', sales: 'ISMAIL KODJI' },
+  { nama: 'TK DK KWANDANG/JL. TRANS SULAWESI', sales: 'RANDI HASAN' },
+  { nama: 'YUYUN KIOS/JL. SUWAWA', sales: 'MOHAMAD FEBRIYANTO HAMID' },
+  { nama: 'DK /JL.RAYA LIMBOTO', sales: 'MOHAMAD FEBRIYANTO HAMID' },
+  { nama: 'CV. AGUNG BERKAT JAYA / JL. PIERE TENDEAN', sales: 'MOHAMAD FEBRIYANTO HAMID' },
+  { nama: 'ROMY/JL. PALU SAMPING KIOS', sales: 'RANDI HASAN' },
+  { nama: 'INTI MART/JALAN TIPANIPI KOMPLEKS JEMBATAN RUMAH S', sales: 'MOHAMAD FEBRIYANTO HAMID' },
+  { nama: 'NURMART JAYA', sales: 'MOHAMAD SUGIARTO PONTOH' },
+  { nama: 'TK.AMANG/JLN JEMBATAN MERAH NO 665 RT 01 RW 01', sales: 'MOHAMAD SUGIARTO PONTOH' },
+  { nama: 'SUKSES GEMILANG MART', sales: 'ISMAIL KODJI' },
+  { nama: 'CV.SABASS MANDIRI/JL. TRANS SULAWESI', sales: 'ISMAIL KODJI' },
+  { nama: 'CV.ORNAMEN MARISA', sales: 'ISMAIL KODJI' },
+  { nama: 'HERCE / JL TRANS SULAWESI DKT PERTIGAAN DS MOUTONG', sales: 'ISMAIL KODJI' },
+  { nama: 'CV. HOKKY MAKMUR SEJAHTERA', sales: 'MOHAMAD FEBRIYANTO HAMID' },
+  { nama: 'ILOPONU / PSR. CENTRAL', sales: 'RANDI HASAN' },
+  { nama: 'DAPURKU/JLN RAYA MARISA, DEPAN MESJID AL-MUNARWAH', sales: 'ISMAIL KODJI' },
+  { nama: 'HYMART EXPRESS/JL SULTAN BOTUTIHE KEL WOODU RT.002', sales: 'RANDI HASAN' },
+  { nama: 'TOKO ALVINA/JL. SAM RATULANGI', sales: 'RANDI HASAN' },
+  { nama: 'TOKO ANEKA JAYA', sales: 'ISMAIL KODJI' },
+  { nama: 'APOTEK HARAPAN KITA', sales: 'MOHAMAD FEBRIYANTO HAMID' },
+  { nama: 'IRA STATIONERY/JL.IMAM BONJOL', sales: 'RANDI HASAN' },
+  { nama: 'TOKO YUSUF LIMBOTO', sales: 'MOHAMAD SUGIARTO PONTOH' },
+  { nama: 'TOKO SEKAWAN/JL. GORONTALO 1 NO 332', sales: 'RANDI HASAN' },
+  { nama: 'WATI / PSR. CENTRAL', sales: 'RANDI HASAN' },
+  { nama: 'RAGAM JAYA / JL. BENGAWAN SOLO', sales: 'RANDI HASAN' },
+  { nama: 'TOKO RIZKY / LIMBA U I NO. 03 RT. 02 RW. 01', sales: 'RANDI HASAN' },
+  { nama: 'SH PANDI/JLN. BANDENG', sales: 'RANDI HASAN' },
+  { nama: 'LESTARI/JL. DURIAN', sales: 'RANDI HASAN' },
+  { nama: 'INAYAH/JL. PROF DRS SAHMINA NU', sales: 'MOHAMAD FEBRIYANTO HAMID' },
+  { nama: 'TOKO RAMA/LIMEHE TIMUR NO 03 RT 01 RW 02', sales: 'MOHAMAD SUGIARTO PONTOH' },
+  { nama: 'TK ROSNA/JL AISYA TANGAHU', sales: 'MOHAMAD SUGIARTO PONTOH' }
+];
+function findOfficialGorontaloSalesman(targetNama){
+  for(const entry of GORONTALO_STORE_SALESMAN_MAP){
+    if(wordsSubsetMatch(entry.nama, targetNama)) return entry.sales;
+  }
+  return null;
 }
 
 function findOfficialBCPSalesman(targetNama){
