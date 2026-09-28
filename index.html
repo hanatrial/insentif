@@ -5452,7 +5452,7 @@ function applyDashboardFilters(){
   const rows = document.querySelectorAll('#dashboardTable tr[data-pct]');
   rows.forEach(row=>{
     const p = parseFloat(row.dataset.pct);
-    const achOk = p < currentAchThreshold;
+    const achOk = currentAchThreshold >= 100 ? true : p < currentAchThreshold;
     const salesText = (row.dataset.sales || '').toUpperCase();
     const salesOk = !currentSalesQuery || salesText.includes(currentSalesQuery);
     row.style.display = (achOk && salesOk) ? '' : 'none';
