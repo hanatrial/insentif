@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <title>Program Insentif</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <style>
@@ -97,6 +98,7 @@
   <input type="file" id="fileInput" accept=".xlsx,.xls,.csv">
   <button onclick="processFile()">Proses & Hitung</button>
   <button onclick="exportToExcel()" style="background:#1155cc;">Export Excel</button>
+  <button id="btn-exportImage" onclick="exportTableImages()" style="background:#7b3fe4;">Export Gambar (2 bagian)</button>
   <span id="status">Belum ada file. Upload data mentah transaksi (kolom: Tgl, KodeNota, NamaBarang, Merek, NamaSales).</span>
 </div>
 
@@ -4824,6 +4826,7 @@ function logout(){
   document.getElementById('fileInput').classList.remove('hidden');
   document.querySelector('button[onclick="processFile()"]').classList.remove('hidden');
   document.querySelector('button[onclick="exportToExcel()"]').classList.remove('hidden');
+  document.getElementById('btn-exportImage').classList.remove('hidden');
   document.getElementById('btn-BSP').classList.add('hidden');
   document.getElementById('bspUploadRow').classList.add('hidden');
   document.getElementById('monthToggleRow').classList.add('hidden');
@@ -4847,6 +4850,7 @@ async function login(user){
   document.getElementById('fileInput').classList.toggle('hidden', isDashboard);
   document.querySelector('button[onclick="processFile()"]').classList.toggle('hidden', isDashboard);
   document.querySelector('button[onclick="exportToExcel()"]').classList.toggle('hidden', isDashboard);
+  document.getElementById('btn-exportImage').classList.toggle('hidden', isDashboard);
   document.getElementById('monthToggleRow').classList.remove('hidden');
   currentInsentifMonth = 'Juli';
   currentDashboardMonth = 'Juli';
@@ -4955,9 +4959,9 @@ const OKTOBER_KPI = [
   { id:'okNs7', title:'RO NS 7 Varian', periode:OKTOBER_PERIODE, target:50 }
 ];
 const OKTOBER_VARIAN = [
-  { id:'okSchoolCok', title:'Insentif Hilo School PLS Coklat', periode:OKTOBER_PERIODE, insentif:'200,000', target:20 },
-  { id:'okSchoolVan', title:'Insentif Hilo School PLS Vanilla', periode:OKTOBER_PERIODE, insentif:'200,000', target:20 },
-  { id:'okTeen', title:'Insentif Hilo Teen (3in1) PLS', periode:OKTOBER_PERIODE, insentif:'200,000', target:20 }
+  { id:'okSchoolCok', title:'Insentif Hilo School PLS Coklat', periode:OKTOBER_PERIODE, insentif:'200,000', target:20, branches:['Makassar','Bulukumba','Gorontalo'] },
+  { id:'okSchoolVan', title:'Insentif Hilo School PLS Vanilla', periode:OKTOBER_PERIODE, insentif:'200,000', target:20, branches:['Bulukumba','Gorontalo'] },
+  { id:'okTeen', title:'Insentif Hilo Teen (3in1) PLS', periode:OKTOBER_PERIODE, insentif:'200,000', target:20, branches:['Bulukumba'] }
 ];
 const OKTOBER_RAPORT_TIERS = [0, 200000, 400000, 600000, 1000000, 2500000];
 const OKTOBER_RAPORT_BONUS_ALL = 3000000;
@@ -6650,12 +6654,13 @@ function renderOktober(results){
     row.innerHTML = html;
   });
 
-  OKTOBER_VARIAN.forEach(p=>renderBlock(p, 'Rp ' + p.insentif + '/varian'));
+  const varianAktif = OKTOBER_VARIAN.filter(p=>p.branches.includes(currentBranch));
+  varianAktif.forEach(p=>renderBlock(p, 'Rp ' + p.insentif + '/varian'));
 
   const totals = {};
   salesList.forEach(s=>{
     totals[s] = raport[s].nominal + raport[s].bonusOkt;
-    OKTOBER_VARIAN.forEach(p=>{
+    varianAktif.forEach(p=>{
       if(p.target > 0 && get(p.id, s) >= p.target) totals[s] += parseInsentifAmount(p.insentif);
     });
   });
@@ -6861,6 +6866,53 @@ function updateTarget(id, val){
     }
   }
   if(rawData.length) compute();
+}
+
+async function exportTableImages(){
+  const table = document.getElementById('mainTable');
+  const allRows = Array.from(table.rows);
+  if(allRows.length < 2){ alert('Belum ada tabel untuk diexport.'); return; }
+  if(typeof html2canvas !== 'function'){ alert('Library gambar belum termuat, coba refresh halaman.'); return; }
+  const headerIdx = allRows.map((r, i)=> (r.cells[0] && r.cells[0].tagName === 'TH') ? i : -1).filter(i=>i > 0);
+  const half = allRows.length / 2;
+  let split = allRows.length;
+  if(headerIdx.length){
+    split = headerIdx.reduce((best, i)=> Math.abs(i - half) < Math.abs(best - half) ? i : best, headerIdx[0]);
+  }
+  const caption = table.caption ? table.caption.textContent : 'Insentif';
+  const parts = [allRows.slice(0, split), allRows.slice(split)].filter(p=>p.length);
+  setStatus('⏳ Membuat gambar...', 'pending');
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'position:fixed;left:-10000px;top:0;background:#fff;padding:12px;width:' + Math.max(table.offsetWidth, 900) + 'px;';
+  document.body.appendChild(wrap);
+  try{
+    for(let i = 0; i < parts.length; i++){
+      wrap.innerHTML = '';
+      const t = document.createElement('table');
+      const cap = document.createElement('caption');
+      cap.textContent = `${caption} (${currentBranch}) - Bagian ${i + 1}/${parts.length}`;
+      t.appendChild(cap);
+      parts[i].forEach(r=>t.appendChild(r.cloneNode(true)));
+      wrap.appendChild(t);
+      const canvas = await html2canvas(wrap, { backgroundColor:'#ffffff', scale:2 });
+      await new Promise(res=>canvas.toBlob(blob=>{
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `Insentif_${currentBranch}_${caption.replace(/[^A-Za-z0-9]+/g, '_')}_${i + 1}.png`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(()=>URL.revokeObjectURL(a.href), 2000);
+        res();
+      }));
+      await new Promise(r=>setTimeout(r, 400));
+    }
+    setStatus(`✅ ${parts.length} gambar berhasil diexport.`, 'ok');
+  }catch(err){
+    setStatus(`❌ Gagal export gambar: ${err.message}`, 'error');
+  }finally{
+    wrap.remove();
+  }
 }
 
 function exportToExcel(){
