@@ -6660,10 +6660,7 @@ function renderOktober(results){
 
   const totals = {};
   salesList.forEach(s=>{
-    totals[s] = raport[s].nominal + raport[s].bonusOkt;
-    varianAktif.forEach(p=>{
-      if(p.target > 0 && get(p.id, s) >= p.target) totals[s] += parseInsentifAmount(p.insentif);
-    });
+    totals[s] = raport[s].bonusOkt;
   });
 
   const theadTotal = table.insertRow(-1);
@@ -6672,7 +6669,7 @@ function renderOktober(results){
     const row = table.insertRow(-1);
     let html = '';
     if(idx === 0){
-      html += `<td class="program" rowspan="${salesList.length}" colspan="2">Total Insentif per Salesman</td>`;
+      html += `<td class="program" rowspan="${salesList.length}" colspan="2">Total Insentif Oktober per Salesman (hanya Bonus Oktober)</td>`;
     }
     html += `<td class="nama">${sales}</td>`;
     html += `<td colspan="4" style="text-align:right; font-weight:bold;">Rp ${totals[sales].toLocaleString('id-ID')}</td>`;
