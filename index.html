@@ -6872,7 +6872,7 @@ function updateTarget(id, val){
 async function exportTableImages(){
   if(typeof html2canvas !== 'function'){ alert('Library gambar belum termuat, coba refresh halaman.'); return; }
   const original = currentBranch;
-  const branches = original === 'KOMPETISI' ? ['KOMPETISI'] : currentUserBranches.slice();
+  const branches = [original];
   setStatus('⏳ Membuat gambar...', 'pending');
   let total = 0;
   let errMsg = null;
