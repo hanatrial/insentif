@@ -6550,9 +6550,9 @@ function computeOktober(){
     const inOkt = d >= rOkt[0] && d <= rOkt[1];
     const inNov = d >= rNov[0] && d <= rNov[1];
     if(!inOkt && !inNov) return;
-    const toko = field(r, 'Ship To', 'ShipTo') || field(r, 'Perusahaan');
+    const toko = String(field(r, 'Ship To', 'ShipTo') || field(r, 'Perusahaan'));
     const merek = field(r, 'Merek');
-    const isTrad = String(field(r, 'Group 1Barang', 'Group1Barang') || '').trim().toUpperCase() === 'TRADITIONAL';
+    const isTrad =String(field(r, 'Group 1Barang', 'Group1Barang') || '').trim().toUpperCase() === 'TRADITIONAL';
     const n = String(barang).toUpperCase();
 
     if(isTrad && !isBonusRow(r) && (n.includes('HILO') || n.includes('HI LO'))){
