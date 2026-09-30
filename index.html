@@ -6870,10 +6870,29 @@ function updateTarget(id, val){
 }
 
 async function exportTableImages(){
+  if(typeof html2canvas !== 'function'){ alert('Library gambar belum termuat, coba refresh halaman.'); return; }
+  const original = currentBranch;
+  const branches = original === 'KOMPETISI' ? ['KOMPETISI'] : currentUserBranches.slice();
+  setStatus('⏳ Membuat gambar...', 'pending');
+  let total = 0;
+  let errMsg = null;
+  try{
+    for(const b of branches){
+      if(b !== currentBranch) switchBranch(b);
+      total += await exportOneTableImages();
+    }
+  }catch(err){
+    errMsg = err.message;
+  }
+  if(currentBranch !== original) switchBranch(original);
+  if(errMsg) setStatus(`❌ Gagal export gambar: ${errMsg}`, 'error');
+  else setStatus(`✅ ${total} gambar berhasil diexport (${branches.join(', ')}).`, 'ok');
+}
+
+async function exportOneTableImages(){
   const table = document.getElementById('mainTable');
   const allRows = Array.from(table.rows);
-  if(allRows.length < 2){ alert('Belum ada tabel untuk diexport.'); return; }
-  if(typeof html2canvas !== 'function'){ alert('Library gambar belum termuat, coba refresh halaman.'); return; }
+  if(allRows.length < 2) return 0;
   const headerIdx = allRows.map((r, i)=> (r.cells[0] && r.cells[0].tagName === 'TH') ? i : -1).filter(i=>i > 0);
   const half = allRows.length / 2;
   let split = allRows.length;
@@ -6885,7 +6904,6 @@ async function exportTableImages(){
   }
   const caption = table.caption ? table.caption.textContent : 'Insentif';
   const parts = [allRows.slice(0, split), allRows.slice(split)].filter(p=>p.length);
-  setStatus('⏳ Membuat gambar...', 'pending');
   const wrap = document.createElement('div');
   wrap.style.cssText = 'position:fixed;left:-10000px;top:0;background:#fff;padding:12px;width:' + Math.max(table.offsetWidth, 900) + 'px;';
   document.body.appendChild(wrap);
@@ -6911,9 +6929,7 @@ async function exportTableImages(){
       }));
       await new Promise(r=>setTimeout(r, 400));
     }
-    setStatus(`✅ ${parts.length} gambar berhasil diexport.`, 'ok');
-  }catch(err){
-    setStatus(`❌ Gagal export gambar: ${err.message}`, 'error');
+    return parts.length;
   }finally{
     wrap.remove();
   }
