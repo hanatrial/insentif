@@ -6654,6 +6654,7 @@ function renderOktober(results){
     row.innerHTML = html;
   });
 
+  table.dataset.splitRow = table.rows.length;
   const varianAktif = OKTOBER_VARIAN.filter(p=>p.branches.includes(currentBranch));
   varianAktif.forEach(p=>renderBlock(p, 'Rp ' + p.insentif + '/varian'));
 
@@ -6878,6 +6879,9 @@ async function exportTableImages(){
   let split = allRows.length;
   if(headerIdx.length){
     split = headerIdx.reduce((best, i)=> Math.abs(i - half) < Math.abs(best - half) ? i : best, headerIdx[0]);
+  }
+  if(currentInsentifMonth === 'Oktober' && currentBranch !== 'KOMPETISI' && table.dataset.splitRow){
+    split = parseInt(table.dataset.splitRow, 10);
   }
   const caption = table.caption ? table.caption.textContent : 'Insentif';
   const parts = [allRows.slice(0, split), allRows.slice(split)].filter(p=>p.length);
