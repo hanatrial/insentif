@@ -5125,7 +5125,7 @@ function isTea(name, merek){
   return merek === 'NUTRISARI' && n.includes('TEA') && n.includes('PLS');
 }
 function isMatcha(name){ const n=name.toUpperCase(); return n.includes('MATCHA') && n.includes('PLS'); }
-function isSwiss(name){ return name.toUpperCase().includes('HILO SWISS CHOCOLATE PLS'); }
+function isSwiss(name){ const n = name.toUpperCase(); return n.includes('HILO SWISS CHOCOLATE PLS') || n.includes('HILO DRINK SWISS CHOCOLATE PLS'); }
 function isSchool(name, group1){ return name.toUpperCase().includes('HILO SCHOOL') && String(group1 || '').trim().toUpperCase() === 'TRADITIONAL'; }
 function isHiloChocolate(name){ return name.toUpperCase().includes('HILO CHOCOLATE PLS'); }
 function isHiloChocomalt(name){ const n = name.toUpperCase(); return n.includes('CHOCO MALT') && n.includes('PLS'); }
