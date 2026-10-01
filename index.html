@@ -4973,7 +4973,7 @@ const OKTOBER_BONUS_OKT = 500000;
 const OKTOBER_NS7_THRESHOLD = 7;
 const OKTOBER_TARGET_CABANG = {
   Makassar: { label:'BORWITA CITRA PRIMA - MAKASSAR, PT', branches:['Makassar','Bulukumba'], okEaHilo:1250, okSwiss:450, okSchool:180, okTea:720, okNs7:450 },
-  Gorontalo: { label:'BORWITA CITRA PRIMA - GORONTALO, PT', branches:['Gorontalo'], okEaHilo:450, okSwiss:200, okSchool:100, okTea:320, okNs7:200 }
+  Gorontalo: { label:'BORWITA CITRA PRIMA - GORONTALO, PT', branches:['Gorontalo'], okEaHilo:450, okSwiss:200, okSchool:100, okTea:320, okNs7:200, okSchoolCok:80, okSchoolVan:80 }
 };
 
 const NS7_VARIAN = {
@@ -6716,7 +6716,7 @@ function renderOktober(results){
 
   table.dataset.splitRow = table.rows.length;
   const varianAktif = OKTOBER_VARIAN.filter(p=>p.branches.includes(currentBranch));
-  varianAktif.forEach(p=>renderBlock(p, 'Rp ' + p.insentif + '/varian'));
+  varianAktif.forEach(p=>renderBlock(p, 'Rp ' + p.insentif + '/varian', !!(cabangCfg && cabangCfg[p.id])));
 
   const totals = {};
   salesList.forEach(s=>{
