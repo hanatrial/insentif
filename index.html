@@ -6630,23 +6630,33 @@ function renderTargetCabang(cfg, sum, jmlSales){
   table.innerHTML = '<caption>Target Cabang Oktober - November (Makassar + Bulukumba)</caption>';
   delete table.dataset.splitRow;
   const thead = table.insertRow(-1);
-  thead.innerHTML = '<th>Distributor / Cabang</th><th>KPI</th><th>Target Cabang</th><th>Ach Cabang</th><th>%Ach</th>';
+  thead.innerHTML = '<th>Distributor / Cabang</th><th>Program Insentif</th><th>KPI</th><th>Target Cabang</th><th>Ach Cabang</th><th>%Ach</th>';
   const rowsCfg = targetCabangRows(cfg);
-  rowsCfg.forEach((k, idx)=>{
-    const target = cfg[k.id];
-    const ach = sum[k.id] || 0;
-    const p_ = pct(ach, target);
-    const width = Math.max(0, Math.min(p_, 100));
-    const row = table.insertRow(-1);
-    let html = '';
-    if(idx === 0){
-      html += `<td class="program" rowspan="${rowsCfg.length}">${cfg.label}</td>`;
-    }
-    html += `<td class="nama">${k.title}</td>`;
-    html += `<td>${target}</td>`;
-    html += `<td>${ach}</td>`;
-    html += `<td class="bar-cell"><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:${width}%"></div></div><span class="bar-label">${p_}%</span></div></td>`;
-    row.innerHTML = html;
+  const groups = [
+    { label:'Insentif Raport Sales Q4 2026', items:OKTOBER_KPI.map(k=>({ id:k.id, name:k.title })) },
+    { label:'Insentif Hilo School PLS', items:[{ id:'okSchoolCok', name:'Coklat' }, { id:'okSchoolVan', name:'Vanilla' }] },
+    { label:'Insentif Hilo Teen (3in1) PLS', items:[{ id:'okTeen', name:'3in1 Coklat Belgia / ACT Belgian' }] }
+  ].map(g=>({ label:g.label, items:g.items.filter(it=>cfg[it.id] !== undefined) })).filter(g=>g.items.length);
+  let first = true;
+  groups.forEach(g=>{
+    g.items.forEach((it, i)=>{
+      const target = cfg[it.id];
+      const ach = sum[it.id] || 0;
+      const p_ = pct(ach, target);
+      const width = Math.max(0, Math.min(p_, 100));
+      const row = table.insertRow(-1);
+      let html = '';
+      if(first){
+        html += `<td class="program" rowspan="${rowsCfg.length}">${cfg.label}</td>`;
+        first = false;
+      }
+      if(i === 0) html += `<td class="program" rowspan="${g.items.length}">${g.label}</td>`;
+      html += `<td class="nama">${it.name}</td>`;
+      html += `<td>${target}</td>`;
+      html += `<td>${ach}</td>`;
+      html += `<td class="bar-cell"><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:${width}%"></div></div><span class="bar-label">${p_}%</span></div></td>`;
+      row.innerHTML = html;
+    });
   });
 }
 
