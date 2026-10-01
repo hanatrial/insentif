@@ -107,6 +107,7 @@
   <button id="btn-BSP" class="hidden" onclick="showBSPDashboard()" style="background:#888;">BSP</button>
   <button id="btn-Makassar" onclick="switchBranch('Makassar')">Makassar</button>
   <button id="btn-Bulukumba" onclick="switchBranch('Bulukumba')">Bulukumba</button>
+  <button id="btn-TargetCabang" class="hidden" onclick="switchBranch('TargetCabang')">Target Cabang</button>
   <button id="btn-KOMPETISI" class="hidden" onclick="switchBranch('KOMPETISI')">KOMPETISI</button>
   <button id="btn-Gorontalo" onclick="switchBranch('Gorontalo')">Gorontalo</button>
   <button id="btn-tokoMT" class="hidden" onclick="showTokoMTDashboard()" style="background:#888;">Toko MT</button>
@@ -4874,6 +4875,8 @@ async function login(user){
     if(btn) btn.classList.toggle('hidden', !cfg.branches.includes(b));
   });
   currentUserBranches = cfg.branches.slice();
+  const btnTargetCabang = document.getElementById('btn-TargetCabang');
+  if(btnTargetCabang) btnTargetCabang.classList.toggle('hidden', isDashboard || !cfg.branches.includes('Makassar'));
   const btnKOMPETISI = document.getElementById('btn-KOMPETISI');
   if(btnKOMPETISI) btnKOMPETISI.classList.toggle('hidden', isDashboard || cfg.branches.length < 1);
   currentBranch = cfg.branches[0];
@@ -4968,6 +4971,10 @@ const OKTOBER_RAPORT_BONUS_ALL = 3000000;
 const OKTOBER_EA_HILO_BONUS_MIN = 160;
 const OKTOBER_BONUS_OKT = 500000;
 const OKTOBER_NS7_THRESHOLD = 7;
+const OKTOBER_TARGET_CABANG = {
+  Makassar: { label:'BORWITA CITRA PRIMA - MAKASSAR, PT', branches:['Makassar','Bulukumba'], okEaHilo:1250, okSwiss:450, okSchool:180, okTea:720, okNs7:450 },
+  Gorontalo: { label:'BORWITA CITRA PRIMA - GORONTALO, PT', branches:['Gorontalo'], okEaHilo:450, okSwiss:200, okSchool:100, okTea:320, okNs7:200 }
+};
 
 const NS7_VARIAN = {
   id:'nsVarian7',
@@ -5997,6 +6004,7 @@ function closeTokoModal(){
 }
 
 function compute(){
+  if(currentBranch === 'TargetCabang'){ computeTargetCabang(); return; }
   if(currentInsentifMonth === 'Agustus'){ computeAgustus(); return; }
   if(currentInsentifMonth === 'September'){ computeSeptember(); return; }
   if(currentInsentifMonth === 'Oktober'){ computeOktober(); return; }
@@ -6524,8 +6532,8 @@ function renderSeptember(results, ns7Count, kpiCount){
   });
 }
 
-function computeOktober(){
-  const salesList = getSalesList();
+function calcOktoberResults(branch){
+  const salesList = OKTOBER_SALES[branch];
   const rOkt = periodRange('Oktober');
   const rNov = periodRange('November');
   const sets = {};
@@ -6567,7 +6575,7 @@ function computeOktober(){
     if(n.includes('HILO 3IN1 COKLAT BELGIA PLS') || n.includes('HILO ACT BELGIAN CHOCOLATE PLS')) addTo(sets.okTeen, sales, toko);
 
     if(merek === 'NUTRISARI' && isTrad){
-      const varian = itemGroupKompetisi(barang, currentBranch);
+      const varian = itemGroupKompetisi(barang, branch);
       if(varian){
         addVarian(ns7All, sales, toko, varian);
         if(inOkt) addVarian(ns7Okt, sales, toko, varian);
@@ -6589,9 +6597,50 @@ function computeOktober(){
   };
   results.okNs7 = countNs7(ns7All);
   results.okNs7Okt = countNs7(ns7Okt);
+  return results;
+}
 
-  renderOktober(results);
+function computeOktober(){
+  renderOktober(calcOktoberResults(currentBranch));
   document.getElementById('status').textContent = `Selesai menghitung dari ${rawData.length} baris data.`;
+}
+
+function computeTargetCabang(){
+  const cfg = OKTOBER_TARGET_CABANG.Makassar;
+  const sum = {}; OKTOBER_KPI.forEach(k=>sum[k.id] = 0);
+  let jmlSales = 0;
+  cfg.branches.forEach(b=>{
+    const res = rawData.length ? calcOktoberResults(b) : null;
+    jmlSales += OKTOBER_SALES[b].length;
+    if(res) OKTOBER_KPI.forEach(k=>{ OKTOBER_SALES[b].forEach(s=>{ sum[k.id] += (res[k.id] && res[k.id][s]) || 0; }); });
+  });
+  renderTargetCabang(cfg, sum, jmlSales);
+  document.getElementById('status').textContent = rawData.length ? `Selesai menghitung dari ${rawData.length} baris data.` : '';
+}
+
+function renderTargetCabang(cfg, sum, jmlSales){
+  const table = document.getElementById('mainTable');
+  table.innerHTML = '<caption>Target Cabang Oktober - November (Makassar + Bulukumba)</caption>';
+  delete table.dataset.splitRow;
+  const thead = table.insertRow(-1);
+  thead.innerHTML = '<th>Distributor / Cabang</th><th>Jumlah Sales</th><th>KPI</th><th>Target Cabang</th><th>Ach Cabang</th><th>%Ach</th>';
+  OKTOBER_KPI.forEach((k, idx)=>{
+    const target = cfg[k.id];
+    const ach = sum[k.id] || 0;
+    const p_ = pct(ach, target);
+    const width = Math.max(0, Math.min(p_, 100));
+    const row = table.insertRow(-1);
+    let html = '';
+    if(idx === 0){
+      html += `<td class="program" rowspan="${OKTOBER_KPI.length}">${cfg.label}</td>`;
+      html += `<td rowspan="${OKTOBER_KPI.length}">${jmlSales}</td>`;
+    }
+    html += `<td class="nama">${k.title}</td>`;
+    html += `<td>${target}</td>`;
+    html += `<td>${ach}</td>`;
+    html += `<td class="bar-cell"><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:${width}%"></div></div><span class="bar-label">${p_}%</span></div></td>`;
+    row.innerHTML = html;
+  });
 }
 
 function renderOktober(results){
@@ -6601,7 +6650,9 @@ function renderOktober(results){
   const get = (id, s)=> (results[id] && results[id][s]) || 0;
   const header = '<th>Program Insentif</th><th>Periode</th><th>Nama Salesman</th><th>Insentif</th><th>Target</th><th>Ach</th><th>%Ach</th>';
 
-  const renderBlock = (p, insentifText)=>{
+  const cabangCfg = currentBranch === 'Gorontalo' ? OKTOBER_TARGET_CABANG.Gorontalo : null;
+  const renderBlock = (p, insentifText, withCabang)=>{
+    const rs = salesList.length + (withCabang ? 1 : 0);
     const thead = table.insertRow(-1);
     thead.innerHTML = header;
     salesList.forEach((sales, idx)=>{
@@ -6611,19 +6662,28 @@ function renderOktober(results){
       const row = table.insertRow(-1);
       let html = '';
       if(idx === 0){
-        html += `<td class="program" rowspan="${salesList.length}">${p.title}</td>`;
-        html += `<td rowspan="${salesList.length}">${p.periode}</td>`;
+        html += `<td class="program" rowspan="${rs}">${p.title}</td>`;
+        html += `<td rowspan="${rs}">${p.periode}</td>`;
       }
       html += `<td class="nama">${sales}</td>`;
-      if(idx === 0) html += `<td rowspan="${salesList.length}">${insentifText}</td>`;
+      if(idx === 0) html += `<td rowspan="${rs}">${insentifText}</td>`;
       html += `<td><input class="target-input" type="number" value="${p.target}" onchange="updateTarget('${p.id}', this.value)"></td>`;
       html += `<td>${ach}</td>`;
       html += `<td class="bar-cell"><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:${width}%"></div></div><span class="bar-label">${p_}%</span></div></td>`;
       row.innerHTML = html;
     });
+    if(withCabang){
+      const total = salesList.reduce((acc, s)=>acc + get(p.id, s), 0);
+      const target = cabangCfg[p.id];
+      const p_ = pct(total, target);
+      const width = Math.max(0, Math.min(p_, 100));
+      const row = table.insertRow(-1);
+      row.style.background = '#eef3ea';
+      row.innerHTML = `<td class="nama" style="color:#000;">TOTAL CABANG</td><td style="font-weight:bold;">${target}</td><td style="font-weight:bold;">${total}</td><td class="bar-cell"><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:${width}%"></div></div><span class="bar-label">${p_}%</span></div></td>`;
+    }
   };
 
-  OKTOBER_KPI.forEach(p=>renderBlock(p, 'Masuk Raport Sales'));
+  OKTOBER_KPI.forEach(p=>renderBlock(p, 'Masuk Raport Sales', !!cabangCfg));
 
   const raport = {};
   salesList.forEach(s=>{
@@ -6703,7 +6763,7 @@ function switchInsentifMonth(month){
 
 function switchBranch(branch){
   currentBranch = branch;
-  ['Makassar','Bulukumba','Gorontalo','KOMPETISI'].forEach(b=>{
+  ['Makassar','Bulukumba','Gorontalo','KOMPETISI','TargetCabang'].forEach(b=>{
     const btn = document.getElementById('btn-' + b);
     if(btn) btn.classList.toggle('branch-active', b === branch);
   });
@@ -6720,6 +6780,12 @@ function switchBranch(branch){
   }
   const monthRow = document.getElementById('monthToggleRow');
   const divisorRow = document.getElementById('kompetisiDivisorRow');
+  if(branch === 'TargetCabang'){
+    if(monthRow) monthRow.classList.add('hidden');
+    if(divisorRow) divisorRow.classList.add('hidden');
+    computeTargetCabang();
+    return;
+  }
   if(branch === 'KOMPETISI'){
     if(monthRow) monthRow.classList.add('hidden');
     if(divisorRow) divisorRow.classList.remove('hidden');
