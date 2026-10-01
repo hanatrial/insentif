@@ -4972,7 +4972,7 @@ const OKTOBER_EA_HILO_BONUS_MIN = 160;
 const OKTOBER_BONUS_OKT = 500000;
 const OKTOBER_NS7_THRESHOLD = 7;
 const OKTOBER_TARGET_CABANG = {
-  Makassar: { label:'BORWITA CITRA PRIMA - MAKASSAR, PT', branches:['Makassar','Bulukumba'], okEaHilo:1250, okSwiss:450, okSchool:180, okTea:720, okNs7:450 },
+  Makassar: { label:'BORWITA CITRA PRIMA - MAKASSAR, PT', branches:['Makassar','Bulukumba'], okEaHilo:1250, okSwiss:450, okSchool:180, okTea:720, okNs7:450, okSchoolCok:180, okSchoolVan:40, okTeen:40 },
   Gorontalo: { label:'BORWITA CITRA PRIMA - GORONTALO, PT', branches:['Gorontalo'], okEaHilo:450, okSwiss:200, okSchool:100, okTea:320, okNs7:200, okSchoolCok:80, okSchoolVan:80 }
 };
 
@@ -6607,15 +6607,22 @@ function computeOktober(){
 
 function computeTargetCabang(){
   const cfg = OKTOBER_TARGET_CABANG.Makassar;
-  const sum = {}; OKTOBER_KPI.forEach(k=>sum[k.id] = 0);
+  const sum = {}; targetCabangRows(cfg).forEach(k=>sum[k.id] = 0);
   let jmlSales = 0;
   cfg.branches.forEach(b=>{
     const res = rawData.length ? calcOktoberResults(b) : null;
     jmlSales += OKTOBER_SALES[b].length;
-    if(res) OKTOBER_KPI.forEach(k=>{ OKTOBER_SALES[b].forEach(s=>{ sum[k.id] += (res[k.id] && res[k.id][s]) || 0; }); });
+    if(res) targetCabangRows(cfg).forEach(k=>{
+      if(k.branches && !k.branches.includes(b)) return;
+      OKTOBER_SALES[b].forEach(s=>{ sum[k.id] += (res[k.id] && res[k.id][s]) || 0; });
+    });
   });
   renderTargetCabang(cfg, sum, jmlSales);
   document.getElementById('status').textContent = rawData.length ? `Selesai menghitung dari ${rawData.length} baris data.` : '';
+}
+
+function targetCabangRows(cfg){
+  return OKTOBER_KPI.concat(OKTOBER_VARIAN.filter(v=>cfg[v.id] !== undefined));
 }
 
 function renderTargetCabang(cfg, sum, jmlSales){
@@ -6624,7 +6631,8 @@ function renderTargetCabang(cfg, sum, jmlSales){
   delete table.dataset.splitRow;
   const thead = table.insertRow(-1);
   thead.innerHTML = '<th>Distributor / Cabang</th><th>Jumlah Sales</th><th>KPI</th><th>Target Cabang</th><th>Ach Cabang</th><th>%Ach</th>';
-  OKTOBER_KPI.forEach((k, idx)=>{
+  const rowsCfg = targetCabangRows(cfg);
+  rowsCfg.forEach((k, idx)=>{
     const target = cfg[k.id];
     const ach = sum[k.id] || 0;
     const p_ = pct(ach, target);
@@ -6632,8 +6640,8 @@ function renderTargetCabang(cfg, sum, jmlSales){
     const row = table.insertRow(-1);
     let html = '';
     if(idx === 0){
-      html += `<td class="program" rowspan="${OKTOBER_KPI.length}">${cfg.label}</td>`;
-      html += `<td rowspan="${OKTOBER_KPI.length}">${jmlSales}</td>`;
+      html += `<td class="program" rowspan="${rowsCfg.length}">${cfg.label}</td>`;
+      html += `<td rowspan="${rowsCfg.length}">${jmlSales}</td>`;
     }
     html += `<td class="nama">${k.title}</td>`;
     html += `<td>${target}</td>`;
