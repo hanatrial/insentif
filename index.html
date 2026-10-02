@@ -4831,11 +4831,24 @@ function logout(){
   document.getElementById('btn-BSP').classList.add('hidden');
   document.getElementById('bspUploadRow').classList.add('hidden');
   document.getElementById('monthToggleRow').classList.add('hidden');
+  document.getElementById('btn-month-Juli').classList.remove('hidden');
   currentInsentifMonth = 'Juli';
   hideAchSlider(); hideSalesFilter();
 }
 
 let currentUser = null;
+
+function updateMonthToggleVisibility(){
+  const julyButton = document.getElementById('btn-month-Juli');
+  const hideJuly = currentUser === 'Irfan' && currentBranch === 'Makassar' && currentMode !== 'dashboard';
+  if(julyButton) julyButton.classList.toggle('hidden', hideJuly);
+
+  if(hideJuly && currentInsentifMonth === 'Juli'){
+    currentInsentifMonth = 'Agustus';
+    document.getElementById('btn-month-Juli').classList.remove('branch-active');
+    document.getElementById('btn-month-Agustus').classList.add('branch-active');
+  }
+}
 
 async function login(user){
   const cfg = LOGIN_CONFIG[user];
@@ -4880,6 +4893,7 @@ async function login(user){
   const btnKOMPETISI = document.getElementById('btn-KOMPETISI');
   if(btnKOMPETISI) btnKOMPETISI.classList.toggle('hidden', isDashboard || cfg.branches.length < 1);
   currentBranch = cfg.branches[0];
+  updateMonthToggleVisibility();
   ['Makassar','Bulukumba','Gorontalo','KOMPETISI'].forEach(b=>{
     const btn = document.getElementById('btn-' + b);
     if(btn) btn.classList.toggle('branch-active', b === currentBranch);
@@ -6755,6 +6769,9 @@ function renderOktober(results){
 }
 
 function switchInsentifMonth(month){
+  if(month === 'Juli' && currentUser === 'Irfan' && currentBranch === 'Makassar' && currentMode !== 'dashboard'){
+    month = 'Agustus';
+  }
   document.getElementById('btn-month-Juli').classList.toggle('branch-active', month === 'Juli');
   document.getElementById('btn-month-Agustus').classList.toggle('branch-active', month === 'Agustus');
   document.getElementById('btn-month-September').classList.toggle('branch-active', month === 'September');
@@ -6780,6 +6797,7 @@ function switchInsentifMonth(month){
 
 function switchBranch(branch){
   currentBranch = branch;
+  updateMonthToggleVisibility();
   ['Makassar','Bulukumba','Gorontalo','KOMPETISI','TargetCabang'].forEach(b=>{
     const btn = document.getElementById('btn-' + b);
     if(btn) btn.classList.toggle('branch-active', b === branch);
