@@ -4886,6 +4886,41 @@ function switchInsentifMonth(month){
   else if(currentBranch === 'TotalTarget') showTotalTargetDashboard();
   else loadDashboardBranch(currentBranch);
 }
+function itemGroupKPI(name){
+  const n = name.toUpperCase();
+  if(n.includes('DIABTX')){
+    if(n.includes('25')) return 'TS_DIABTX_25';
+    if(n.includes('50')) return 'TS_DIABTX_50';
+    if(n.includes('100')) return 'TS_DIABTX_100';
+    return null;
+  }
+  if(n.includes('TS') && n.includes('CLASSIC')){
+    if(n.includes('25')) return 'TS_CLASSIC_25';
+    if(n.includes('50')) return 'TS_CLASSIC_50';
+    if(n.includes('100')) return 'TS_CLASSIC_100';
+    return null;
+  }
+  if(n.includes('RTD') && n.includes('OAT DRINK') && n.includes('VANILLICIOUS')) return 'TS_RTD_OAT';
+  if(n.includes('RTD') && n.includes('ALMOND DRINK') && n.includes('CHOCOLICIOUS')) return 'TS_RTD_ALMOND';
+  if(n.includes('JAMBU BIJI')) return 'NS_RTD_JAMBU';
+  if(n.includes('SQUEEZE') && n.includes('ORANGE')) return 'NS_RTD_SQUEEZE';
+  if(n.includes('JERUK MADU')) return 'NS_RTD_JERUKMADU';
+  const isHilo = n.includes('HILO') || n.includes('HI LO');
+  if(!isHilo) return null;
+  const cokVar = (n.includes('COKLAT') || n.includes('COKELAT') || n.includes('CHOCOLATE')) ? 'COKLAT' : (n.includes('VANILLA') ? 'VANILLA' : null);
+  if(n.includes('RTD') && n.includes('SCHOOL') && cokVar === 'COKLAT') return 'HILO_SCHOOL_RTD_COKLAT';
+  if(n.includes('RTD') && n.includes('TEEN') && cokVar === 'COKLAT') return 'HILO_TEEN_RTD_COKLAT';
+  if(n.includes('SCHOOL') && n.includes('250') && cokVar) return 'HILO_SCHOOL_' + cokVar + '_250';
+  if(n.includes('TEEN') && n.includes('250') && cokVar) return 'HILO_TEEN_' + cokVar + '_250';
+  if(n.includes('ACTIVE') && n.includes('250') && cokVar === 'COKLAT') return 'HILO_ACTIVE_COKLAT_250';
+  return null;
+}
+
+const DATA_PERIODE = 'Oktober - Desember';
+const OKTOBER_MT5 = {
+  id:'okMt5', title:'Insentif MT 5 Varian', periode:'Oktober - Desember',
+  byBranch:{ Bulukumba:{ target:25, targetCabang:50 }, Gorontalo:{ target:20, targetCabang:80 } }
+};
 const OKTOBER_PERIODE = 'Oktober - November';
 const OKTOBER_KPI = [
   { id:'okEaHilo', title:'EA Hilo (EA Okt + EA Nov)', periode:OKTOBER_PERIODE, target:120 },
@@ -5036,7 +5071,7 @@ function slimRow(r){
   };
 }
 function inOktNov(r){
-  return inPeriod(field(r, 'Tgl'), periodRange(OKTOBER_PERIODE));
+  return inPeriod(field(r, 'Tgl'), periodRange(DATA_PERIODE));
 }
 function isBonusRow(r){
   const b = field(r, 'Bonus');
@@ -5063,7 +5098,7 @@ function processFile(){
       const allRows = XLSX.utils.sheet_to_json(ws, {defval:null}).map(slimRow);
       const okt = allRows.filter(inOktNov);
       if(!okt.length){
-        setStatus(`❌ Tidak ada baris bertanggal Oktober-November ${YEAR} dari ${allRows.length} baris di file. Data cloud TIDAK diganti. Cek kolom Tgl dan periode file.`, 'error');
+        setStatus(`❌ Tidak ada baris bertanggal Oktober-Desember ${YEAR} dari ${allRows.length} baris di file. Data cloud TIDAK diganti. Cek kolom Tgl dan periode file.`, 'error');
         return;
       }
       rawData = okt;
@@ -5101,10 +5136,10 @@ async function loadUserFromCloud(user){
     rawData = (await loadDataFromCloud(user)).filter(inOktNov);
     if(rawData.length){
       compute();
-      setStatus(`✅ Dimuat ${rawData.length} baris Oktober-November dari cloud untuk ${user}.`, 'ok');
+      setStatus(`✅ Dimuat ${rawData.length} baris Oktober-Desember dari cloud untuk ${user}.`, 'ok');
     } else {
       compute();
-      setStatus(`⚠️ Belum ada data Oktober-November di cloud untuk ${user}. Upload file untuk mengisi.`, 'error');
+      setStatus(`⚠️ Belum ada data Oktober-Desember di cloud untuk ${user}. Upload file untuk mengisi.`, 'error');
     }
   }catch(err){
     compute();
@@ -5880,7 +5915,30 @@ function calcOktoberResults(branch){
   };
   results.okNs7 = countNs7(ns7All);
   results.okNs7Okt = countNs7(ns7Okt);
+  if(OKTOBER_MT5.byBranch[branch]) results.okMt5 = calcMt5(salesList);
   return results;
+}
+
+function calcMt5(salesList){
+  const range = periodRange(OKTOBER_MT5.periode);
+  const grupPerToko = {};
+  rawData.forEach(r=>{
+    const sales = normSales(field(r, 'Nama Sales', 'NamaSales'));
+    if(!salesList.includes(sales)) return;
+    const barang = field(r, 'Nama Barang', 'NamaBarang');
+    if(!barang || !inPeriod(field(r, 'Tgl'), range)) return;
+    const grup = itemGroupKPI(barang);
+    if(!grup) return;
+    const toko = String(field(r, 'Ship To', 'ShipTo') || field(r, 'Perusahaan'));
+    const key = sales + '|' + toko;
+    (grupPerToko[key] = grupPerToko[key] || new Set()).add(grup);
+  });
+  const res = {}; salesList.forEach(s=>res[s] = 0);
+  Object.keys(grupPerToko).forEach(key=>{
+    const sales = key.split('|')[0];
+    if(grupPerToko[key].size >= 5 && res[sales] !== undefined) res[sales]++;
+  });
+  return res;
 }
 
 function computeOktober(){
@@ -5951,7 +6009,8 @@ function renderOktober(results){
   const header = '<th>Program Insentif</th><th>Periode</th><th>Nama Salesman</th><th>Insentif</th><th>Target</th><th>Ach</th><th>%Ach</th>';
 
   const cabangCfg = currentBranch === 'Gorontalo' ? OKTOBER_TARGET_CABANG.Gorontalo : null;
-  const renderBlock = (p, insentifText, withCabang)=>{
+  const renderBlock = (p, insentifText, cabangTarget)=>{
+    const withCabang = cabangTarget > 0;
     const rs = salesList.length + (withCabang ? 1 : 0);
     const thead = table.insertRow(-1);
     thead.innerHTML = header;
@@ -5974,7 +6033,7 @@ function renderOktober(results){
     });
     if(withCabang){
       const total = salesList.reduce((acc, s)=>acc + get(p.id, s), 0);
-      const target = cabangCfg[p.id];
+      const target = cabangTarget;
       const p_ = pct(total, target);
       const width = Math.max(0, Math.min(p_, 100));
       const row = table.insertRow(-1);
@@ -5983,7 +6042,7 @@ function renderOktober(results){
     }
   };
 
-  OKTOBER_KPI.forEach(p=>renderBlock(p, 'Masuk Raport Sales', !!cabangCfg));
+  OKTOBER_KPI.forEach(p=>renderBlock(p, 'Masuk Raport Sales', cabangCfg ? cabangCfg[p.id] : 0));
 
   const raport = {};
   salesList.forEach(s=>{
@@ -6016,7 +6075,12 @@ function renderOktober(results){
 
   table.dataset.splitRow = table.rows.length;
   const varianAktif = OKTOBER_VARIAN.filter(p=>p.branches.includes(currentBranch));
-  varianAktif.forEach(p=>renderBlock(p, 'Rp ' + p.insentif + '/varian', !!(cabangCfg && cabangCfg[p.id])));
+  varianAktif.forEach(p=>renderBlock(p, 'Rp ' + p.insentif + '/varian', (cabangCfg && cabangCfg[p.id]) || 0));
+
+  const mt5Cfg = OKTOBER_MT5.byBranch[currentBranch];
+  if(mt5Cfg){
+    renderBlock({ id:OKTOBER_MT5.id, title:OKTOBER_MT5.title, periode:OKTOBER_MT5.periode, target:mt5Cfg.target }, 'Belum ada nominal', mt5Cfg.targetCabang);
+  }
 
   const totals = {};
   salesList.forEach(s=>{
@@ -6038,6 +6102,11 @@ function renderOktober(results){
 }
 
 function updateTarget(id, val){
+  if(id === OKTOBER_MT5.id){
+    if(OKTOBER_MT5.byBranch[currentBranch]) OKTOBER_MT5.byBranch[currentBranch].target = parseInt(val) || 0;
+    compute();
+    return;
+  }
   const p = OKTOBER_KPI.find(p=>p.id===id) || OKTOBER_VARIAN.find(p=>p.id===id);
   if(p){
     const num = parseInt(val) || 0;
