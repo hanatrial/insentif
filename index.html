@@ -96,6 +96,7 @@
 <div class="toolbar">
   <button onclick="logout()" style="background:#888;">&larr; Kembali</button>
   <input type="file" id="fileInput" accept=".xlsx,.xls,.csv">
+  <span id="lastUpload" style="font-size:12px; color:#555;"></span>
   <button onclick="processFile()">Proses & Hitung</button>
   <button onclick="exportToExcel()" style="background:#1155cc;">Export Excel</button>
   <button id="btn-exportImage" onclick="exportTableImages()" style="background:#7b3fe4;">Export Gambar (2 bagian)</button>
@@ -204,6 +205,22 @@ async function saveDataToCloud(branch, data){
     rowCount: data.length,
     updatedAt: firebase.firestore.FieldValue.serverTimestamp()
   });
+}
+
+function formatLastUpload(d){
+  return 'Terakhir upload: ' + d.toLocaleString('id-ID', { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
+}
+
+async function showLastUpload(user){
+  const el = document.getElementById('lastUpload');
+  el.textContent = '';
+  try{
+    const snap = await db.collection('insentifData').doc(user).get();
+    const ts = snap.exists ? snap.data().updatedAt : null;
+    el.textContent = ts ? formatLastUpload(ts.toDate()) : 'Belum ada upload';
+  }catch(err){
+    el.textContent = '';
+  }
 }
 
 async function loadDataFromCloud(branch){
@@ -4828,6 +4845,8 @@ function logout(){
   document.getElementById('mainTable').classList.remove('hidden');
   document.getElementById('dashboardTable').classList.add('hidden');
   document.getElementById('fileInput').classList.remove('hidden');
+  document.getElementById('lastUpload').classList.remove('hidden');
+  document.getElementById('lastUpload').textContent = '';
   document.querySelector('button[onclick="processFile()"]').classList.remove('hidden');
   document.querySelector('button[onclick="exportToExcel()"]').classList.remove('hidden');
   document.getElementById('btn-exportImage').classList.remove('hidden');
@@ -4849,6 +4868,7 @@ async function login(user){
   document.getElementById('mainTable').classList.toggle('hidden', isDashboard);
   document.getElementById('dashboardTable').classList.toggle('hidden', !isDashboard);
   document.getElementById('fileInput').classList.toggle('hidden', isDashboard);
+  document.getElementById('lastUpload').classList.toggle('hidden', isDashboard);
   document.querySelector('button[onclick="processFile()"]').classList.toggle('hidden', isDashboard);
   document.querySelector('button[onclick="exportToExcel()"]').classList.toggle('hidden', isDashboard);
   document.getElementById('btn-exportImage').classList.toggle('hidden', isDashboard);
@@ -5117,6 +5137,7 @@ function processFile(){
     if(saveError){
       setStatus(`❌ GAGAL SIMPAN KE CLOUD: ${saveError.message}. Data cuma ada di layar ini, akan hilang saat refresh!`, 'error');
     } else {
+      document.getElementById('lastUpload').textContent = formatLastUpload(new Date());
       setStatus(`✅ TERSIMPAN DI CLOUD — data ${currentUser} sudah diganti (${rawData.length} baris).`, 'ok');
     }
   };
@@ -5132,6 +5153,7 @@ function setStatus(text, kind){
 
 async function loadUserFromCloud(user){
   setStatus(`⏳ Memuat data ${user} dari cloud...`, 'pending');
+  showLastUpload(user);
   try{
     rawData = (await loadDataFromCloud(user)).filter(inOktNov);
     if(rawData.length){
