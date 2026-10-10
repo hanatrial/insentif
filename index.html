@@ -6137,23 +6137,24 @@ function renderOktoberMatrix(results){
   };
   const addHeader = ()=>{
     const h1 = table.insertRow(-1);
-    h1.innerHTML = '<th rowspan="2">Program Insentif</th><th rowspan="2">Periode</th><th rowspan="2">Insentif</th><th rowspan="2">Target</th>' + salesList.map(s=>`<th colspan="2">${s}</th>`).join('');
+    h1.innerHTML = '<th rowspan="2">Program Insentif</th><th rowspan="2">Target</th>' + salesList.map(s=>`<th colspan="2">${s}</th>`).join('') + '<th rowspan="2">Periode</th><th rowspan="2">Insentif</th>';
     const h2 = table.insertRow(-1);
     h2.innerHTML = salesList.map(()=>'<th>Ach</th><th>%Ach</th>').join('');
   };
   const progRow = (p, insentifText)=>{
     const row = table.insertRow(-1);
-    let html = `<td class="program">${p.title}</td><td>${p.periode}</td><td>${insentifText}</td>`;
+    let html = `<td class="program">${p.title}</td>`;
     html += `<td><input class="target-input" type="number" value="${p.target}" onchange="updateTarget('${p.id}', this.value)"></td>`;
     salesList.forEach(s=>{
       const ach = get(p.id, s);
       html += `<td>${ach}</td>` + bar(pct(ach, p.target), 1);
     });
+    html += `<td>${p.periode}</td><td>${insentifText}</td>`;
     row.innerHTML = html;
   };
   const infoRow = (label, values, bold)=>{
     const row = table.insertRow(-1);
-    row.innerHTML = `<td class="program" colspan="4">${label}</td>` + values.map(v=>`<td colspan="2"${bold ? ' style="font-weight:bold;"' : ''}>${v}</td>`).join('');
+    row.innerHTML = `<td class="program" colspan="2">${label}</td>` + values.map(v=>`<td colspan="2"${bold ? ' style="font-weight:bold;"' : ''}>${v}</td>`).join('') + '<td colspan="2"></td>';
   };
   const sectionRow = (text)=>{
     const row = table.insertRow(-1);
@@ -6188,7 +6189,7 @@ function renderOktoberMatrix(results){
     const total = salesList.reduce((acc, s)=>acc + get(OKTOBER_MT5.id, s), 0);
     const row = table.insertRow(-1);
     row.style.background = '#eef3ea';
-    row.innerHTML = `<td class="nama" colspan="3" style="color:#000;">TOTAL CABANG ${OKTOBER_MT5.title}</td><td style="font-weight:bold;">${mt5Cfg.targetCabang}</td><td colspan="${n * 2}" style="font-weight:bold;">Total ${total} dari ${mt5Cfg.targetCabang} (${pct(total, mt5Cfg.targetCabang)}%)</td>`;
+    row.innerHTML = `<td class="nama" style="color:#000;">TOTAL CABANG ${OKTOBER_MT5.title}</td><td style="font-weight:bold;">${mt5Cfg.targetCabang}</td><td colspan="${n * 2}" style="font-weight:bold;">Total ${total} dari ${mt5Cfg.targetCabang} (${pct(total, mt5Cfg.targetCabang)}%)</td><td colspan="2"></td>`;
   }
 
   sectionRow('Ringkasan');
