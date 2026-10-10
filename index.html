@@ -5964,7 +5964,9 @@ function calcMt5(salesList){
 }
 
 function computeOktober(){
-  renderOktober(calcOktoberResults(currentBranch));
+  const results = calcOktoberResults(currentBranch);
+  if(currentBranch === 'Bulukumba') renderOktoberMatrix(results);
+  else renderOktober(results);
   document.getElementById('status').textContent = `Selesai menghitung dari ${rawData.length} baris data.`;
 }
 
@@ -6121,6 +6123,76 @@ function renderOktober(results){
     html += `<td colspan="4" style="text-align:right; font-weight:bold;">Rp ${totals[sales].toLocaleString('id-ID')}</td>`;
     row.innerHTML = html;
   });
+}
+
+function renderOktoberMatrix(results){
+  const salesList = getSalesList();
+  const n = salesList.length;
+  const table = document.getElementById('mainTable');
+  table.innerHTML = '<caption>Program Insentif Oktober - November</caption>';
+  const get = (id, s)=> (results[id] && results[id][s]) || 0;
+  const bar = (p_, span)=>{
+    const w = Math.max(0, Math.min(p_, 100));
+    return `<td class="bar-cell"${span > 1 ? ` colspan="${span}"` : ''}><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:${w}%"></div></div><span class="bar-label">${p_}%</span></div></td>`;
+  };
+  const addHeader = ()=>{
+    const h1 = table.insertRow(-1);
+    h1.innerHTML = '<th rowspan="2">Program Insentif</th><th rowspan="2">Periode</th><th rowspan="2">Insentif</th><th rowspan="2">Target</th>' + salesList.map(s=>`<th colspan="2">${s}</th>`).join('');
+    const h2 = table.insertRow(-1);
+    h2.innerHTML = salesList.map(()=>'<th>Ach</th><th>%Ach</th>').join('');
+  };
+  const progRow = (p, insentifText)=>{
+    const row = table.insertRow(-1);
+    let html = `<td class="program">${p.title}</td><td>${p.periode}</td><td>${insentifText}</td>`;
+    html += `<td><input class="target-input" type="number" value="${p.target}" onchange="updateTarget('${p.id}', this.value)"></td>`;
+    salesList.forEach(s=>{
+      const ach = get(p.id, s);
+      html += `<td>${ach}</td>` + bar(pct(ach, p.target), 1);
+    });
+    row.innerHTML = html;
+  };
+  const infoRow = (label, values, bold)=>{
+    const row = table.insertRow(-1);
+    row.innerHTML = `<td class="program" colspan="4">${label}</td>` + values.map(v=>`<td colspan="2"${bold ? ' style="font-weight:bold;"' : ''}>${v}</td>`).join('');
+  };
+  const sectionRow = (text)=>{
+    const row = table.insertRow(-1);
+    row.innerHTML = `<th colspan="${4 + n * 2}">${text}</th>`;
+  };
+
+  addHeader();
+  OKTOBER_KPI.forEach(p=>progRow(p, 'Masuk Raport Sales'));
+
+  const raport = {};
+  salesList.forEach(s=>{
+    const achCount = OKTOBER_KPI.filter(k=>k.target > 0 && get(k.id, s) >= k.target).length;
+    let nominal = OKTOBER_RAPORT_TIERS[achCount] || 0;
+    const allBonus = achCount === OKTOBER_KPI.length && get('okEaHilo', s) > OKTOBER_EA_HILO_BONUS_MIN;
+    if(allBonus) nominal = OKTOBER_RAPORT_BONUS_ALL;
+    const okt60 = OKTOBER_KPI.filter(k=>k.target > 0 && get(k.id + 'Okt', s) >= 0.6 * k.target).length;
+    raport[s] = { achCount, nominal, allBonus, okt60, bonusOkt: okt60 >= 3 ? OKTOBER_BONUS_OKT : 0 };
+  });
+  sectionRow('Insentif Raport Sales Q4 2026 (Oktober - November)');
+  infoRow('KPI Tercapai (dari 5)', salesList.map(s=>raport[s].achCount + (raport[s].allBonus ? ' (EA Hilo >' + OKTOBER_EA_HILO_BONUS_MIN + ')' : '')));
+  infoRow('Insentif Raport 2 Bulan', salesList.map(s=>'Rp ' + raport[s].nominal.toLocaleString('id-ID')), true);
+  infoRow('KPI >=60% di Oktober', salesList.map(s=>raport[s].okt60));
+  infoRow('Bonus Oktober', salesList.map(s=>'Rp ' + raport[s].bonusOkt.toLocaleString('id-ID')), true);
+
+  table.dataset.splitRow = table.rows.length;
+  addHeader();
+  OKTOBER_VARIAN.filter(p=>p.branches.includes(currentBranch)).forEach(p=>progRow(p, 'Rp ' + p.insentif + '/varian'));
+
+  const mt5Cfg = OKTOBER_MT5.byBranch[currentBranch];
+  if(mt5Cfg){
+    progRow({ id:OKTOBER_MT5.id, title:OKTOBER_MT5.title, periode:OKTOBER_MT5.periode, target:mt5Cfg.target }, 'Belum ada nominal');
+    const total = salesList.reduce((acc, s)=>acc + get(OKTOBER_MT5.id, s), 0);
+    const row = table.insertRow(-1);
+    row.style.background = '#eef3ea';
+    row.innerHTML = `<td class="nama" colspan="3" style="color:#000;">TOTAL CABANG ${OKTOBER_MT5.title}</td><td style="font-weight:bold;">${mt5Cfg.targetCabang}</td><td colspan="${n * 2}" style="font-weight:bold;">Total ${total} dari ${mt5Cfg.targetCabang} (${pct(total, mt5Cfg.targetCabang)}%)</td>`;
+  }
+
+  sectionRow('Ringkasan');
+  infoRow('Total Insentif Oktober (hanya Bonus Oktober)', salesList.map(s=>'Rp ' + raport[s].bonusOkt.toLocaleString('id-ID')), true);
 }
 
 function updateTarget(id, val){
