@@ -1,7 +1,0 @@
-﻿{
-  "name": "insentif-bsp-auto",
-  "version": "1.0.0",
-  "private": true,
-  "description": "Ambil laporan sales BSP dari Outlook tiap pagi dan upload ke Firestore (BSP)",
-  "dependencies": { "xlsx": "^0.18.5" }
-}
