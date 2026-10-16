@@ -7,7 +7,7 @@
   "background_color": "#ffffff",
   "theme_color": "#0a5c36",
   "icons": [
-    { "src": "logo.jpg", "sizes": "192x192", "type": "image/jpeg", "purpose": "any maskable" },
+    { "src": "logo.jpg", "sizes": "192x192", "type": "image/jpeg", "purpose": "any" },
     { "src": "logo.jpg", "sizes": "512x512", "type": "image/jpeg" }
   ],
   "description": "Dashboard Program Insentif Sales MDS Sulawesi (Makassar, Bulukumba, Gorontalo)"
