@@ -94,10 +94,11 @@
     .wrap { max-width: 100%; padding: 0; }
     .login-screen { margin: 30px auto; padding: 20px 16px; }
     .login-option { font-size: 15px; padding: 14px; }
-    .toolbar { padding: 10px 12px; gap: 8px; flex-direction: column; align-items: stretch; }
-    .toolbar button { width: 100%; box-sizing: border-box; font-size: 14px; padding: 10px 14px; }
-    .toolbar input[type=file] { width: 100%; font-size: 14px; }
-    .toolbar span#lastUpload { font-size: 12px; margin-top: 6px; display: block; }
+    .toolbar { padding: 8px 10px; gap: 6px; flex-direction: row; flex-wrap: wrap; align-items: center; }
+    .toolbar button { flex: 1 1 auto; width: auto; box-sizing: border-box; font-size: 13px; padding: 9px 10px; }
+    .toolbar > span { flex: 0 0 100%; }
+    .toolbar input[type=file] { width: 100%; font-size: 13px; }
+    .toolbar span#lastUpload { font-size: 12px; display: block; }
     .toolbar input[type=text] { width: 100%; }
     input#achSlider { width: 100% !important; }
     th, td { padding: 6px 8px; font-size: 13px; }
@@ -115,17 +116,53 @@
   }
   .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; margin-bottom: 12px; }
   @media (min-width: 641px){ .table-wrap { overflow-x: visible; } }
+  @media (max-width: 640px){
+    body { background:#f6f7f9; font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; color:#101828; -webkit-font-smoothing: antialiased; }
+    .toolbar { background:#fff; border:1px solid #eaecf0; border-radius:12px; box-shadow:0 1px 2px rgba(16,24,40,.05); }
+    .toolbar button { border-radius:8px; font-weight:600; }
+    #btn-Makassar, #btn-Bulukumba, #btn-Gorontalo, #btn-TargetCabang, #btn-BSP, #btn-tokoMT, #btn-totalTarget, #btn-month-Oktober { background:#f2f4f7 !important; color:#344054 !important; box-shadow:none !important; }
+    .toolbar button.branch-active { background:#0a5c36 !important; color:#fff !important; box-shadow:none !important; }
+    #status { font-size:12px; font-weight:600; }
+    .table-wrap { background:#fff; border:1px solid #eaecf0; border-radius:12px; box-shadow:0 1px 3px rgba(16,24,40,.08); }
+    #mainTable, #dashboardTable { background:transparent; border-collapse:collapse; }
+    caption { background:#fff !important; color:#101828 !important; border:none !important; text-align:left; font-size:16px; font-weight:700; padding:14px 12px 8px; }
+    #mainTable th, #dashboardTable th { background:#fff; color:#667085; font-weight:600; font-size:11px; border:none; border-bottom:1px solid #eaecf0; padding:8px 4px; }
+    #mainTable td, #dashboardTable td { border:none; border-bottom:1px solid #f2f4f7; padding:7px 4px; font-size:12px; color:#344054; font-variant-numeric: tabular-nums; }
+    #mainTable tr:nth-child(even) td, #dashboardTable tr:nth-child(even) td { background:#f9fafb; }
+    #mainTable td.nama, #dashboardTable td.nama { color:#101828; font-weight:600; }
+    #mainTable td.program { color:#101828; }
+    #dashboardTable th[colspan] { background:#0a5c36 !important; color:#fff !important; font-size:12px; text-align:left; padding:7px 10px; }
+    #mainTable .m-title td { background:#f2f4f7 !important; color:#0a5c36; border-left:3px solid #0a5c36; font-weight:700; padding:7px 8px; border-bottom:1px solid #eaecf0; }
+    #mainTable tr.tot-row td { background:#ecfdf3 !important; color:#067647; font-weight:700; }
+    #mainTable tr.tot-row td.nama { color:#067647 !important; }
+    .bar-bg { height:6px !important; border-radius:3px; background:#eaecf0; }
+    .bar-fill { height:6px !important; border-radius:3px; background:#12b76a; }
+    .lvl-mid .bar-fill { background:#f79009; }
+    .lvl-lo .bar-fill { background:#f04438; }
+    .bar-label { padding:1px 6px; border-radius:6px; font-weight:700; font-size:10.5px !important; }
+    .bar-label.pct-hi { color:#067647; background:#ecfdf3; }
+    .bar-label.pct-mid { color:#b54708; background:#fffaeb; }
+    .bar-label.pct-lo { color:#b42318; background:#fef3f2; }
+    .target-input { border:1px solid #d0d5dd; border-radius:6px; background:#fff; color:#101828; }
+  }
   .m-title, .m-only { display: none; }
   .m-sub { font-size: 11px; font-weight: normal; color: #555; margin-top: 2px; }
   @media (max-width: 640px){
     .m-title { display: table-row; }
     .m-title td { background: #d9ead3; font-weight: bold; text-align: left; font-size: 13px; padding: 6px 8px; }
     .m-only { display: block; }
-    .col-prog, .col-per, .col-ins { display: none; }
+    .col-prog, .col-per, .col-ins, .col-sales { display: none; }
+    td .m-sub { display: inline-block !important; width: 100%; text-decoration: none; }
     #mainTable th, #mainTable td, #dashboardTable th, #dashboardTable td { padding: 4px 4px; font-size: 12px; }
-    #mainTable .bar-bg { width: 54px; }
-    table.mtx .bar-bg, #dashboardTable .bar-bg { display: none; }
+    #mainTable .bar-bg { width: 60px; }
+    #dashboardTable .bar-wrap { flex-direction: column; align-items: stretch; gap: 3px; }
+    #dashboardTable .bar-bg { width: 100%; min-width: 30px; }
+    #dashboardTable .bar-label { align-self: flex-start; }
+    #dashboardTable th, #dashboardTable td { padding-left: 3px; padding-right: 3px; font-size: 11px; }
+    .bar-bg.mbar { width: 100%; height: 8px; margin-top: 3px; }
+    .bar-bg.mbar .bar-fill { height: 8px; }
     #mainTable .bar-label, #dashboardTable .bar-label { font-size: 11px; }
+    #dashboardTable td, #dashboardTable th { white-space: normal; }
     #mainTable .target-input { width: 48px; padding: 2px; box-sizing: border-box; }
   }
 </style>
@@ -5243,7 +5280,7 @@ function renderTokoTargetDashboard(branch, stores){
   const table = document.getElementById('dashboardTable');
   table.innerHTML = '<caption>Dashboard Toko</caption>';
   const thead = table.insertRow(-1);
-  thead.innerHTML = '<th>Nama Toko</th><th style="cursor:pointer;" onclick="sortDashboardTable(1)">Nama Sales</th><th style="cursor:pointer;" onclick="sortDashboardTable(2)">Target</th><th>Omzet</th><th>%Ach</th>';
+  thead.innerHTML = '<th>Nama Toko</th><th class="col-sales" style="cursor:pointer;" onclick="sortDashboardTable(1)">Nama Sales</th><th style="cursor:pointer;" onclick="sortDashboardTable(2)">Target</th><th>Omzet</th><th>%Ach</th>';
   const targets = [...(TOKO_TARGETS[branch] || [])].sort((a,b)=> b.target - a.target);
   if(!targets.length){
     const row = table.insertRow(-1);
@@ -5262,7 +5299,7 @@ function renderTokoTargetDashboard(branch, stores){
     row.dataset.pct = p_;
     row.dataset.sales = salesNames;
     const clickAttr = match ? ` style="cursor:pointer; text-decoration:underline;" onclick="openTokoModal('${match.key.replace(/'/g,"\\'")}')"` : '';
-    row.innerHTML = `<td class="nama"${clickAttr}>${t.nama}</td><td>${salesNames}</td><td style="white-space:nowrap;">${fmtRp(t.target)}</td><td style="white-space:nowrap;">${fmtRp(omzet)}</td><td class="bar-cell"><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:${width}%"></div></div><span class="bar-label">${p_}%</span></div></td>`;
+    row.innerHTML = `<td class="nama"${clickAttr}>${t.nama}<div class="m-only m-sub">${salesNames}</div></td><td class="col-sales">${salesNames}</td><td style="white-space:nowrap;">${fmtRp(t.target)}</td><td style="white-space:nowrap;">${fmtRp(omzet)}</td><td class="bar-cell"><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:${width}%"></div></div><span class="bar-label">${p_}%</span></div></td>`;
   });
   showAchSlider();
   showSalesFilter();
@@ -5413,7 +5450,16 @@ function sortDashboardTable(colIndex){
 
 let dashboardStores = {};
 
-function fmtRp(n){ return 'Rp ' + Math.round(n).toLocaleString('id-ID'); }
+function isMobileView(){ return window.matchMedia('(max-width: 640px)').matches; }
+function fmtRpFull(n){ return 'Rp ' + Math.round(n).toLocaleString('id-ID'); }
+function fmtRp(n){
+  if(!isMobileView()) return fmtRpFull(n);
+  const a = Math.abs(n), s = n < 0 ? '-' : '';
+  if(a >= 1e9) return s + (a / 1e9).toLocaleString('id-ID', { maximumFractionDigits: 2 }) + ' M';
+  if(a >= 1e6) return s + (a / 1e6).toLocaleString('id-ID', { maximumFractionDigits: a >= 1e8 ? 0 : 1 }) + ' jt';
+  if(a >= 1e3) return s + Math.round(a / 1e3).toLocaleString('id-ID') + ' rb';
+  return s + Math.round(a);
+}
 
 const tokoMTTargets = {
   "(PR) PT CITRA SULAWESI SEJAHTERA": 35000000,
@@ -5727,7 +5773,7 @@ function renderBSPDashboard(stores){
   const table = document.getElementById('dashboardTable');
   table.innerHTML = '<caption>Dashboard BSP (Hilo Tradisional + NS Tradisional)</caption>';
   const thead = table.insertRow(-1);
-  thead.innerHTML = '<th>Nama Toko</th><th style="cursor:pointer;" onclick="sortDashboardTable(1)">Nama Sales</th><th style="cursor:pointer;" onclick="sortDashboardTable(2)">Target</th><th>Omzet Tradisional</th><th>%Ach</th>';
+  thead.innerHTML = '<th>Nama Toko</th><th class="col-sales" style="cursor:pointer;" onclick="sortDashboardTable(1)">Nama Sales</th><th style="cursor:pointer;" onclick="sortDashboardTable(2)">Target</th><th>Omzet Tradisional</th><th>%Ach</th>';
   const targets = [...BSP_TARGETS].sort((a,b)=> b.target - a.target);
   if(!targets.length){
     const row = table.insertRow(-1);
@@ -5745,7 +5791,7 @@ function renderBSPDashboard(stores){
     row.dataset.pct = p_;
     row.dataset.sales = salesNames;
     const clickAttr = match ? ` style="cursor:pointer; text-decoration:underline;" onclick="openBSPModal('${match.key.replace(/'/g,"\\'")}')"` : '';
-    row.innerHTML = `<td class="nama"${clickAttr}>${t.nama}</td><td>${salesNames}</td><td style="white-space:nowrap;">${fmtRp(t.target)}</td><td style="white-space:nowrap; font-weight:bold;">${fmtRp(omzet)}</td><td class="bar-cell"><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:${width}%"></div></div><span class="bar-label">${p_}%</span></div></td>`;
+    row.innerHTML = `<td class="nama"${clickAttr}>${t.nama}<div class="m-only m-sub">${salesNames}</div></td><td class="col-sales">${salesNames}</td><td style="white-space:nowrap;">${fmtRp(t.target)}</td><td style="white-space:nowrap; font-weight:bold;">${fmtRp(omzet)}</td><td class="bar-cell"><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:${width}%"></div></div><span class="bar-label">${p_}%</span></div></td>`;
   });
   showAchSlider();
   showSalesFilter();
@@ -5839,7 +5885,7 @@ function itemRowsSortedByOmzet(itemMap){
       html += `<tr><td colspan="4" style="text-align:left; background:#e8f0e8; font-weight:bold;">${item.merek}</td></tr>`;
       lastMerek = item.merek;
     }
-    html += `<tr><td data-name="${name.toUpperCase()}" style="text-align:left;">${name}</td><td style="text-align:right; white-space:nowrap;">${fmtRp(item.omzet)}</td><td style="text-align:center;">${item.notas.size}</td><td style="text-align:left;">${datesSorted.join(', ')}</td></tr>`;
+    html += `<tr><td data-name="${name.toUpperCase()}" style="text-align:left;">${name}</td><td style="text-align:right; white-space:nowrap;">${fmtRpFull(item.omzet)}</td><td style="text-align:center;">${item.notas.size}</td><td style="text-align:left;">${datesSorted.join(', ')}</td></tr>`;
   });
   return html;
 }
@@ -6078,12 +6124,34 @@ function renderOktober(results){
   const table = document.getElementById('mainTable');
   table.className = '';
   table.innerHTML = '<caption>Program Insentif Oktober - November</caption>';
+  const m = isMobileView();
   const get = (id, s)=> (results[id] && results[id][s]) || 0;
+  const barCell = (p_, span)=>{
+    const w = Math.max(0, Math.min(p_, 100));
+    return `<td class="bar-cell" colspan="${span}"><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:${w}%"></div></div><span class="bar-label">${p_}%</span></div></td>`;
+  };
   const header = '<th class="col-prog">Program Insentif</th><th class="col-per">Periode</th><th>Nama Salesman</th><th class="col-ins">Insentif</th><th>Target</th><th>Ach</th><th>%Ach</th>';
 
   const cabangCfg = currentBranch === 'Gorontalo' ? OKTOBER_TARGET_CABANG.Gorontalo : null;
   const renderBlock = (p, insentifText, cabangTarget)=>{
     const withCabang = cabangTarget > 0;
+    if(m){
+      addMobileTitle(table, `${p.title} &bull; ${p.periode} &bull; ${insentifText}`, 5);
+      const th = table.insertRow(-1);
+      th.innerHTML = '<th>Nama Salesman</th><th>Target</th><th>Ach</th><th colspan="2">%Ach</th>';
+      salesList.forEach(sales=>{
+        const ach = get(p.id, sales);
+        const row = table.insertRow(-1);
+        row.innerHTML = `<td class="nama">${sales}</td><td><input class="target-input" type="number" value="${p.target}" onchange="updateTarget('${p.id}', this.value)"></td><td>${ach}</td>` + barCell(pct(ach, p.target), 2);
+      });
+      if(withCabang){
+        const total = salesList.reduce((acc, s)=>acc + get(p.id, s), 0);
+        const row = table.insertRow(-1);
+        row.style.background = '#eef3ea'; row.className = 'tot-row';
+        row.innerHTML = `<td class="nama" style="color:#000;">TOTAL CABANG</td><td style="font-weight:bold;">${cabangTarget}</td><td style="font-weight:bold;">${total}</td>` + barCell(pct(total, cabangTarget), 2);
+      }
+      return;
+    }
     const rs = salesList.length + (withCabang ? 1 : 0);
     addMobileTitle(table, `${p.title} &bull; ${p.periode} &bull; ${insentifText}`, 4);
     const thead = table.insertRow(-1);
@@ -6111,7 +6179,7 @@ function renderOktober(results){
       const p_ = pct(total, target);
       const width = Math.max(0, Math.min(p_, 100));
       const row = table.insertRow(-1);
-      row.style.background = '#eef3ea';
+      row.style.background = '#eef3ea'; row.className = 'tot-row';
       row.innerHTML = `<td class="nama" style="color:#000;">TOTAL CABANG</td><td style="font-weight:bold;">${target}</td><td style="font-weight:bold;">${total}</td><td class="bar-cell"><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:${width}%"></div></div><span class="bar-label">${p_}%</span></div></td>`;
     }
   };
@@ -6129,6 +6197,16 @@ function renderOktober(results){
     raport[s] = { achCount, nominal, allBonus, okt60, bonusOkt };
   });
 
+  if(m){
+    addMobileTitle(table, `Insentif Raport Sales Q4 2026 &bull; ${OKTOBER_PERIODE} &bull; * = EA Hilo >${OKTOBER_EA_HILO_BONUS_MIN}`, 5);
+    const th = table.insertRow(-1);
+    th.innerHTML = '<th>Nama Salesman</th><th>KPI (dari 5)</th><th>Raport 2 Bln</th><th>KPI &ge;60%</th><th>Bonus Okt</th>';
+    salesList.forEach(sales=>{
+      const rp = raport[sales];
+      const row = table.insertRow(-1);
+      row.innerHTML = `<td class="nama">${sales}</td><td>${rp.achCount}${rp.allBonus ? '*' : ''}</td><td style="font-weight:bold;">Rp ${fmtRp(rp.nominal)}</td><td>${rp.okt60}</td><td style="font-weight:bold;">Rp ${fmtRp(rp.bonusOkt)}</td>`;
+    });
+  } else {
   addMobileTitle(table, `Insentif Raport Sales Q4 2026 &bull; ${OKTOBER_PERIODE}`, 5);
   const theadR = table.insertRow(-1);
   theadR.innerHTML = '<th class="col-prog">Program Insentif</th><th class="col-per">Periode</th><th>Nama Salesman</th><th>KPI Tercapai (dari 5)</th><th>Insentif Raport 2 Bulan</th><th>KPI >=60% di Oktober</th><th>Bonus Oktober</th>';
@@ -6147,6 +6225,7 @@ function renderOktober(results){
     html += `<td style="font-weight:bold;">Rp ${rp.bonusOkt.toLocaleString('id-ID')}</td>`;
     row.innerHTML = html;
   });
+  }
 
   table.dataset.splitRow = table.rows.length;
   const varianAktif = OKTOBER_VARIAN.filter(p=>p.branches.includes(currentBranch));
@@ -6162,6 +6241,16 @@ function renderOktober(results){
     totals[s] = raport[s].bonusOkt;
   });
 
+  if(m){
+    addMobileTitle(table, 'Ringkasan: Total Insentif Oktober (hanya Bonus Oktober)', 5);
+    const th = table.insertRow(-1);
+    th.innerHTML = '<th colspan="2">Nama Salesman</th><th colspan="3">Total Insentif</th>';
+    salesList.forEach(sales=>{
+      const row = table.insertRow(-1);
+      row.innerHTML = `<td class="nama" colspan="2">${sales}</td><td colspan="3" style="text-align:right; font-weight:bold;">Rp ${fmtRp(totals[sales])}</td>`;
+    });
+    return;
+  }
   addMobileTitle(table, 'Ringkasan: Total Insentif Oktober (hanya Bonus Oktober)', 2);
   const theadTotal = table.insertRow(-1);
   theadTotal.innerHTML = '<th class="col-prog" colspan="2">Ringkasan</th><th>Nama Salesman</th><th colspan="4">Total Insentif</th>';
@@ -6188,7 +6277,13 @@ function renderOktoberMatrix(results){
     const w = Math.max(0, Math.min(p_, 100));
     return `<td class="bar-cell"${span > 1 ? ` colspan="${span}"` : ''}><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:${w}%"></div></div><span class="bar-label">${p_}%</span></div></td>`;
   };
+  const m = isMobileView();
   const addHeader = ()=>{
+    if(m){
+      const hm = table.insertRow(-1);
+      hm.innerHTML = '<th>Program Insentif</th><th>Target</th>' + salesList.map(s=>`<th>${s}</th>`).join('');
+      return;
+    }
     const h1 = table.insertRow(-1);
     h1.innerHTML = '<th rowspan="2">Program Insentif</th><th rowspan="2">Target</th>' + salesList.map(s=>`<th colspan="2">${s}</th>`).join('') + '<th class="col-per" rowspan="2">Periode</th><th class="col-ins" rowspan="2">Insentif</th>';
     const h2 = table.insertRow(-1);
@@ -6200,18 +6295,28 @@ function renderOktoberMatrix(results){
     html += `<td><input class="target-input" type="number" value="${p.target}" onchange="updateTarget('${p.id}', this.value)"></td>`;
     salesList.forEach(s=>{
       const ach = get(p.id, s);
-      html += `<td>${ach}</td>` + bar(pct(ach, p.target), 1);
+      if(m){
+        const p_ = pct(ach, p.target);
+        const w = Math.max(0, Math.min(p_, 100));
+        html += `<td><b>${ach}</b> &nbsp;<span class="bar-label">${p_}%</span><div class="bar-bg mbar"><div class="bar-fill" style="width:${w}%"></div></div></td>`;
+      } else {
+        html += `<td>${ach}</td>` + bar(pct(ach, p.target), 1);
+      }
     });
-    html += `<td class="col-per">${p.periode}</td><td class="col-ins">${insentifText}</td>`;
+    if(!m) html += `<td class="col-per">${p.periode}</td><td class="col-ins">${insentifText}</td>`;
     row.innerHTML = html;
   };
   const infoRow = (label, values, bold)=>{
     const row = table.insertRow(-1);
-    row.innerHTML = `<td class="program" colspan="2">${label}</td>` + values.map(v=>`<td colspan="2"${bold ? ' style="font-weight:bold;"' : ''}>${v}</td>`).join('') + '<td class="col-per" colspan="2"></td>';
+    if(m){
+      row.innerHTML = `<td class="program" colspan="2">${label}</td>` + values.map(v=>`<td${bold ? ' style="font-weight:bold;"' : ''}>${v}</td>`).join('');
+      return;
+    }
+    row.innerHTML =`<td class="program" colspan="2">${label}</td>` + values.map(v=>`<td colspan="2"${bold ? ' style="font-weight:bold;"' : ''}>${v}</td>`).join('') + '<td class="col-per" colspan="2"></td>';
   };
   const sectionRow = (text)=>{
     const row = table.insertRow(-1);
-    row.innerHTML = `<th colspan="${4 + n * 2}">${text}</th>`;
+    row.innerHTML = `<th colspan="${m ? 2 + n : 4 + n * 2}">${text}</th>`;
   };
 
   addHeader();
@@ -6241,8 +6346,8 @@ function renderOktoberMatrix(results){
     progRow({ id:OKTOBER_MT5.id, title:OKTOBER_MT5.title, periode:OKTOBER_MT5.periode, target:mt5Cfg.target }, 'Rp ' + mt5Cfg.nominal.toLocaleString('id-ID') + '/sales');
     const total = salesList.reduce((acc, s)=>acc + get(OKTOBER_MT5.id, s), 0);
     const row = table.insertRow(-1);
-    row.style.background = '#eef3ea';
-    row.innerHTML = `<td class="nama" style="color:#000;">TOTAL CABANG ${OKTOBER_MT5.title}</td><td style="font-weight:bold;">${mt5Cfg.targetCabang}</td><td colspan="${n * 2}" style="font-weight:bold;">Total ${total} dari ${mt5Cfg.targetCabang} (${pct(total, mt5Cfg.targetCabang)}%)</td><td class="col-per" colspan="2"></td>`;
+    row.style.background = '#eef3ea'; row.className = 'tot-row';
+    row.innerHTML = `<td class="nama" style="color:#000;">TOTAL CABANG ${OKTOBER_MT5.title}</td><td style="font-weight:bold;">${mt5Cfg.targetCabang}</td><td colspan="${m ? n : n * 2}" style="font-weight:bold;">Total ${total} dari ${mt5Cfg.targetCabang} (${pct(total, mt5Cfg.targetCabang)}%)</td>` + (m ? '' : '<td class="col-per" colspan="2"></td>');
   }
 
   sectionRow('Ringkasan');
@@ -6362,6 +6467,37 @@ function wrapTablesForMobile(){
     }
   });
 }
+
+function decoratePills(){
+  document.querySelectorAll('#mainTable .bar-label, #dashboardTable .bar-label').forEach(el=>{
+    const v = parseFloat(el.textContent);
+    if(isNaN(v)) return;
+    const lvl = v >= 100 ? 'hi' : (v >= 50 ? 'mid' : 'lo');
+    ['hi', 'mid', 'lo'].forEach(k=>el.classList.toggle('pct-' + k, k === lvl));
+    const box = el.closest('.bar-wrap') || el.closest('td');
+    if(box) ['hi', 'mid', 'lo'].forEach(k=>box.classList.toggle('lvl-' + k, k === lvl));
+  });
+}
+let pillQueued = false;
+const pillObserver = new MutationObserver(()=>{
+  if(pillQueued) return;
+  pillQueued = true;
+  requestAnimationFrame(()=>{ pillQueued = false; decoratePills(); });
+});
+['mainTable', 'dashboardTable'].forEach(id=>{
+  const el = document.getElementById(id);
+  if(el) pillObserver.observe(el, { childList: true, subtree: true });
+});
+
+let lastMobileView = isMobileView();
+window.addEventListener('resize', ()=>{
+  const now = isMobileView();
+  if(now === lastMobileView) return;
+  lastMobileView = now;
+  if(!currentUser) return;
+  if(currentMode === 'dashboard') switchInsentifMonth(currentDashboardMonth);
+  else compute();
+});
 
 if('serviceWorker' in navigator){
   navigator.serviceWorker.register('./sw.js').catch(err=>console.log('Service Worker gagal terdaftar:', err));
