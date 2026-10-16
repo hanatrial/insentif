@@ -1,0 +1,10 @@
+{
+  "name": "Program Insentif MDS",
+  "short_name": "Insentif",
+  "start_url": "index.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#ffffff",
+  "theme_color": "#0a5c36",
+  "description": "Dashboard Program Insentif Sales MDS Sulawesi (Makassar, Bulukumba, Gorontalo)"
+}

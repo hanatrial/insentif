@@ -2,6 +2,11 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0a5c36">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Insentif MDS">
 <title>Program Insentif</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -79,6 +84,35 @@
   }
   #tokoModalBody { padding:16px 18px; text-align:left; font-size:13px; }
   #tokoModalBody ul { margin:6px 0; padding-left:18px; }
+</style>
+<link rel="manifest" href="manifest.json">
+<style>
+  @media (max-width: 640px){
+    body { padding: 8px; }
+    .wrap { max-width: 100%; padding: 0; }
+    .login-screen { margin: 30px auto; padding: 20px 16px; }
+    .login-option { font-size: 15px; padding: 14px; }
+    .toolbar { padding: 10px 12px; gap: 8px; flex-direction: column; align-items: stretch; }
+    .toolbar button { width: 100%; box-sizing: border-box; font-size: 14px; padding: 10px 14px; }
+    .toolbar input[type=file] { width: 100%; font-size: 14px; }
+    .toolbar span#lastUpload { font-size: 12px; margin-top: 6px; display: block; }
+    .toolbar input[type=text] { width: 100%; }
+    input#achSlider { width: 100% !important; }
+    th, td { padding: 6px 8px; font-size: 13px; }
+    caption { font-size: 16px; padding: 8px; }
+    .bar-bg { width: 70px; height: 14px; flex-shrink: 0; }
+    .bar-fill { height: 14px; }
+    .bar-label { font-size: 11px; white-space: nowrap; }
+    .bar-wrap { gap: 4px; }
+    .target-input { width: 45px; }
+    #tokoModalBox { width: 95%; max-height: 92vh; }
+    #tokoModalBody { padding: 14px; font-size: 13px; }
+    #tokoModalHeader h3 { font-size: 16px; }
+    #tokoModalClose { font-size: 24px; }
+    #tokoModalHeader { padding: 10px 16px; }
+  }
+  .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; margin-bottom: 12px; }
+  @media (min-width: 641px){ .table-wrap { overflow-x: visible; } }
 </style>
 </head>
 <body>
@@ -4851,6 +4885,7 @@ async function login(user){
   document.getElementById('loginError').textContent = '';
   document.getElementById('loginScreen').classList.add('hidden');
   document.getElementById('appWrap').classList.remove('hidden');
+  wrapTablesForMobile();
   currentUser = user;
   currentMode = cfg.mode || 'insentif';
   const isDashboard = currentMode === 'dashboard';
@@ -6287,6 +6322,22 @@ function exportToExcel(){
 }
 
 // menunggu login sebelum render pertama (lihat fungsi login())
+
+function wrapTablesForMobile(){
+  ['mainTable','dashboardTable'].forEach(id=>{
+    const t = document.getElementById(id);
+    if(t && !t.parentElement.classList.contains('table-wrap')){
+      const wrap = document.createElement('div');
+      wrap.className = 'table-wrap';
+      t.parentNode.insertBefore(wrap, t);
+      wrap.appendChild(t);
+    }
+  });
+}
+
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('./sw.js').catch(err=>console.log('Service Worker gagal terdaftar:', err));
+}
 </script>
 </body>
 </html>
