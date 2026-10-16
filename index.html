@@ -115,6 +115,19 @@
   }
   .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; margin-bottom: 12px; }
   @media (min-width: 641px){ .table-wrap { overflow-x: visible; } }
+  .m-title, .m-only { display: none; }
+  .m-sub { font-size: 11px; font-weight: normal; color: #555; margin-top: 2px; }
+  @media (max-width: 640px){
+    .m-title { display: table-row; }
+    .m-title td { background: #d9ead3; font-weight: bold; text-align: left; font-size: 13px; padding: 6px 8px; }
+    .m-only { display: block; }
+    .col-prog, .col-per, .col-ins { display: none; }
+    #mainTable th, #mainTable td, #dashboardTable th, #dashboardTable td { padding: 4px 4px; font-size: 12px; }
+    #mainTable .bar-bg { width: 54px; }
+    table.mtx .bar-bg, #dashboardTable .bar-bg { display: none; }
+    #mainTable .bar-label, #dashboardTable .bar-label { font-size: 11px; }
+    #mainTable .target-input { width: 48px; padding: 2px; box-sizing: border-box; }
+  }
 </style>
 </head>
 <body>
@@ -6017,12 +6030,20 @@ function targetCabangRows(cfg){
   return OKTOBER_KPI.concat(OKTOBER_VARIAN.filter(v=>cfg[v.id] !== undefined));
 }
 
+function addMobileTitle(table, text, cols){
+  const tr = table.insertRow(-1);
+  tr.className = 'm-title';
+  tr.innerHTML = `<td colspan="${cols}">${text}</td>`;
+}
+
 function renderTargetCabang(cfg, sum, jmlSales){
   const table = document.getElementById('mainTable');
+  table.className = '';
   table.innerHTML = '<caption>Target Cabang Oktober - November (Makassar + Bulukumba)</caption>';
   delete table.dataset.splitRow;
+  addMobileTitle(table, cfg.label, 5);
   const thead = table.insertRow(-1);
-  thead.innerHTML = '<th>Distributor / Cabang</th><th>Program Insentif</th><th>KPI</th><th>Target Cabang</th><th>Ach Cabang</th><th>%Ach</th>';
+  thead.innerHTML = '<th class="col-prog">Distributor / Cabang</th><th>Program Insentif</th><th>KPI</th><th>Target Cabang</th><th>Ach Cabang</th><th>%Ach</th>';
   const rowsCfg = targetCabangRows(cfg);
   const groups = [
     { label:'Insentif Raport Sales Q4 2026', items:OKTOBER_KPI.map(k=>({ id:k.id, name:k.title })) },
@@ -6039,7 +6060,7 @@ function renderTargetCabang(cfg, sum, jmlSales){
       const row = table.insertRow(-1);
       let html = '';
       if(first){
-        html += `<td class="program" rowspan="${rowsCfg.length}">${cfg.label}</td>`;
+        html += `<td class="program col-prog" rowspan="${rowsCfg.length}">${cfg.label}</td>`;
         first = false;
       }
       if(i === 0) html += `<td class="program" rowspan="${g.items.length}">${g.label}</td>`;
@@ -6055,14 +6076,16 @@ function renderTargetCabang(cfg, sum, jmlSales){
 function renderOktober(results){
   const salesList = getSalesList();
   const table = document.getElementById('mainTable');
+  table.className = '';
   table.innerHTML = '<caption>Program Insentif Oktober - November</caption>';
   const get = (id, s)=> (results[id] && results[id][s]) || 0;
-  const header = '<th>Program Insentif</th><th>Periode</th><th>Nama Salesman</th><th>Insentif</th><th>Target</th><th>Ach</th><th>%Ach</th>';
+  const header = '<th class="col-prog">Program Insentif</th><th class="col-per">Periode</th><th>Nama Salesman</th><th class="col-ins">Insentif</th><th>Target</th><th>Ach</th><th>%Ach</th>';
 
   const cabangCfg = currentBranch === 'Gorontalo' ? OKTOBER_TARGET_CABANG.Gorontalo : null;
   const renderBlock = (p, insentifText, cabangTarget)=>{
     const withCabang = cabangTarget > 0;
     const rs = salesList.length + (withCabang ? 1 : 0);
+    addMobileTitle(table, `${p.title} &bull; ${p.periode} &bull; ${insentifText}`, 4);
     const thead = table.insertRow(-1);
     thead.innerHTML = header;
     salesList.forEach((sales, idx)=>{
@@ -6072,11 +6095,11 @@ function renderOktober(results){
       const row = table.insertRow(-1);
       let html = '';
       if(idx === 0){
-        html += `<td class="program" rowspan="${rs}">${p.title}</td>`;
-        html += `<td rowspan="${rs}">${p.periode}</td>`;
+        html += `<td class="program col-prog" rowspan="${rs}">${p.title}</td>`;
+        html += `<td class="col-per" rowspan="${rs}">${p.periode}</td>`;
       }
       html += `<td class="nama">${sales}</td>`;
-      if(idx === 0) html += `<td rowspan="${rs}">${insentifText}</td>`;
+      if(idx === 0) html += `<td class="col-ins" rowspan="${rs}">${insentifText}</td>`;
       html += `<td><input class="target-input" type="number" value="${p.target}" onchange="updateTarget('${p.id}', this.value)"></td>`;
       html += `<td>${ach}</td>`;
       html += `<td class="bar-cell"><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:${width}%"></div></div><span class="bar-label">${p_}%</span></div></td>`;
@@ -6106,15 +6129,16 @@ function renderOktober(results){
     raport[s] = { achCount, nominal, allBonus, okt60, bonusOkt };
   });
 
+  addMobileTitle(table, `Insentif Raport Sales Q4 2026 &bull; ${OKTOBER_PERIODE}`, 5);
   const theadR = table.insertRow(-1);
-  theadR.innerHTML = '<th>Program Insentif</th><th>Periode</th><th>Nama Salesman</th><th>KPI Tercapai (dari 5)</th><th>Insentif Raport 2 Bulan</th><th>KPI >=60% di Oktober</th><th>Bonus Oktober</th>';
+  theadR.innerHTML = '<th class="col-prog">Program Insentif</th><th class="col-per">Periode</th><th>Nama Salesman</th><th>KPI Tercapai (dari 5)</th><th>Insentif Raport 2 Bulan</th><th>KPI >=60% di Oktober</th><th>Bonus Oktober</th>';
   salesList.forEach((sales, idx)=>{
     const rp = raport[sales];
     const row = table.insertRow(-1);
     let html = '';
     if(idx === 0){
-      html += `<td class="program" rowspan="${salesList.length}">Insentif Raport Sales Q4 2026</td>`;
-      html += `<td rowspan="${salesList.length}">${OKTOBER_PERIODE}</td>`;
+      html += `<td class="program col-prog" rowspan="${salesList.length}">Insentif Raport Sales Q4 2026</td>`;
+      html += `<td class="col-per" rowspan="${salesList.length}">${OKTOBER_PERIODE}</td>`;
     }
     html += `<td class="nama">${sales}</td>`;
     html += `<td>${rp.achCount}${rp.allBonus ? ' (EA Hilo >' + OKTOBER_EA_HILO_BONUS_MIN + ')' : ''}</td>`;
@@ -6138,13 +6162,14 @@ function renderOktober(results){
     totals[s] = raport[s].bonusOkt;
   });
 
+  addMobileTitle(table, 'Ringkasan: Total Insentif Oktober (hanya Bonus Oktober)', 2);
   const theadTotal = table.insertRow(-1);
-  theadTotal.innerHTML = '<th colspan="2">Ringkasan</th><th>Nama Salesman</th><th colspan="4">Total Insentif</th>';
+  theadTotal.innerHTML = '<th class="col-prog" colspan="2">Ringkasan</th><th>Nama Salesman</th><th colspan="4">Total Insentif</th>';
   salesList.forEach((sales, idx)=>{
     const row = table.insertRow(-1);
     let html = '';
     if(idx === 0){
-      html += `<td class="program" rowspan="${salesList.length}" colspan="2">Total Insentif Oktober per Salesman (hanya Bonus Oktober)</td>`;
+      html += `<td class="program col-prog" rowspan="${salesList.length}" colspan="2">Total Insentif Oktober per Salesman (hanya Bonus Oktober)</td>`;
     }
     html += `<td class="nama">${sales}</td>`;
     html += `<td colspan="4" style="text-align:right; font-weight:bold;">Rp ${totals[sales].toLocaleString('id-ID')}</td>`;
@@ -6156,6 +6181,7 @@ function renderOktoberMatrix(results){
   const salesList = getSalesList();
   const n = salesList.length;
   const table = document.getElementById('mainTable');
+  table.className = 'mtx';
   table.innerHTML = '<caption>Program Insentif Oktober - November</caption>';
   const get = (id, s)=> (results[id] && results[id][s]) || 0;
   const bar = (p_, span)=>{
@@ -6164,24 +6190,24 @@ function renderOktoberMatrix(results){
   };
   const addHeader = ()=>{
     const h1 = table.insertRow(-1);
-    h1.innerHTML = '<th rowspan="2">Program Insentif</th><th rowspan="2">Target</th>' + salesList.map(s=>`<th colspan="2">${s}</th>`).join('') + '<th rowspan="2">Periode</th><th rowspan="2">Insentif</th>';
+    h1.innerHTML = '<th rowspan="2">Program Insentif</th><th rowspan="2">Target</th>' + salesList.map(s=>`<th colspan="2">${s}</th>`).join('') + '<th class="col-per" rowspan="2">Periode</th><th class="col-ins" rowspan="2">Insentif</th>';
     const h2 = table.insertRow(-1);
     h2.innerHTML = salesList.map(()=>'<th>Ach</th><th>%Ach</th>').join('');
   };
   const progRow = (p, insentifText)=>{
     const row = table.insertRow(-1);
-    let html = `<td class="program">${p.title}</td>`;
+    let html = `<td class="program">${p.title}<div class="m-only m-sub">${p.periode} &bull; ${insentifText}</div></td>`;
     html += `<td><input class="target-input" type="number" value="${p.target}" onchange="updateTarget('${p.id}', this.value)"></td>`;
     salesList.forEach(s=>{
       const ach = get(p.id, s);
       html += `<td>${ach}</td>` + bar(pct(ach, p.target), 1);
     });
-    html += `<td>${p.periode}</td><td>${insentifText}</td>`;
+    html += `<td class="col-per">${p.periode}</td><td class="col-ins">${insentifText}</td>`;
     row.innerHTML = html;
   };
   const infoRow = (label, values, bold)=>{
     const row = table.insertRow(-1);
-    row.innerHTML = `<td class="program" colspan="2">${label}</td>` + values.map(v=>`<td colspan="2"${bold ? ' style="font-weight:bold;"' : ''}>${v}</td>`).join('') + '<td colspan="2"></td>';
+    row.innerHTML = `<td class="program" colspan="2">${label}</td>` + values.map(v=>`<td colspan="2"${bold ? ' style="font-weight:bold;"' : ''}>${v}</td>`).join('') + '<td class="col-per" colspan="2"></td>';
   };
   const sectionRow = (text)=>{
     const row = table.insertRow(-1);
@@ -6216,7 +6242,7 @@ function renderOktoberMatrix(results){
     const total = salesList.reduce((acc, s)=>acc + get(OKTOBER_MT5.id, s), 0);
     const row = table.insertRow(-1);
     row.style.background = '#eef3ea';
-    row.innerHTML = `<td class="nama" style="color:#000;">TOTAL CABANG ${OKTOBER_MT5.title}</td><td style="font-weight:bold;">${mt5Cfg.targetCabang}</td><td colspan="${n * 2}" style="font-weight:bold;">Total ${total} dari ${mt5Cfg.targetCabang} (${pct(total, mt5Cfg.targetCabang)}%)</td><td colspan="2"></td>`;
+    row.innerHTML = `<td class="nama" style="color:#000;">TOTAL CABANG ${OKTOBER_MT5.title}</td><td style="font-weight:bold;">${mt5Cfg.targetCabang}</td><td colspan="${n * 2}" style="font-weight:bold;">Total ${total} dari ${mt5Cfg.targetCabang} (${pct(total, mt5Cfg.targetCabang)}%)</td><td class="col-per" colspan="2"></td>`;
   }
 
   sectionRow('Ringkasan');
