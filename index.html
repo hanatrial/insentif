@@ -4964,7 +4964,7 @@ function itemGroupKPI(name){
 const DATA_PERIODE = 'Oktober - Desember';
 const OKTOBER_MT5 = {
   id:'okMt5', title:'Insentif MT 5 Varian', periode:'Oktober - Desember',
-  byBranch:{ Bulukumba:{ target:25, targetCabang:50 }, Gorontalo:{ target:20, targetCabang:80 } }
+  byBranch:{ Bulukumba:{ target:25, targetCabang:50, insentif:300000 }, Gorontalo:{ target:20, targetCabang:80, insentif:250000 } }
 };
 const OKTOBER_PERIODE = 'Oktober - November';
 const OKTOBER_KPI = [
@@ -6128,7 +6128,7 @@ function renderOktober(results){
 
   const mt5Cfg = OKTOBER_MT5.byBranch[currentBranch];
   if(mt5Cfg){
-    renderBlock({ id:OKTOBER_MT5.id, title:OKTOBER_MT5.title, periode:OKTOBER_MT5.periode, target:mt5Cfg.target }, 'Belum ada nominal', mt5Cfg.targetCabang);
+    renderBlock({ id:OKTOBER_MT5.id, title:OKTOBER_MT5.title, periode:OKTOBER_MT5.periode, target:mt5Cfg.target }, 'Rp ' + mt5Cfg.insentif.toLocaleString('id-ID') + '/store', mt5Cfg.targetCabang);
   }
 
   const totals = {};
@@ -6210,7 +6210,7 @@ function renderOktoberMatrix(results){
 
   const mt5Cfg = OKTOBER_MT5.byBranch[currentBranch];
   if(mt5Cfg){
-    progRow({ id:OKTOBER_MT5.id, title:OKTOBER_MT5.title, periode:OKTOBER_MT5.periode, target:mt5Cfg.target }, 'Belum ada nominal');
+    progRow({ id:OKTOBER_MT5.id, title:OKTOBER_MT5.title, periode:OKTOBER_MT5.periode, target:mt5Cfg.target }, 'Rp ' + mt5Cfg.insentif.toLocaleString('id-ID') + '/store');
     const total = salesList.reduce((acc, s)=>acc + get(OKTOBER_MT5.id, s), 0);
     const row = table.insertRow(-1);
     row.style.background = '#eef3ea';
