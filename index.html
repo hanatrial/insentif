@@ -6242,9 +6242,9 @@ function computeSehatIndah(){
     raport[s] = { ea, ns7: get('sehatNs7', s), tercapai, nominal, bonus, total: nominal + bonus };
   });
 
-  addMobileTitle(table, `Insentif Raport Salesman &bull; ${SEHAT_PERIODE} &bull; 1 KPI = Rp500.000 &bull; 2 KPI = Rp2.000.000`, 7);
+  addMobileTitle(table, `Insentif Raport Salesman &bull; ${SEHAT_PERIODE} &bull; 1 KPI = Rp500.000 &bull; 2 KPI = Rp2.000.000`, 6);
   const theadR = table.insertRow(-1);
-  theadR.innerHTML = '<th class="col-prog">Program Insentif</th><th class="col-per">Periode</th><th>Nama Salesman</th><th>KPI Tercapai (dari 2)</th><th>EA Hilo Polos 2 Bln</th><th>Insentif Raport</th><th>Tambahan EA &gt; 160</th>';
+  theadR.innerHTML = '<th class="col-prog">Program Insentif</th><th class="col-per">Periode</th><th>Nama Salesman</th><th>KPI Tercapai (dari 2)</th><th>Insentif Raport</th><th>Tambahan EA &gt; 160</th>';
   SEHAT_SALES.forEach((sales, idx)=>{
     const rp = raport[sales];
     const row = table.insertRow(-1);
@@ -6255,7 +6255,6 @@ function computeSehatIndah(){
     }
     html += `<td class="nama">${sales}</td>`;
     html += `<td>${rp.tercapai}</td>`;
-    html += `<td>${rp.ea}</td>`;
     html += `<td style="font-weight:bold;">Rp ${rp.nominal.toLocaleString('id-ID')}</td>`;
     html += `<td>${rp.bonus ? 'Rp ' + rp.bonus.toLocaleString('id-ID') : '-'}</td>`;
     row.innerHTML = html;
