@@ -120,7 +120,7 @@
     body { background:#f6f7f9; font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; color:#101828; -webkit-font-smoothing: antialiased; }
     .toolbar { background:#fff; border:1px solid #eaecf0; border-radius:12px; box-shadow:0 1px 2px rgba(16,24,40,.05); }
     .toolbar button { border-radius:8px; font-weight:600; }
-    #btn-Makassar, #btn-Bulukumba, #btn-Gorontalo, #btn-SehatIndah, #btn-TargetCabang, #btn-BSP, #btn-tokoMT, #btn-totalTarget, #btn-month-Oktober { background:#f2f4f7 !important; color:#344054 !important; box-shadow:none !important; }
+    #btn-Makassar, #btn-Bulukumba, #btn-Gorontalo, #btn-SehatIndah, #btn-TargetCabang, #btn-TokoPareto, #btn-BSP, #btn-tokoMT, #btn-totalTarget, #btn-month-Oktober { background:#f2f4f7 !important; color:#344054 !important; box-shadow:none !important; }
     .toolbar button.branch-active { background:#0a5c36 !important; color:#fff !important; box-shadow:none !important; }
     #status { font-size:12px; font-weight:600; }
     .table-wrap { background:#fff; border:1px solid #eaecf0; border-radius:12px; box-shadow:0 1px 3px rgba(16,24,40,.08); }
@@ -149,7 +149,7 @@
     .m-title { display: table-row; }
     .m-title td { background: #d9ead3; font-weight: bold; text-align: left; font-size: 13px; padding: 6px 8px; }
     .m-only { display: block; }
-    .col-prog, .col-per, .col-ins, .col-sales { display: none; }
+    .col-prog, .col-per, .col-ins, .col-sales, .col-no { display: none; }
     td .m-sub { display: inline-block !important; width: 100%; text-decoration: none; }
     #mainTable th, #mainTable td, #dashboardTable th, #dashboardTable td { padding: 4px 4px; font-size: 12px; }
     #mainTable .bar-bg { width: 60px; }
@@ -196,6 +196,7 @@
   <button id="btn-TargetCabang" class="hidden" onclick="switchBranch('TargetCabang')">Target Cabang</button>
   <button id="btn-Gorontalo" onclick="switchBranch('Gorontalo')">Gorontalo</button>
   <button id="btn-SehatIndah" class="hidden" onclick="switchBranch('SehatIndah')">Sehat Indah</button>
+  <button id="btn-TokoPareto" class="hidden" onclick="switchBranch('TokoPareto')">Toko Pareto</button>
   <button id="btn-tokoMT" class="hidden" onclick="showTokoMTDashboard()" style="background:#888;">Toko MT</button>
   <button id="btn-totalTarget" class="hidden" onclick="showTotalTargetDashboard()" style="background:#888;">Total Target</button>
 </div>
@@ -320,7 +321,7 @@ async function loadDataFromCloud(branch){
 const LOGIN_CONFIG = {
   Irfan: { branches:['Makassar','Bulukumba'] },
   Teddy: { branches:['Gorontalo'] },
-  Fahri: { branches:['SehatIndah'] },
+  Fahri: { branches:['SehatIndah','TokoPareto'] },
   RKA: { branches:['Makassar','Bulukumba','Gorontalo'], mode:'dashboard' }
 };
 let currentMode = 'insentif';
@@ -4945,6 +4946,75 @@ const SEHAT_TEEN = {
   insentifSales:200000,
   insentifSup:300000
 };
+// ===== Sehat Indah (Fahri) — TOKO PARETO: 50 toko avg > Rp5jt =====
+// Sumber: toko_sehat_indah_avg_5jt.xlsx (sheet "Avg 2026 > 5jt").
+// Target = 120% dari Avg 2026, dibulatkan KE ATAS ke satuan 100rb (target per bulan).
+// Ach = penjualan Nutrifood toko tsb pada data yang diupload (Oktober - Desember).
+// alias = nama toko di file penjualan kalau beda dari nama di file avg
+//         (RIDHO KIOS -> RIDOH KIOS, GUNUNG SARI / WENI PAYUYU -> GUNUNG SARI).
+const SEHAT_PARETO = [
+  { no:1, toko:"PT INTI CAKRAWALA CITRA", sales:"ADMIN", avg2026:293201662, target:351900000 },
+  { no:2, toko:"PT KRISTAL PERMATA ABADI", sales:"MAX TO", avg2026:48573000, target:58300000 },
+  { no:3, toko:"DHIDI.Sw", sales:"MAX TO", avg2026:34701069, target:41700000 },
+  { no:4, toko:"TOKO PLASTIK GAJAH", sales:"RIDHO", avg2026:28012214, target:33700000 },
+  { no:5, toko:"ARNED / FADLAN ALAMRI", sales:"MAX TO", avg2026:26185196, target:31500000 },
+  { no:6, toko:"SUKSES GEMILANG", sales:"MAX TO", avg2026:24072046, target:28900000 },
+  { no:7, toko:"ADI JAYA PAGUYAMAN", sales:"MAX TO", avg2026:19720161, target:23700000 },
+  { no:8, toko:"CHANDRA DK", sales:"ADMIN", avg2026:18290091, target:22000000 },
+  { no:9, toko:"ISIMU JAYA / YANCE SITO", sales:"MELKY", avg2026:18225076, target:21900000 },
+  { no:10, toko:"AMANG MOODU / ANDI RIZKIANSYAH LATIF", sales:"RIDHO", avg2026:18129765, target:21800000 },
+  { no:11, toko:"DK KWANDANG", sales:"MELKY", avg2026:16291019, target:19600000 },
+  { no:12, toko:"KORMA BOGA", sales:"MAX TO", avg2026:16091478, target:19400000 },
+  { no:13, toko:"PT MEMBANGUN BERSAMA", sales:"RIDHO", avg2026:15972248, target:19200000 },
+  { no:14, toko:"UMU / KALSUM ALHASNI", sales:"RIDHO", avg2026:15888350, target:19100000 },
+  { no:15, toko:"ANNAS", sales:"RIDHO", avg2026:15877629, target:19100000 },
+  { no:16, toko:"MAXMILIAN PANDENAA", sales:"MAX TO", avg2026:14521447, target:17500000 },
+  { no:17, toko:"MEGA BETI", sales:"MELKY", avg2026:13895419, target:16700000 },
+  { no:18, toko:"BAGUS PAGUYAMAN", sales:"MAX TO", avg2026:12651668, target:15200000 },
+  { no:19, toko:"TOKO IMANUEL", sales:"RIDHO", avg2026:12201249, target:14700000 },
+  { no:20, toko:"CV. NURMART JAYA", sales:"MELKY", avg2026:12191524, target:14700000 },
+  { no:21, toko:"CILI KABILA / ABD.RAHMAN DJIBU", sales:"RIDHO", avg2026:11897968, target:14300000 },
+  { no:22, toko:"PT. KARSA UTAMA LESTARI", sales:"RIDHO", avg2026:11602217, target:14000000 },
+  { no:23, toko:"YULIN MARISA", sales:"MAX TO", avg2026:10328750, target:12400000 },
+  { no:24, toko:"SEKAWAN / JHON THAIB", sales:"RIDHO", avg2026:10286452, target:12400000 },
+  { no:25, toko:"ANISA PENTADIO /UMIHANI PAKAYA", sales:"MELKY", avg2026:9917384, target:12000000 },
+  { no:26, toko:"SINAR MULIA", sales:"MELKY", avg2026:9820936, target:11800000 },
+  { no:27, toko:"RIDHO KIOS", sales:"RIDHO", avg2026:9577893, target:11500000, alias:"RIDOH KIOS" },
+  { no:28, toko:"RAHMAH / NANIK SETIAWATI", sales:"MELKY", avg2026:8527309, target:10300000 },
+  { no:29, toko:"AA / RAFLIN TUNA", sales:"MELKY", avg2026:8210680, target:9900000 },
+  { no:30, toko:"RAGAM JAYA / ABD.RAHMAN YANTU", sales:"MELKY", avg2026:7991776, target:9600000 },
+  { no:31, toko:"GUNUNG SARI / WENI PAYUYU", sales:"MELKY", avg2026:7905631, target:9500000, alias:"GUNUNG SARI" },
+  { no:32, toko:"PT.ORIENTAL JAYA MANDIRI", sales:"RIDHO", avg2026:7681709, target:9300000 },
+  { no:33, toko:"WATI / YERY MOHAMAD", sales:"RIDHO", avg2026:7270858, target:8800000 },
+  { no:34, toko:"CV INDONESIA SEJAHTERA", sales:"RIDHO", avg2026:7245328, target:8700000 },
+  { no:35, toko:"ILOPONU / ISHAK KUDU", sales:"RIDHO", avg2026:7219059, target:8700000 },
+  { no:36, toko:"SR.GEMILANG TILAMUTA", sales:"MAX TO", avg2026:7200802, target:8700000 },
+  { no:37, toko:"RM  AZWA MARISA", sales:"MAX TO", avg2026:6912200, target:8300000 },
+  { no:38, toko:"DAPURKU MARISA", sales:"MAX TO", avg2026:6615258, target:8000000 },
+  { no:39, toko:"OPAN SENTRAL", sales:"RIDHO", avg2026:6237609, target:7500000 },
+  { no:40, toko:"JAYA ABADI KWANDANG", sales:"MAX TO", avg2026:6104692, target:7400000 },
+  { no:41, toko:"INAYAH TK / TENDRY MOLE", sales:"MELKY", avg2026:6070281, target:7300000 },
+  { no:42, toko:"HERTJE / MARTHA YULIANA", sales:"MAX TO", avg2026:6040781, target:7300000 },
+  { no:43, toko:"DIVANA", sales:"RIDHO", avg2026:5750459, target:7000000 },
+  { no:44, toko:"YUN MART / THAIB SUMA", sales:"RIDHO", avg2026:5468237, target:6600000 },
+  { no:45, toko:"SENG PAGUAT / SAUL BERTUS", sales:"MAX TO", avg2026:5454860, target:6600000 },
+  { no:46, toko:"RISNA KASIM / PASAR SENTRAL", sales:"RIDHO", avg2026:5441951, target:6600000 },
+  { no:47, toko:"SINAR PS TELAGA", sales:"MELKY", avg2026:5402083, target:6500000 },
+  { no:48, toko:"INTI MART", sales:"MELKY", avg2026:5154240, target:6200000 },
+  { no:49, toko:"LESTARI TK / LUKMAN ALI", sales:"RIDHO", avg2026:5125907, target:6200000 },
+  { no:50, toko:"FIT PERUMNAS / JUSNAN LATJENGKE", sales:"RIDHO", avg2026:5114380, target:6200000 },
+];
+
+// peta nama toko (sudah dinormalkan: huruf & angka saja) -> baris SEHAT_PARETO
+function paretoKey(nama){ return String(nama||'').toUpperCase().replace(/[^A-Z0-9]/g, ''); }
+const SEHAT_PARETO_MAP = (()=>{
+  const m = {};
+  SEHAT_PARETO.forEach(p=>{
+    m[paretoKey(p.toko)] = p;
+    if(p.alias) m[paretoKey(p.alias)] = p;
+  });
+  return m;
+})();
 const SEHAT_MONTHS = { jan:0, feb:1, mar:2, apr:3, mei:4, may:4, jun:5, jul:6, agu:7, aug:7, sep:8, okt:9, oct:9, nov:10, des:11, dec:11 };
 
 let currentUser = null;
@@ -4998,12 +5068,12 @@ async function login(user){
     btn.classList.remove('branch-active');
   });
   document.getElementById('bspUploadRow').classList.add('hidden');
-  ['Makassar','Bulukumba','Gorontalo','SehatIndah'].forEach(b=>{
+  ['Makassar','Bulukumba','Gorontalo','SehatIndah','TokoPareto'].forEach(b=>{
     document.getElementById('btn-' + b).classList.toggle('hidden', !cfg.branches.includes(b));
   });
   document.getElementById('btn-TargetCabang').classList.toggle('hidden', isDashboard || !cfg.branches.includes('Makassar'));
   currentBranch = cfg.branches[0];
-  ['Makassar','Bulukumba','Gorontalo','SehatIndah','TargetCabang'].forEach(b=>{
+  ['Makassar','Bulukumba','Gorontalo','SehatIndah','TokoPareto','TargetCabang'].forEach(b=>{
     document.getElementById('btn-' + b).classList.toggle('branch-active', b === currentBranch);
   });
   if(isDashboard) await loadDashboardBranch(currentBranch);
@@ -5284,7 +5354,7 @@ function processFile(){
       const wb = XLSX.read(data, {type:'array', cellDates:true});
       const ws = wb.Sheets[wb.SheetNames[0]];
       const rawObjs = XLSX.utils.sheet_to_json(ws, {defval:null});
-      const sehat = currentBranch === 'SehatIndah' || isSehatFile(rawObjs);
+      const sehat = currentBranch === 'SehatIndah' || currentBranch === 'TokoPareto' || isSehatFile(rawObjs);
       if(sehat && !isSehatFile(rawObjs)){
         setStatus('❌ Format file tidak dikenali sebagai ekspor Sehat Indah (butuh kolom smarket, invoice, tdate, customer1, goods1, vendor1). Data cloud TIDAK diganti.', 'error');
         return;
@@ -6026,12 +6096,13 @@ function closeTokoModal(){
 function compute(){
   if(currentBranch === 'TargetCabang'){ computeTargetCabang(); return; }
   if(currentBranch === 'SehatIndah'){ computeSehatIndah(); return; }
+  if(currentBranch === 'TokoPareto'){ computeSehatPareto(); return; }
   computeOktober();
 }
 
 function switchBranch(branch){
   currentBranch = branch;
-  ['Makassar','Bulukumba','Gorontalo','SehatIndah','TargetCabang'].forEach(b=>{
+  ['Makassar','Bulukumba','Gorontalo','SehatIndah','TokoPareto','TargetCabang'].forEach(b=>{
     const btn = document.getElementById('btn-' + b);
     if(btn) btn.classList.toggle('branch-active', b === branch);
   });
@@ -6225,6 +6296,78 @@ function calcSehatResults(){
     results[SEHAT_TEEN.id][s] = Object.keys(teenPerToko).filter(key=> key.slice(0, key.indexOf('|')) === s && teenPerToko[key] >= SEHAT_TEEN.minRenceng).length;
   });
   return results;
+}
+
+// ===== Toko Pareto: 50 toko avg 2026 > Rp5jt, target/bln = 120% dari Avg 2026 =====
+// Ach = penjualan toko (baris Nutrifood) pada data yang diupload (Oktober - Desember).
+function calcSehatPareto(){
+  const hasil = {};   // no -> { ach, toko }
+  const bulan = {};
+  let tokoKetemu = 0;
+  rawData.forEach(r=>{
+    const d = toDate(field(r, 'Tgl'));
+    if(d) bulan[d.getFullYear() + '-' + d.getMonth()] = true;
+    if(isBonusRow(r)) return; // BONUS / GIMMICK tidak dihitung
+    const toko = String(field(r, 'Ship To', 'ShipTo') || field(r, 'Perusahaan') || '').trim();
+    if(!toko) return;
+    const p = SEHAT_PARETO_MAP[paretoKey(toko)];
+    if(!p) return;
+    if(!hasil[p.no]){
+      hasil[p.no] = { ach:0, toko:toko };
+      tokoKetemu++;
+    }
+    hasil[p.no].ach += Number(field(r, 'DPP')) || 0;
+  });
+  return { hasil, jmlBulan: Math.max(1, Object.keys(bulan).length), tokoKetemu };
+}
+
+function computeSehatPareto(){
+  const table = document.getElementById('mainTable');
+  table.className = '';
+  delete table.dataset.splitRow;
+  const { hasil, jmlBulan, tokoKetemu } = calcSehatPareto();
+  table.innerHTML = '<caption>Toko Pareto — Sehat Indah (avg 2026 &gt; Rp5jt/bulan)</caption>';
+  const barCell = p_=>{
+    const w = Math.max(0, Math.min(p_, 100));
+    return `<td class="bar-cell"><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:${w}%"></div></div><span class="bar-label">${p_}%</span></div></td>`;
+  };
+  const header = '<th class="col-prog">Program Insentif</th><th class="col-per">Periode</th><th class="col-no">No</th>'
+    + '<th>Nama Toko</th><th>Salesman</th><th>Avg 2026/bln</th><th>Target/bln (120%)</th><th>Ach</th><th>%Ach</th>';
+  const GRUP = 25;
+  const total = { avg:0, target:0, ach:0 };
+  for(let g = 0; g * GRUP < SEHAT_PARETO.length; g++){
+    const rows = SEHAT_PARETO.slice(g * GRUP, g * GRUP + GRUP);
+    if(g > 0) table.dataset.splitRow = String(table.rows.length); // supaya export gambar terbagi rapi
+    addMobileTitle(table, `Toko Pareto ${rows[0].no}-${rows[rows.length-1].no} &bull; target/bln = 120% dari Avg 2026 (dibulatkan ke atas per 100rb) &bull; Ach dari ${jmlBulan} bulan data terupload`, 9);
+    const thead = table.insertRow(-1);
+    thead.innerHTML = header;
+    rows.forEach((p, i)=>{
+      const ach = hasil[p.no] ? hasil[p.no].ach : 0;
+      const targetPeriode = p.target * jmlBulan;
+      total.avg += p.avg2026; total.target += p.target; total.ach += ach;
+      const row = table.insertRow(-1);
+      let html = '';
+      if(i === 0){
+        html += `<td class="program col-prog" rowspan="${rows.length}">Toko Pareto</td>`;
+        html += `<td class="col-per" rowspan="${rows.length}">${SEHAT_PERIODE} &bull; target per bulan</td>`;
+      }
+      html += `<td class="col-no">${p.no}</td>`;
+      html += `<td class="nama">${p.toko}${p.alias ? `<div class="m-only m-sub">nama di data: ${p.alias}</div>` : ''}</td>`;
+      html += `<td>${p.sales}</td>`;
+      html += `<td>${fmtRp(p.avg2026)}</td>`;
+      html += `<td style="font-weight:bold;">${fmtRp(p.target)}</td>`;
+      html += `<td>${fmtRp(ach)}</td>`;
+      html += barCell(pct(ach, targetPeriode));
+      row.innerHTML = html;
+    });
+  }
+  const rowT = table.insertRow(-1);
+  rowT.className = 'tot-row';
+  rowT.innerHTML = '<td class="col-prog"></td><td class="col-per"></td><td class="col-no"></td>'
+    + `<td class="nama" colspan="2">TOTAL ${SEHAT_PARETO.length} TOKO</td>`
+    + `<td>${fmtRp(total.avg)}</td><td style="font-weight:bold;">${fmtRp(total.target)}</td><td>${fmtRp(total.ach)}</td>`
+    + barCell(pct(total.ach, total.target * jmlBulan));
+  setStatus(`Selesai: ${SEHAT_PARETO.length} toko pareto, ${tokoKetemu} toko sudah ada transaksi. Ach dari ${jmlBulan} bulan data terupload (Oktober-Desember) — kalau data masih sebagian bulan, %Ach wajar di bawah target.`, 'ok');
 }
 
 function computeSehatIndah(){
