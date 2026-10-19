@@ -4943,8 +4943,7 @@ const SEHAT_TEEN = {
   target:20,
   minRenceng:2,
   insentifSales:200000,
-  insentifSup:300000,
-  targetCabang:20 * 2 // 20 RO x jumlah sales (SK: 2 sales)
+  insentifSup:300000
 };
 const SEHAT_MONTHS = { jan:0, feb:1, mar:2, apr:3, mei:4, may:4, jun:5, jul:6, agu:7, aug:7, sep:8, okt:9, oct:9, nov:10, des:11, dec:11 };
 
@@ -6321,12 +6320,13 @@ function computeSehatIndah(){
     row.innerHTML = html;
   });
   const rowT3 = table.insertRow(-1);
+  const target3Cabang = SEHAT_TEEN.target * SEHAT_CABANG.jmlSales; // 20 RO x jumlah sales
   rowT3.className = 'tot-row';
-  rowT3.innerHTML = `<td class="nama">TOTAL CABANG</td><td style="font-weight:bold;">${SEHAT_TEEN.targetCabang}</td><td style="font-weight:bold;">${totalTeen}</td>` + barCell(pct(totalTeen, SEHAT_TEEN.targetCabang));
+  rowT3.innerHTML = `<td class="nama">TOTAL CABANG</td><td style="font-weight:bold;">${target3Cabang}</td><td style="font-weight:bold;">${totalTeen}</td>` + barCell(pct(totalTeen, target3Cabang));
   const rowN3 = table.insertRow(-1);
-  const teenCabangTercapai = totalTeen >= SEHAT_TEEN.targetCabang;
+  const teenCabangTercapai = totalTeen >= target3Cabang;
   const teenSup = teenCabangTercapai ? (SEHAT_CABANG.jmlSales <= 2 ? SEHAT_TEEN.insentifSales : SEHAT_TEEN.insentifSup) : 0;
-  rowN3.innerHTML = `<td colspan="7" style="font-size:12px; color:#555;">Insentif Supervisor: Rp ${teenSup.toLocaleString('id-ID')} ${teenCabangTercapai ? '(cabang tercapai)' : `(belum tercapai, butuh ${SEHAT_TEEN.targetCabang} RO)`} &bull; Aturan SK: cabang 100% = Rp ${SEHAT_TEEN.insentifSup.toLocaleString('id-ID')}, tetapi cabang dengan 1-2 salesman besarannya senilai insentif salesman (Rp ${SEHAT_TEEN.insentifSales.toLocaleString('id-ID')}). Klaim paling lambat 10 Januari 2027.</td>`;
+  rowN3.innerHTML = `<td colspan="7" style="font-size:12px; color:#555;">Insentif Supervisor: Rp ${teenSup.toLocaleString('id-ID')} ${teenCabangTercapai ? '(cabang tercapai)' : `(belum tercapai, butuh ${target3Cabang} RO)`} &bull; Aturan SK: cabang 100% = Rp ${SEHAT_TEEN.insentifSup.toLocaleString('id-ID')}, tetapi cabang dengan 1-2 salesman besarannya senilai insentif salesman (Rp ${SEHAT_TEEN.insentifSales.toLocaleString('id-ID')}). Klaim paling lambat 10 Januari 2027.</td>`;
 
   // ---- Ringkasan total insentif salesman ----
   addMobileTitle(table, 'Ringkasan: Total Insentif Salesman (Raport + Retensi RO Hilo 3in1)', 7);
