@@ -1,5 +1,5 @@
-const CACHE_NAME = 'insentif-v2';
-const APP_SHELL = ['./', './index.html', './manifest.json', './icon-192.png'];
+const CACHE_NAME = 'insentif-v3';
+const APP_SHELL = ['./', './index.html', './manifest.json', './icon-192.png', './vendor/xlsx.full.min.js', './vendor/html2canvas.min.js'];
 
 self.addEventListener('install', event=>{
   self.skipWaiting();

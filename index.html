@@ -8,8 +8,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Insentif MDS">
 <title>Program Insentif</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="vendor/xlsx.full.min.js"></script>
+<script src="vendor/html2canvas.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <style>
@@ -5255,6 +5255,7 @@ function isBonusRow(r){
 function processFile(){
   const f = document.getElementById('fileInput').files[0];
   if(!f){ document.getElementById('status').textContent = 'Pilih file dulu.'; return; }
+  if(typeof XLSX === 'undefined'){ setStatus('❌ Library Excel belum termuat. Refresh halaman (Ctrl+Shift+R) lalu coba lagi.', 'error'); return; }
   const reader = new FileReader();
   setStatus('⏳ Membaca file...', 'pending');
   reader.onerror = function(){
