@@ -120,7 +120,7 @@
     body { background:#f6f7f9; font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; color:#101828; -webkit-font-smoothing: antialiased; }
     .toolbar { background:#fff; border:1px solid #eaecf0; border-radius:12px; box-shadow:0 1px 2px rgba(16,24,40,.05); }
     .toolbar button { border-radius:8px; font-weight:600; }
-    #btn-Makassar, #btn-Bulukumba, #btn-Gorontalo, #btn-TargetCabang, #btn-BSP, #btn-tokoMT, #btn-totalTarget, #btn-month-Oktober { background:#f2f4f7 !important; color:#344054 !important; box-shadow:none !important; }
+    #btn-Makassar, #btn-Bulukumba, #btn-Gorontalo, #btn-SehatIndah, #btn-TargetCabang, #btn-BSP, #btn-tokoMT, #btn-totalTarget, #btn-month-Oktober { background:#f2f4f7 !important; color:#344054 !important; box-shadow:none !important; }
     .toolbar button.branch-active { background:#0a5c36 !important; color:#fff !important; box-shadow:none !important; }
     #status { font-size:12px; font-weight:600; }
     .table-wrap { background:#fff; border:1px solid #eaecf0; border-radius:12px; box-shadow:0 1px 3px rgba(16,24,40,.08); }
@@ -171,6 +171,7 @@
   <h2>Pilih Cabang</h2>
   <button class="login-option" onclick="login('Irfan')">Irfan (Makassar)</button>
   <button class="login-option" onclick="login('Teddy')">Teddy (Gorontalo)</button>
+  <button class="login-option" onclick="login('Fahri')">Fahri (Sehat Indah)</button>
   <button class="login-option" onclick="login('RKA')">RKA</button>
   <div id="loginError"></div>
 </div>
@@ -194,6 +195,7 @@
   <button id="btn-Bulukumba" onclick="switchBranch('Bulukumba')">Bulukumba</button>
   <button id="btn-TargetCabang" class="hidden" onclick="switchBranch('TargetCabang')">Target Cabang</button>
   <button id="btn-Gorontalo" onclick="switchBranch('Gorontalo')">Gorontalo</button>
+  <button id="btn-SehatIndah" class="hidden" onclick="switchBranch('SehatIndah')">Sehat Indah</button>
   <button id="btn-tokoMT" class="hidden" onclick="showTokoMTDashboard()" style="background:#888;">Toko MT</button>
   <button id="btn-totalTarget" class="hidden" onclick="showTotalTargetDashboard()" style="background:#888;">Total Target</button>
 </div>
@@ -318,6 +320,7 @@ async function loadDataFromCloud(branch){
 const LOGIN_CONFIG = {
   Irfan: { branches:['Makassar','Bulukumba'] },
   Teddy: { branches:['Gorontalo'] },
+  Fahri: { branches:['SehatIndah'] },
   RKA: { branches:['Makassar','Bulukumba','Gorontalo'], mode:'dashboard' }
 };
 let currentMode = 'insentif';
@@ -325,7 +328,8 @@ let currentMode = 'insentif';
 const BRANCH_SALES = {
   Makassar: ["DIAN FARADILA","JUSTANG","KAMELIA (NFI)","RINALDI","SYAHRUL (NFI)","WAHYUDDIN ABU","YOHANES BUDIYANTO","BAHARUDDIN TAMRIN"],
   Bulukumba: ["ERWIN SABAR","HABRIYANTO"],
-  Gorontalo: ["RANDI HASAN","MOHAMAD FEBRIYANTO HAMID","MUHAMMAD SUGIARTO","ISMAIL KODJI"]
+  Gorontalo: ["RANDI HASAN","MOHAMAD FEBRIYANTO HAMID","MUHAMMAD SUGIARTO","ISMAIL KODJI"],
+  SehatIndah: ["RIDHO","MELKY","LK"]
 };
 
 const BRANCH_CLOUD_OWNER = { Makassar:'Irfan', Bulukumba:'Irfan', Gorontalo:'Teddy' };
@@ -4905,6 +4909,14 @@ const OKTOBER_SALES = {
   Gorontalo: ['RANDI HASAN','MOHAMAD FEBRIYANTO HAMID','MUHAMMAD SUGIARTO','ISMAIL KODJI']
 };
 
+// ===== Sehat Indah (Fahri) =====
+// Aturan insentif dari user: EA = jumlah customer1 (toko) UNIK.
+//   - EA Hilo      : toko unik yang ada transaksi barang Hilo
+//   - EA NS 7 Varian: toko unik yang transaksi NS mencapai SEHAT_NS7_MIN SKU (boleh dicicil/akumulasi)
+const SEHAT_SALES = ['RIDHO','MELKY','LK'];
+const SEHAT_NS7_MIN = 7;
+const SEHAT_MONTHS = { jan:0, feb:1, mar:2, apr:3, mei:4, may:4, jun:5, jul:6, agu:7, aug:7, sep:8, okt:9, oct:9, nov:10, des:11, dec:11 };
+
 let currentUser = null;
 let currentBranch = 'Makassar';
 let currentUserBranches = [];
@@ -4956,12 +4968,12 @@ async function login(user){
     btn.classList.remove('branch-active');
   });
   document.getElementById('bspUploadRow').classList.add('hidden');
-  ['Makassar','Bulukumba','Gorontalo'].forEach(b=>{
+  ['Makassar','Bulukumba','Gorontalo','SehatIndah'].forEach(b=>{
     document.getElementById('btn-' + b).classList.toggle('hidden', !cfg.branches.includes(b));
   });
   document.getElementById('btn-TargetCabang').classList.toggle('hidden', isDashboard || !cfg.branches.includes('Makassar'));
   currentBranch = cfg.branches[0];
-  ['Makassar','Bulukumba','Gorontalo','TargetCabang'].forEach(b=>{
+  ['Makassar','Bulukumba','Gorontalo','SehatIndah','TargetCabang'].forEach(b=>{
     document.getElementById('btn-' + b).classList.toggle('branch-active', b === currentBranch);
   });
   if(isDashboard) await loadDashboardBranch(currentBranch);
@@ -5165,6 +5177,56 @@ function slimRow(r){
     'AREA': field(r, 'AREA')
   };
 }
+
+// ===== Sehat Indah: ekspor penjualan sendiri (kolom berbeda dari BCP) =====
+// smarket = sales | invoice = kode nota | tdate = tanggal | customer1 = toko
+// goods1 = nama barang | vendor1 = principal | quantity_b = qty | unit | amount = netto
+// Hanya baris vendor1 = PT.Nutrifood Indonesia yang dipakai.
+function isSehatFile(rows){
+  const h = (rows && rows[0]) ? rows[0] : {};
+  return h['smarket'] !== undefined && h['goods1'] !== undefined;
+}
+function isSehatNutrifood(r){
+  return String(r['vendor1'] || '').toUpperCase().replace(/[^A-Z]/g, '').includes('NUTRIFOOD');
+}
+function parseSehatTgl(v){
+  if(v instanceof Date) return v;
+  const s = String(v || '').trim();
+  const m = s.match(/^(\d{1,2})[-/\s]([A-Za-z]{3,})[-/\s](\d{2,4})$/);
+  if(!m) return toDate(s);
+  const mo = SEHAT_MONTHS[m[2].slice(0, 3).toLowerCase()];
+  if(mo === undefined) return toDate(s);
+  const y = Number(m[3]);
+  return new Date(y < 100 ? 2000 + y : y, mo, Number(m[1]));
+}
+// RIDHO & MELKY dihitung sendiri; semua nama lain (ICHAL, MAX TO, ADMIN, FAHRI, FITRIA, SANDI) jadi "LK"
+function sehatSales(raw){
+  const n = String(raw || '').trim().toUpperCase();
+  return (n === 'RIDHO' || n === 'MELKY') ? n : 'LK';
+}
+function slimRowSehat(r){
+  const barang = String(r['goods1'] || '').trim();
+  const n = barang.toUpperCase();
+  let merek = '';
+  if(n.startsWith('NS ') || n.includes('NUTRISARI')) merek = 'NUTRISARI';
+  else if(n.includes('HILO') || n.includes('HI LO')) merek = 'HILO';
+  return {
+    'Tgl': parseSehatTgl(r['tdate']),
+    'Kode Nota': r['invoice'],
+    'Ship To': r['customer1'],
+    'Perusahaan': r['customer1'],
+    'Nama Barang': barang,
+    'Merek': merek,
+    'Group1Barang': 'TRADITIONAL',
+    'DPP': r['amount'],
+    'Jml': r['quantity_b'],
+    'Satuan': r['unit'],
+    'Nama Sales': sehatSales(r['smarket']),
+    'Bonus': (n.startsWith('BONUS') || n.includes('GIMMICK')) ? 1 : null,
+    'AREA': null
+  };
+}
+
 function inOktNov(r){
   return inPeriod(field(r, 'Tgl'), periodRange(DATA_PERIODE));
 }
@@ -5190,10 +5252,19 @@ function processFile(){
       const data = new Uint8Array(e.target.result);
       const wb = XLSX.read(data, {type:'array', cellDates:true});
       const ws = wb.Sheets[wb.SheetNames[0]];
-      const allRows = XLSX.utils.sheet_to_json(ws, {defval:null}).map(slimRow);
+      const rawObjs = XLSX.utils.sheet_to_json(ws, {defval:null});
+      const sehat = currentBranch === 'SehatIndah' || isSehatFile(rawObjs);
+      if(sehat && !isSehatFile(rawObjs)){
+        setStatus('❌ Format file tidak dikenali sebagai ekspor Sehat Indah (butuh kolom smarket, invoice, tdate, customer1, goods1, vendor1). Data cloud TIDAK diganti.', 'error');
+        return;
+      }
+      // Sehat Indah: hanya baris vendor1 = PT.Nutrifood Indonesia yang dipakai
+      const allRows = sehat
+        ? rawObjs.filter(isSehatNutrifood).map(slimRowSehat)
+        : rawObjs.map(slimRow);
       const okt = allRows.filter(inOktNov);
       if(!okt.length){
-        setStatus(`❌ Tidak ada baris bertanggal Oktober-Desember ${YEAR} dari ${allRows.length} baris di file. Data cloud TIDAK diganti. Cek kolom Tgl dan periode file.`, 'error');
+        setStatus(`❌ Tidak ada baris bertanggal Oktober-Desember ${YEAR} dari ${allRows.length} baris yang dibaca${sehat ? ` (file asli ${rawObjs.length} baris, disaring ke vendor Nutrifood)` : ''}. Data cloud TIDAK diganti. Cek kolom Tgl dan periode file.`, 'error');
         return;
       }
       rawData = okt;
@@ -5923,12 +5994,13 @@ function closeTokoModal(){
 
 function compute(){
   if(currentBranch === 'TargetCabang'){ computeTargetCabang(); return; }
+  if(currentBranch === 'SehatIndah'){ computeSehatIndah(); return; }
   computeOktober();
 }
 
 function switchBranch(branch){
   currentBranch = branch;
-  ['Makassar','Bulukumba','Gorontalo','TargetCabang'].forEach(b=>{
+  ['Makassar','Bulukumba','Gorontalo','SehatIndah','TargetCabang'].forEach(b=>{
     const btn = document.getElementById('btn-' + b);
     if(btn) btn.classList.toggle('branch-active', b === branch);
   });
@@ -6045,6 +6117,76 @@ function calcMt5(salesList){
     if(grupPerToko[key].size >= 5 && res[sales] !== undefined) res[sales]++;
   });
   return res;
+}
+
+// ===== Sehat Indah: EA Hilo & EA NS 7 Varian =====
+// EA = jumlah customer1 (toko) unik per sales. NS 7 Varian boleh dicicil
+// (7 SKU NS dihitung akumulasi sepanjang periode, tidak harus satu nota).
+function sehatSkuKey(barang){
+  return String(barang || '').toUpperCase().replace(/\s+/g, ' ').trim();
+}
+function calcSehatResults(){
+  const res = {};
+  SEHAT_SALES.forEach(s=>{ res[s] = { eaHilo:0, eaNs7:0, baris:0, toko:0, netto:0, tokoList:new Set() }; });
+  const hiloToko = {}, skuPerToko = {};
+
+  rawData.forEach(r=>{
+    const sales = normSales(field(r, 'Nama Sales', 'NamaSales'));
+    if(!res[sales]) return;
+    const barang = String(field(r, 'Nama Barang', 'NamaBarang') || '');
+    const n = barang.toUpperCase();
+    const toko = String(field(r, 'Ship To', 'ShipTo') || field(r, 'Perusahaan') || '').trim();
+    if(!toko) return;
+
+    res[sales].baris++;
+    res[sales].tokoList.add(toko);
+    res[sales].netto += Number(field(r, 'DPP') || 0);
+
+    if(isBonusRow(r)) return; // BONUS / GIMMICK tidak dihitung
+
+    if(n.includes('HILO') || n.includes('HI LO')){
+      (hiloToko[sales] = hiloToko[sales] || new Set()).add(toko);
+    }
+    if(n.startsWith('NS ') || n.includes('NUTRISARI')){
+      const sku = sehatSkuKey(barang);
+      if(sku){
+        const key = sales + '|' + toko;
+        (skuPerToko[key] = skuPerToko[key] || new Set()).add(sku);
+      }
+    }
+  });
+
+  SEHAT_SALES.forEach(s=>{
+    res[s].eaHilo = hiloToko[s] ? hiloToko[s].size : 0;
+    res[s].toko = res[s].tokoList.size;
+    let n7 = 0;
+    Object.keys(skuPerToko).forEach(key=>{
+      const sep = key.indexOf('|');
+      if(key.slice(0, sep) !== s) return;
+      if(skuPerToko[key].size >= SEHAT_NS7_MIN) n7++;
+    });
+    res[s].eaNs7 = n7;
+  });
+  return res;
+}
+
+function computeSehatIndah(){
+  const results = calcSehatResults();
+  const table = document.getElementById('mainTable');
+  table.className = '';
+  delete table.dataset.splitRow;
+  table.innerHTML = '<caption>Sehat Indah — EA Hilo &amp; EA NS 7 Varian</caption>';
+  addMobileTitle(table, 'EA = jumlah toko (customer1) unik &bull; NS 7 Varian boleh dicicil', 5);
+  const thead = table.insertRow(-1);
+  thead.innerHTML = '<th>Nama Salesman</th><th>EA Hilo</th><th>EA NS 7 Varian</th><th>Toko Unik</th><th>Netto (Rp)</th>';
+  SEHAT_SALES.forEach(sales=>{
+    const d = results[sales] || {};
+    const row = table.insertRow(-1);
+    row.innerHTML = `<td class="nama">${sales}</td><td>${d.eaHilo || 0}</td><td>${d.eaNs7 || 0}</td>`
+      + `<td>${d.toko || 0}</td><td style="text-align:right;">${fmtRpFull(d.netto || 0)}</td>`;
+  });
+  addMobileTitle(table, 'Target &amp; nominal insentif belum diisi (menunggu aturan)', 5);
+  setStatus(`Selesai menghitung ${rawData.length} baris Nutrifood. Catatan: target & nominal insentif Sehat Indah menunggu aturan.`, 'ok');
 }
 
 function computeOktober(){
