@@ -213,9 +213,11 @@
   <button onclick="processBSPFile()">Proses & Hitung BSP</button>
 </div>
 
-<table id="mainTable">
-<caption>Program Insentif Oktober - November</caption>
-</table>
+<div id="salesFilterRow" class="toolbar hidden">
+  <span style="font-size:13px; font-weight:bold;">Cari Nama Sales:</span>
+  <input type="text" id="salesFilterInput" oninput="filterBySales(this.value)" placeholder="Ketik nama sales..." style="padding:6px; border:1px solid #ccc; border-radius:4px; width:220px;">
+  <button onclick="document.getElementById('salesFilterInput').value=''; filterBySales('');" style="background:#888;">Reset</button>
+</div>
 
 <div id="achSliderRow" class="toolbar hidden">
   <span style="font-size:13px; font-weight:bold;">Tampilkan toko dengan %Ach di bawah:</span>
@@ -224,11 +226,9 @@
   <button onclick="document.getElementById('achSlider').value=100; filterByAch(100);" style="background:#888;">Reset</button>
 </div>
 
-<div id="salesFilterRow" class="toolbar hidden">
-  <span style="font-size:13px; font-weight:bold;">Cari Nama Sales:</span>
-  <input type="text" id="salesFilterInput" oninput="filterBySales(this.value)" placeholder="Ketik nama sales..." style="padding:6px; border:1px solid #ccc; border-radius:4px; width:220px;">
-  <button onclick="document.getElementById('salesFilterInput').value=''; filterBySales('');" style="background:#888;">Reset</button>
-</div>
+<table id="mainTable">
+<caption>Program Insentif Oktober - November</caption>
+</table>
 
 <table id="dashboardTable" class="hidden">
 <caption>Dashboard Toko</caption>
@@ -6342,7 +6342,7 @@ function computeSehatPareto(){
     row.dataset.pct = String(p_);      // dipakai filter %Ach
     row.dataset.sales = p.sales;       // dipakai filter salesman
     row.innerHTML = `<td class="col-no">${p.no}</td>`
-      + `<td class="nama">${p.toko}${p.alias ? `<div class="m-only m-sub">nama di data: ${p.alias}</div>` : ''}</td>`
+      + `<td class="nama" style="cursor:pointer;" title="Klik untuk lihat item yang pernah diorder" onclick="openParetoModal(${p.no})">${p.toko}${p.alias ? `<div class="m-only m-sub">nama di data: ${p.alias}</div>` : ''}</td>`
       + `<td>${p.sales}</td>`
       + `<td style="font-weight:bold;">${fmtRp(p.target)}</td>`
       + `<td>${fmtRp(ach)}</td>`
@@ -6352,7 +6352,34 @@ function computeSehatPareto(){
   table.dataset.splitRow = String(Math.floor(table.rows.length / 2));
   showAchSlider();
   showSalesFilter();
-  setStatus(`Selesai: ${SEHAT_PARETO.length} toko pareto, ${tokoKetemu} toko sudah ada transaksi. Ach = penjualan toko di data terupload (${jmlBulan} bulan, Oktober-Desember); kalau data masih sebagian bulan, %Ach wajar di bawah target.`, 'ok');
+  setStatus(`Selesai: ${SEHAT_PARETO.length} toko pareto, ${tokoKetemu} toko sudah ada transaksi. Ach = penjualan toko di data terupload (${jmlBulan} bulan, Oktober-Desember); kalau data masih sebagian bulan, %Ach wajar di bawah target. Klik nama toko untuk lihat item yang pernah diorder + tanggalnya.`, 'ok');
+}
+
+// klik nama toko di tabel Toko Pareto: rincian item yang pernah diorder + tanggalnya
+function openParetoModal(no){
+  const p = SEHAT_PARETO.find(x=> x.no === Number(no));
+  if(!p) return;
+  const rows = rawData.filter(r=>{
+    if(isBonusRow(r)) return false;
+    const toko = String(field(r, 'Ship To', 'ShipTo') || field(r, 'Perusahaan') || '').trim();
+    return SEHAT_PARETO_MAP[paretoKey(toko)] === p;
+  });
+  const stats = buildStoreStats(rows, null);
+  const keys = Object.keys(stats);
+  const itemMap = keys.length ? stats[keys[0]].itemsTradisional : {};
+  const rincian = itemRowsSortedByOmzet(itemMap);
+  const totalAch = rows.reduce((a, r)=> a + (parseFloat(field(r, 'DPP')) || 0), 0);
+  const notes = Array.from(new Set(rows.map(r=> field(r, 'Kode Nota', 'KodeNota')).filter(Boolean)));
+  document.getElementById('tokoModalTitle').textContent = p.toko + (p.alias ? ' (di data: ' + p.alias + ')' : '');
+  document.getElementById('tokoModalBody').innerHTML = `
+    <div style="font-size:13px; line-height:1.7; margin-bottom:10px;">
+      Salesman: <b>${p.sales}</b> &bull; Target/bln: <b>${fmtRpFull(p.target)}</b><br>
+      Ach di data terupload: <b>${fmtRpFull(totalAch)}</b> &bull; ${rows.length} baris order &bull; ${notes.length} nota
+    </div>
+    <input type="text" id="tokoItemSearch" placeholder="Cari item..." oninput="filterTokoModalItems(this.value)"
+      style="width:100%; padding:8px; margin-bottom:12px; border:1px solid #ccc; border-radius:4px; box-sizing:border-box;">
+    <table style="width:100%; margin-top:6px;"><tr><th>Nama Item</th><th>Omzet</th><th>Jumlah PO</th><th>Tanggal</th></tr>${rincian || '<tr><td colspan="4">(belum ada order di data yang diupload)</td></tr>'}</table>`;
+  document.getElementById('tokoModalOverlay').classList.remove('hidden');
 }
 
 function computeSehatIndah(){
