@@ -4929,6 +4929,23 @@ const SEHAT_CABANG = { label:'SEHAT INDAH - GORONTALO, UD', jmlSales:2, byKpi:{ 
 const SEHAT_TIER = [0, 500000, 2000000];
 const SEHAT_BONUS_ALL = 1000000;
 const SEHAT_EA_BONUS_MIN = 160;
+
+// ===== Sehat Indah (Fahri) — SK26476/QBIHX: Insentif Retensi RO Hilo Teen Belgian Chocolate Polos =====
+// Item: HI LO 3IN1 SUSU COKLAT BELGIA PLS 12RX10SX25G (1 karton = 12 renceng = 120 sachet).
+// Target 20 RO/salesman (Okt-Nov). RO = toko unik (dihitung 1x selama 2 bulan) dengan minimal order 2 renceng.
+// Insentif salesman bila 100% = Rp200.000. Supervisor: cabang 100% = Rp300.000,
+// tetapi bila salesman di cabang hanya 1-2 orang besarannya sama dengan insentif salesman.
+const SEHAT_TEEN = {
+  id:'sehatTeen3in1',
+  title:'Insentif Retensi RO Hilo Teen (3in1) PLS',
+  item:'HI LO 3IN1 SUSU COKLAT BELGIA PLS 12RX10SX25G',
+  periode:SEHAT_PERIODE,
+  target:20,
+  minRenceng:2,
+  insentifSales:200000,
+  insentifSup:300000,
+  targetCabang:20 * 2 // 20 RO x jumlah sales (SK: 2 sales)
+};
 const SEHAT_MONTHS = { jan:0, feb:1, mar:2, apr:3, mei:4, may:4, jun:5, jul:6, agu:7, aug:7, sep:8, okt:9, oct:9, nov:10, des:11, dec:11 };
 
 let currentUser = null;
@@ -6138,15 +6155,30 @@ function calcMt5(salesList){
 function sehatSkuKey(barang){
   return String(barang || '').toUpperCase().replace(/\s+/g, ' ').trim();
 }
+// Hilo Teen 3in1 (Belgian Chocolate / Coklat Belgia) — dipakai untuk program Retensi RO
+function isHilo3in1(barang){
+  const n = String(barang || '').toUpperCase().replace(/\s+/g, ' ');
+  return (n.includes('3IN1') && (n.includes('BELGIAN') || n.includes('BELGIA') || n.includes('CHOCOLATE') || n.includes('COKLAT'))) || n.includes('ACT BELGIAN CHOCOLATE');
+}
+// Konversi jumlah ke renceng: 1 karton = 12 renceng = 120 sachet (12RX10SX25G)
+function qtyRenceng(jml, satuan){
+  const q = Number(jml) || 0;
+  const s = String(satuan || '').trim().toUpperCase();
+  if(/^(CRT|CTN|KTN|KARTON|CT)$/.test(s)) return q * 12;
+  if(/^(RCG|RTG|RENCENG|RANTAI|RNG)$/.test(s)) return q;
+  if(/^(PC|PCS|PCS\.|PAK|PACK|POUCH|BALL|SAK|GELONG|BKS|BUNGKUS)$/.test(s)) return q / 10; // 10 sachet = 1 renceng
+  return q;
+}
 function calcSehatResults(){
   const rOkt = periodRange('Oktober');
   const rNov = periodRange('November');
   // struktur hasil: results[kpiId][namaSales] = angka (sama seperti cabang lain)
   const results = {};
   SEHAT_KPI.forEach(p=>{ results[p.id] = {}; SEHAT_SALES.forEach(s=>{ results[p.id][s] = 0; }); });
+  results[SEHAT_TEEN.id] = {}; SEHAT_SALES.forEach(s=>{ results[SEHAT_TEEN.id][s] = 0; });
   results.eaOkt = {}; results.eaNov = {};
   SEHAT_SALES.forEach(s=>{ results.eaOkt[s] = 0; results.eaNov[s] = 0; });
-  const hiloOkt = {}, hiloNov = {}, skuPerToko = {};
+  const hiloOkt = {}, hiloNov = {}, skuPerToko = {}, teenPerToko = {};
 
   rawData.forEach(r=>{
     const sales = normSales(field(r, 'Nama Sales', 'NamaSales'));
@@ -6174,6 +6206,11 @@ function calcSehatResults(){
       const key = sales + '|' + toko;
       (skuPerToko[key] = skuPerToko[key] || new Set()).add(sku);
     }
+    // Retensi RO Hilo Teen 3in1: toko unik 2 bulan (1x), minimal order 2 renceng
+    if(isHilo3in1(barang)){
+      const key = sales + '|' + toko;
+      teenPerToko[key] = (teenPerToko[key] || 0) + qtyRenceng(field(r, 'Jml', 'Jumlah'), field(r, 'Satuan', 'Unit'));
+    }
   });
 
   SEHAT_SALES.forEach(s=>{
@@ -6186,6 +6223,7 @@ function calcSehatResults(){
       if(skuPerToko[key].size >= SEHAT_NS7_MIN) n7++;
     });
     results.sehatNs7[s] = n7;
+    results[SEHAT_TEEN.id][s] = Object.keys(teenPerToko).filter(key=> key.slice(0, key.indexOf('|')) === s && teenPerToko[key] >= SEHAT_TEEN.minRenceng).length;
   });
   return results;
 }
@@ -6260,8 +6298,38 @@ function computeSehatIndah(){
     row.innerHTML = html;
   });
 
+  // ---- Retensi RO Hilo Teen 3in1 (SK26476/QBIHX) ----
+  addMobileTitle(table, `Insentif Retensi RO Hilo Teen (3in1) PLS &bull; ${SEHAT_PERIODE} &bull; Target ${SEHAT_TEEN.target} RO/salesman &bull; minimal order ${SEHAT_TEEN.minRenceng} renceng (${SEHAT_TEEN.item})`, 7);
+  const theadT3 = table.insertRow(-1);
+  theadT3.innerHTML = header;
+  const rs3 = SEHAT_SALES.length + 1;
+  let totalTeen = 0;
+  SEHAT_SALES.forEach((sales, idx)=>{
+    const ach = get(SEHAT_TEEN.id, sales);
+    totalTeen += ach;
+    const row = table.insertRow(-1);
+    let html = '';
+    if(idx === 0){
+      html += `<td class="program col-prog" rowspan="${rs3}">${SEHAT_TEEN.title}</td>`;
+      html += `<td class="col-per" rowspan="${rs3}">${SEHAT_TEEN.periode}</td>`;
+    }
+    html += `<td class="nama">${sales}</td>`;
+    if(idx === 0) html += `<td class="col-ins" rowspan="${rs3}">Rp ${SEHAT_TEEN.insentifSales.toLocaleString('id-ID')} (100%)</td>`;
+    html += `<td><input class="target-input" type="number" value="${SEHAT_TEEN.target}" onchange="updateTarget('${SEHAT_TEEN.id}', this.value)"></td>`;
+    html += `<td>${ach}</td>`;
+    html += barCell(pct(ach, SEHAT_TEEN.target));
+    row.innerHTML = html;
+  });
+  const rowT3 = table.insertRow(-1);
+  rowT3.className = 'tot-row';
+  rowT3.innerHTML = `<td class="nama">TOTAL CABANG</td><td style="font-weight:bold;">${SEHAT_TEEN.targetCabang}</td><td style="font-weight:bold;">${totalTeen}</td>` + barCell(pct(totalTeen, SEHAT_TEEN.targetCabang));
+  const rowN3 = table.insertRow(-1);
+  const teenCabangTercapai = totalTeen >= SEHAT_TEEN.targetCabang;
+  const teenSup = teenCabangTercapai ? (SEHAT_CABANG.jmlSales <= 2 ? SEHAT_TEEN.insentifSales : SEHAT_TEEN.insentifSup) : 0;
+  rowN3.innerHTML = `<td colspan="7" style="font-size:12px; color:#555;">Insentif Supervisor: Rp ${teenSup.toLocaleString('id-ID')} ${teenCabangTercapai ? '(cabang tercapai)' : `(belum tercapai, butuh ${SEHAT_TEEN.targetCabang} RO)`} &bull; Aturan SK: cabang 100% = Rp ${SEHAT_TEEN.insentifSup.toLocaleString('id-ID')}, tetapi cabang dengan 1-2 salesman besarannya senilai insentif salesman (Rp ${SEHAT_TEEN.insentifSales.toLocaleString('id-ID')}). Klaim paling lambat 10 Januari 2027.</td>`;
+
   // ---- Ringkasan total insentif salesman ----
-  addMobileTitle(table, 'Ringkasan: Total Insentif Salesman', 7);
+  addMobileTitle(table, 'Ringkasan: Total Insentif Salesman (Raport + Retensi RO Hilo 3in1)', 7);
   const theadT = table.insertRow(-1);
   theadT.innerHTML = '<th class="col-prog" colspan="2">Ringkasan</th><th>Nama Salesman</th><th colspan="4">Total Insentif</th>';
   SEHAT_SALES.forEach((sales, idx)=>{
@@ -6270,8 +6338,9 @@ function computeSehatIndah(){
     if(idx === 0){
       html += `<td class="program col-prog" rowspan="${SEHAT_SALES.length}" colspan="2">Total Insentif Sehat Indah ${SEHAT_PERIODE}</td>`;
     }
+    const insentif3in1 = get(SEHAT_TEEN.id, sales) >= SEHAT_TEEN.target ? SEHAT_TEEN.insentifSales : 0;
     html += `<td class="nama">${sales}</td>`;
-    html += `<td colspan="4" style="text-align:right; font-weight:bold;">Rp ${raport[sales].total.toLocaleString('id-ID')}</td>`;
+    html += `<td colspan="4" style="text-align:right; font-weight:bold;">Rp ${(raport[sales].total + insentif3in1).toLocaleString('id-ID')}</td>`;
     row.innerHTML = html;
   });
 
@@ -6621,7 +6690,7 @@ function updateTarget(id, val){
     compute();
     return;
   }
-  const p = OKTOBER_KPI.find(p=>p.id===id) || OKTOBER_VARIAN.find(p=>p.id===id) || SEHAT_KPI.find(p=>p.id===id);
+  const p = OKTOBER_KPI.find(p=>p.id===id) || OKTOBER_VARIAN.find(p=>p.id===id) || SEHAT_KPI.find(p=>p.id===id) || (id === SEHAT_TEEN.id ? SEHAT_TEEN : null);
   if(p){
     const num = parseInt(val) || 0;
     if(p.targetByBranch && p.targetByBranch[currentBranch] !== undefined){
