@@ -6326,7 +6326,7 @@ function calcSehatPareto(){
 function computeSehatPareto(){
   const table = document.getElementById('mainTable');
   table.className = 'pareto';
-  const { hasil, jmlBulan, tokoKetemu } = calcSehatPareto();
+  const { hasil, jmlBulan } = calcSehatPareto();
   table.innerHTML = '<caption>Toko Pareto Sehat Indah</caption>';
   const barCell = p_=>{
     const w = Math.max(0, Math.min(p_, 100));
@@ -6352,7 +6352,6 @@ function computeSehatPareto(){
   table.dataset.splitRow = String(Math.floor(table.rows.length / 2));
   showAchSlider();
   showSalesFilter();
-  setStatus(`Selesai: ${SEHAT_PARETO.length} toko pareto, ${tokoKetemu} toko sudah ada transaksi. Ach = penjualan toko di data terupload (${jmlBulan} bulan, Oktober-Desember); kalau data masih sebagian bulan, %Ach wajar di bawah target. Klik nama toko untuk lihat item yang pernah diorder + tanggalnya.`, 'ok');
 }
 
 // klik nama toko di tabel Toko Pareto: rincian item yang pernah diorder + tanggalnya
