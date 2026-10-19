@@ -6323,10 +6323,6 @@ function computeSehatIndah(){
   const target3Cabang = SEHAT_TEEN.target * SEHAT_CABANG.jmlSales; // 20 RO x jumlah sales
   rowT3.className = 'tot-row';
   rowT3.innerHTML = `<td class="nama">TOTAL CABANG</td><td style="font-weight:bold;">${target3Cabang}</td><td style="font-weight:bold;">${totalTeen}</td>` + barCell(pct(totalTeen, target3Cabang));
-  const rowN3 = table.insertRow(-1);
-  const teenCabangTercapai = totalTeen >= target3Cabang;
-  const teenSup = teenCabangTercapai ? (SEHAT_CABANG.jmlSales <= 2 ? SEHAT_TEEN.insentifSales : SEHAT_TEEN.insentifSup) : 0;
-  rowN3.innerHTML = `<td colspan="7" style="font-size:12px; color:#555;">Insentif Supervisor: Rp ${teenSup.toLocaleString('id-ID')} ${teenCabangTercapai ? '(cabang tercapai)' : `(belum tercapai, butuh ${target3Cabang} RO)`} &bull; Aturan SK: cabang 100% = Rp ${SEHAT_TEEN.insentifSup.toLocaleString('id-ID')}, tetapi cabang dengan 1-2 salesman besarannya senilai insentif salesman (Rp ${SEHAT_TEEN.insentifSales.toLocaleString('id-ID')}). Klaim paling lambat 10 Januari 2027.</td>`;
 
   // ---- Ringkasan total insentif salesman ----
   addMobileTitle(table, 'Ringkasan: Total Insentif Salesman (Raport + Retensi RO Hilo 3in1)', 7);
