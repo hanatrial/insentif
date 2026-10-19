@@ -48,6 +48,8 @@
   .bar-fill { background:#4caf50; height:16px; border-radius:2px 0 0 2px; }
   .bar-label { font-size:12px; white-space:nowrap; }
   .target-input { width:50px; text-align:center; border:1px solid #ccc; }
+  table.pareto th, table.pareto td { padding-left:5px; padding-right:5px; }
+  table.pareto td.angka { white-space:nowrap; }
   .toolbar button.branch-active { background:#073d24; box-shadow: inset 0 0 0 2px #fff; }
 </style>
 <style>
@@ -5569,7 +5571,7 @@ function filterBySales(query){
 }
 
 function applyDashboardFilters(){
-  const rows = document.querySelectorAll('#dashboardTable tr[data-pct]');
+  const rows = document.querySelectorAll('#dashboardTable tr[data-pct], #mainTable tr[data-pct]');
   rows.forEach(row=>{
     const p = parseFloat(row.dataset.pct);
     const achOk = currentAchThreshold >= 100 ? true : p < currentAchThreshold;
@@ -6323,54 +6325,38 @@ function calcSehatPareto(){
 
 function computeSehatPareto(){
   const table = document.getElementById('mainTable');
-  table.className = '';
-  delete table.dataset.splitRow;
+  table.className = 'pareto';
   const { hasil, jmlBulan, tokoKetemu } = calcSehatPareto();
-  table.innerHTML = '<caption>Toko Pareto — Sehat Indah (avg 2026 &gt; Rp5jt/bulan)</caption>';
+  table.innerHTML = '<caption>Toko Pareto Sehat Indah</caption>';
   const barCell = p_=>{
     const w = Math.max(0, Math.min(p_, 100));
     return `<td class="bar-cell"><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:${w}%"></div></div><span class="bar-label">${p_}%</span></div></td>`;
   };
-  const header = '<th class="col-prog">Program Insentif</th><th class="col-per">Periode</th><th class="col-no">No</th>'
-    + '<th>Nama Toko</th><th>Salesman</th><th>Avg 2026/bln</th><th>Target/bln (120%)</th><th>Ach</th><th>%Ach</th>';
-  const GRUP = 25;
-  const total = { avg:0, target:0, ach:0 };
-  for(let g = 0; g * GRUP < SEHAT_PARETO.length; g++){
-    const rows = SEHAT_PARETO.slice(g * GRUP, g * GRUP + GRUP);
-    if(g > 0) table.dataset.splitRow = String(table.rows.length); // supaya export gambar terbagi rapi
-    addMobileTitle(table, `Toko Pareto ${rows[0].no}-${rows[rows.length-1].no} &bull; target/bln = 120% dari Avg 2026 (dibulatkan ke atas per 100rb) &bull; Ach dari ${jmlBulan} bulan data terupload`, 9);
-    const thead = table.insertRow(-1);
-    thead.innerHTML = header;
-    rows.forEach((p, i)=>{
-      const ach = hasil[p.no] ? hasil[p.no].ach : 0;
-      const targetPeriode = p.target * jmlBulan;
-      total.avg += p.avg2026; total.target += p.target; total.ach += ach;
-      const row = table.insertRow(-1);
-      let html = '';
-      if(i === 0){
-        html += `<td class="program col-prog" rowspan="${rows.length}">Toko Pareto</td>`;
-        html += `<td class="col-per" rowspan="${rows.length}">${SEHAT_PERIODE} &bull; target per bulan</td>`;
-      }
-      html += `<td class="col-no">${p.no}</td>`;
-      html += `<td class="nama">${p.toko}${p.alias ? `<div class="m-only m-sub">nama di data: ${p.alias}</div>` : ''}</td>`;
-      html += `<td>${p.sales}</td>`;
-      html += `<td>${fmtRp(p.avg2026)}</td>`;
-      html += `<td style="font-weight:bold;">${fmtRp(p.target)}</td>`;
-      html += `<td>${fmtRp(ach)}</td>`;
-      html += barCell(pct(ach, targetPeriode));
-      row.innerHTML = html;
-    });
-  }
-  const rowT = table.insertRow(-1);
-  rowT.className = 'tot-row';
-  rowT.innerHTML = '<td class="col-prog"></td><td class="col-per"></td><td class="col-no"></td>'
-    + `<td class="nama" colspan="2">TOTAL ${SEHAT_PARETO.length} TOKO</td>`
-    + `<td>${fmtRp(total.avg)}</td><td style="font-weight:bold;">${fmtRp(total.target)}</td><td>${fmtRp(total.ach)}</td>`
-    + barCell(pct(total.ach, total.target * jmlBulan));
-  setStatus(`Selesai: ${SEHAT_PARETO.length} toko pareto, ${tokoKetemu} toko sudah ada transaksi. Ach dari ${jmlBulan} bulan data terupload (Oktober-Desember) — kalau data masih sebagian bulan, %Ach wajar di bawah target.`, 'ok');
+  addMobileTitle(table, `Toko Pareto Sehat Indah &bull; target per bulan &bull; Ach dari ${jmlBulan} bulan data terupload`, 6);
+  const thead = table.insertRow(-1);
+  thead.innerHTML = '<th class="col-no">No</th><th>Nama Toko</th><th>Salesman</th><th>Target/bln</th><th>Ach</th><th>%Ach</th>';
+  SEHAT_PARETO.forEach(p=>{
+    const ach = hasil[p.no] ? hasil[p.no].ach : 0;
+    const p_ = pct(ach, p.target * jmlBulan);
+    const row = table.insertRow(-1);
+    row.dataset.pct = String(p_);      // dipakai filter %Ach
+    row.dataset.sales = p.sales;       // dipakai filter salesman
+    row.innerHTML = `<td class="col-no">${p.no}</td>`
+      + `<td class="nama">${p.toko}${p.alias ? `<div class="m-only m-sub">nama di data: ${p.alias}</div>` : ''}</td>`
+      + `<td>${p.sales}</td>`
+      + `<td style="font-weight:bold;">${fmtRp(p.target)}</td>`
+      + `<td>${fmtRp(ach)}</td>`
+      + barCell(p_);
+  });
+  // export gambar dibagi dua di tengah tabel (tampilan di layar tetap satu header)
+  table.dataset.splitRow = String(Math.floor(table.rows.length / 2));
+  showAchSlider();
+  showSalesFilter();
+  setStatus(`Selesai: ${SEHAT_PARETO.length} toko pareto, ${tokoKetemu} toko sudah ada transaksi. Ach = penjualan toko di data terupload (${jmlBulan} bulan, Oktober-Desember); kalau data masih sebagian bulan, %Ach wajar di bawah target.`, 'ok');
 }
 
 function computeSehatIndah(){
+  hideAchSlider(); hideSalesFilter();
   const results = calcSehatResults();
   const table = document.getElementById('mainTable');
   table.className = '';
@@ -6886,6 +6872,10 @@ async function exportOneTableImages(){
       const cap = document.createElement('caption');
       cap.textContent = `${caption} (${currentBranch}) - Bagian ${i + 1}/${parts.length}`;
       t.appendChild(cap);
+      // bagian ke-2 (dst) tetap dapat baris header, karena tabel pareto tidak dipecah di layar
+      if(i > 0 && headerIdx.length && !parts[i].some(r=> r.cells[0] && r.cells[0].tagName === 'TH')){
+        t.appendChild(allRows[headerIdx[0]].cloneNode(true));
+      }
       parts[i].forEach(r=>t.appendChild(r.cloneNode(true)));
       wrap.appendChild(t);
       const canvas = await html2canvas(wrap, { backgroundColor:'#ffffff', scale:2 });
