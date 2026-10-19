@@ -6141,13 +6141,16 @@ function sehatSkuKey(barang){
 function calcSehatResults(){
   const rOkt = periodRange('Oktober');
   const rNov = periodRange('November');
-  const res = {};
-  SEHAT_SALES.forEach(s=>{ res[s] = { sehatEaHilo:0, sehatNs7:0, eaOkt:0, eaNov:0 }; });
+  // struktur hasil: results[kpiId][namaSales] = angka (sama seperti cabang lain)
+  const results = {};
+  SEHAT_KPI.forEach(p=>{ results[p.id] = {}; SEHAT_SALES.forEach(s=>{ results[p.id][s] = 0; }); });
+  results.eaOkt = {}; results.eaNov = {};
+  SEHAT_SALES.forEach(s=>{ results.eaOkt[s] = 0; results.eaNov[s] = 0; });
   const hiloOkt = {}, hiloNov = {}, skuPerToko = {};
 
   rawData.forEach(r=>{
     const sales = normSales(field(r, 'Nama Sales', 'NamaSales'));
-    if(!res[sales]) return;
+    if(!SEHAT_SALES.includes(sales)) return;
     const d = toDate(field(r, 'Tgl'));
     if(!d) return;
     const inOkt = d >= rOkt[0] && d <= rOkt[1];
@@ -6174,17 +6177,17 @@ function calcSehatResults(){
   });
 
   SEHAT_SALES.forEach(s=>{
-    res[s].eaOkt = hiloOkt[s] ? hiloOkt[s].size : 0;
-    res[s].eaNov = hiloNov[s] ? hiloNov[s].size : 0;
-    res[s].sehatEaHilo = res[s].eaOkt + res[s].eaNov;
+    results.eaOkt[s] = hiloOkt[s] ? hiloOkt[s].size : 0;
+    results.eaNov[s] = hiloNov[s] ? hiloNov[s].size : 0;
+    results.sehatEaHilo[s] = results.eaOkt[s] + results.eaNov[s];
     let n7 = 0;
     Object.keys(skuPerToko).forEach(key=>{
       if(key.slice(0, key.indexOf('|')) !== s) return;
       if(skuPerToko[key].size >= SEHAT_NS7_MIN) n7++;
     });
-    res[s].sehatNs7 = n7;
+    results.sehatNs7[s] = n7;
   });
-  return res;
+  return results;
 }
 
 function computeSehatIndah(){
