@@ -5341,6 +5341,12 @@ function isBonusRow(r){
   return false;
 }
 
+// Sales "UMUM" = penjualan tanpa salesman resmi -> tidak dihitung di semua rekap omzet.
+function isUmumRow(r){
+  const s = String(field(r, 'Nama Sales', 'NamaSales', 'Salesman') || '').trim().toUpperCase();
+  return s === 'UMUM' || s.startsWith('UMUM ');
+}
+
 function processFile(){
   const f = document.getElementById('fileInput').files[0];
   if(!f){ document.getElementById('status').textContent = 'Pilih file dulu.'; return; }
@@ -5366,12 +5372,16 @@ function processFile(){
       const allRows = sehat
         ? rawObjs.filter(isSehatNutrifood).map(slimRowSehat)
         : rawObjs.map(slimRow);
-      const okt = allRows.filter(inOktNov);
-      if(!okt.length){
-        setStatus(`❌ Tidak ada baris bertanggal Oktober-Desember ${YEAR} dari ${allRows.length} baris yang dibaca${sehat ? ` (file asli ${rawObjs.length} baris, disaring ke vendor Nutrifood)` : ''}. Data cloud TIDAK diganti. Cek kolom Tgl dan periode file.`, 'error');
+      // Sehat Indah (SHI): semua baris disimpan apa adanya sesuai Excel (tanpa filter bulan).
+      // BCP: tetap disaring periode Oktober-Desember seperti sebelumnya.
+      const simpan = sehat ? allRows : allRows.filter(inOktNov);
+      if(!simpan.length){
+        setStatus(sehat
+          ? `❌ Tidak ada baris vendor Nutrifood yang terbaca (file asli ${rawObjs.length} baris). Data cloud TIDAK diganti.`
+          : `❌ Tidak ada baris bertanggal Oktober-Desember ${YEAR} dari ${allRows.length} baris yang dibaca. Data cloud TIDAK diganti. Cek kolom Tgl dan periode file.`, 'error');
         return;
       }
-      rawData = okt;
+      rawData = simpan;
     }catch(parseErr){
       setStatus(`❌ GAGAL MEMBACA/PARSING FILE: ${parseErr.message}`, 'error');
       return;
@@ -5831,6 +5841,7 @@ async function showTotalTargetDashboard(){
       let gt = 0, mt = 0;
       rows.forEach(r=>{
         if(filterFn && !filterFn(r)) return;
+        if(isUmumRow(r)) return; // sales UMUM tidak dihitung
         if(!inDashboardMonth(r[tglKey])) return;
         const group1 = String(r['Group1Barang'] || '').trim().toUpperCase();
         const nominal = parseFloat(r[nominalKey]) || 0;
@@ -5843,18 +5854,19 @@ async function showTotalTargetDashboard(){
     function sumGT_BSP(rows, tglKey, nominalKey){
       let gt = 0;
       rows.forEach(r=>{
+        if(isUmumRow(r)) return; // sales UMUM tidak dihitung
         if(!inDashboardMonth(r[tglKey])) return;
         gt += parseFloat(r[nominalKey]) || 0;
       });
       return { gt, mt: 0 };
     }
     // SHI (Sehat Indah) Gorontalo: target GT = semua produk (Rp1,1 M), tanpa target MT.
-    // Omzet = total DPP data Fahri, baris BONUS/GIMMICK tidak dihitung.
+    // Omzet = total DPP (kolom amount ekspor Sehat Indah) seluruh baris yang diupload,
+    // TANPA filter bulan. Baris BONUS/GIMMICK dan sales UMUM tidak dihitung.
     function sumGT_SHI(rows){
       let gt = 0;
       rows.forEach(r=>{
-        if(isBonusRow(r)) return;
-        if(!inDashboardMonth(field(r, 'Tgl'))) return;
+        if(isBonusRow(r) || isUmumRow(r)) return;
         gt += Number(field(r, 'DPP')) || 0;
       });
       return { gt, mt: 0 };
@@ -5862,7 +5874,8 @@ async function showTotalTargetDashboard(){
 
     // Data Irfan cuma berisi Makassar + Bulukumba. Bulukumba hanya 2 sales resmi
     // (Erwin Sabar, Habriyanto) -- selain itu semua dihitung Makassar (termasuk akun
-    // non-roster seperti Siti Hapsah/Syaiful Haris/Umum yang tetap kontribusi omzet cabang).
+    // non-roster seperti Siti Hapsah/Syaiful Haris yang tetap kontribusi omzet cabang,
+    // tapi sales "UMUM" dikecualikan).
     const isBulukumbaSales = r => BRANCH_SALES.Bulukumba.includes(normSales(field(r, 'Nama Sales', 'NamaSales')));
     const bulukumbaFilter = r => isBulukumbaSales(r);
     const makassarFilter = r => !isBulukumbaSales(r);
