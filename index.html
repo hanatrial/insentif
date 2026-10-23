@@ -317,6 +317,13 @@ async function loadDataFromCloud(branch){
   const snap = await colRef.orderBy(firebase.firestore.FieldPath.documentId()).get();
   let all = [];
   snap.forEach(doc=>{ all = all.concat(doc.data().rows || []); });
+  // Data SHI lama tersimpan masih berisi amount mentah (termasuk PPN):
+  // kalau belum ditandai 'DPPNorm', bagi 1,11 sekarang (kecuali toko Inti Cakrawala).
+  if(branch === 'Fahri'){
+    all = all.map(r=> (r && r['DPPNorm'])
+      ? r
+      : Object.assign({}, r, { 'DPP': sehatAmount(r['Ship To'] || r['Perusahaan'], r['DPP']), 'DPPNorm': 1 }));
+  }
   return all;
 }
 
@@ -5321,13 +5328,25 @@ function slimRowSehat(r){
     'Nama Barang': barang,
     'Merek': merek,
     'Group1Barang': 'TRADITIONAL',
-    'DPP': r['amount'],
+    'DPP': sehatAmount(r['customer1'], r['amount']),
     'Jml': r['quantity_b'],
     'Satuan': r['unit'],
     'Nama Sales': sehatSales(r['smarket']),
     'Bonus': (n.startsWith('BONUS') || n.includes('GIMMICK')) ? 1 : null,
-    'AREA': null
+    'AREA': null,
+    'DPPNorm': 1   // penanda: DPP sudah dibagi 1,11 (kecuali Inti Cakrawala) saat upload
   };
+}
+
+// ===== SHI: nilai omzet = amount / 1,11 (kecuali toko INTI CAKRAWALA) =====
+// PPN 11% dikeluarkan dari amount, kecuali order PT Inti Cakrawala Citra.
+const SEHAT_PPN_DIVISOR = 1.11;
+function isSehatIntiCakrawala(toko){
+  return String(toko || '').toUpperCase().includes('CAKRAWALA');
+}
+function sehatAmount(toko, amount){
+  const v = Number(amount) || 0;
+  return isSehatIntiCakrawala(toko) ? v : v / SEHAT_PPN_DIVISOR;
 }
 
 function inOktNov(r){
