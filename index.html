@@ -122,7 +122,7 @@
     body { background:#f6f7f9; font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; color:#101828; -webkit-font-smoothing: antialiased; }
     .toolbar { background:#fff; border:1px solid #eaecf0; border-radius:12px; box-shadow:0 1px 2px rgba(16,24,40,.05); }
     .toolbar button { border-radius:8px; font-weight:600; }
-    #btn-Makassar, #btn-Bulukumba, #btn-Gorontalo, #btn-SehatIndah, #btn-TargetCabang, #btn-TokoPareto, #btn-BSP, #btn-tokoMT, #btn-totalTarget, #btn-month-Oktober { background:#f2f4f7 !important; color:#344054 !important; box-shadow:none !important; }
+    #btn-Makassar, #btn-Bulukumba, #btn-Gorontalo, #btn-SehatIndah, #btn-TargetCabang, #btn-TokoPareto, #btn-Distributor, #btn-BSP, #btn-tokoMT, #btn-totalTarget, #btn-month-Oktober, #btn-dist-Semua, #btn-dist-Hilo, #btn-dist-Nutrisari { background:#f2f4f7 !important; color:#344054 !important; box-shadow:none !important; }
     .toolbar button.branch-active { background:#0a5c36 !important; color:#fff !important; box-shadow:none !important; }
     #status { font-size:12px; font-weight:600; }
     .table-wrap { background:#fff; border:1px solid #eaecf0; border-radius:12px; box-shadow:0 1px 3px rgba(16,24,40,.08); }
@@ -199,6 +199,7 @@
   <button id="btn-Gorontalo" onclick="switchBranch('Gorontalo')">Gorontalo</button>
   <button id="btn-SehatIndah" class="hidden" onclick="switchBranch('SehatIndah')">Sehat Indah</button>
   <button id="btn-TokoPareto" class="hidden" onclick="switchBranch('TokoPareto')">Toko Pareto</button>
+  <button id="btn-Distributor" class="hidden" onclick="switchBranch('Distributor')">Pencapaian Distributor</button>
   <button id="btn-tokoMT" class="hidden" onclick="showTokoMTDashboard()" style="background:#888;">Toko MT</button>
   <button id="btn-totalTarget" class="hidden" onclick="showTotalTargetDashboard()" style="background:#888;">Total Target</button>
 </div>
@@ -206,6 +207,13 @@
 <div id="monthToggleRow" class="toolbar hidden">
   <span style="font-size:13px; font-weight:bold;">Bulan:</span>
   <button id="btn-month-Oktober" class="branch-active" onclick="switchInsentifMonth('Oktober')">Oktober</button>
+</div>
+
+<div id="distToggleRow" class="toolbar hidden">
+  <span style="font-size:13px; font-weight:bold;">Pencapaian:</span>
+  <button id="btn-dist-Semua" class="branch-active" onclick="switchDistributorView('Semua')">Semua</button>
+  <button id="btn-dist-Hilo" onclick="switchDistributorView('Hilo')">Hilo</button>
+  <button id="btn-dist-Nutrisari" onclick="switchDistributorView('Nutrisari')">Nutrisari</button>
 </div>
 
 <div id="bspUploadRow" class="toolbar hidden">
@@ -323,7 +331,7 @@ async function loadDataFromCloud(branch){
 const LOGIN_CONFIG = {
   Irfan: { branches:['Makassar','Bulukumba'] },
   Teddy: { branches:['Gorontalo'] },
-  Fahri: { branches:['SehatIndah','TokoPareto'] },
+  Fahri: { branches:['SehatIndah','TokoPareto','Distributor'] },
   RKA: { branches:['Makassar','Bulukumba','Gorontalo'], mode:'dashboard' }
 };
 let currentMode = 'insentif';
@@ -5041,6 +5049,7 @@ function logout(){
   document.getElementById('btn-BSP').classList.add('hidden');
   document.getElementById('bspUploadRow').classList.add('hidden');
   document.getElementById('monthToggleRow').classList.add('hidden');
+  document.getElementById('distToggleRow').classList.add('hidden');
   hideAchSlider(); hideSalesFilter();
 }
 
@@ -5070,12 +5079,13 @@ async function login(user){
     btn.classList.remove('branch-active');
   });
   document.getElementById('bspUploadRow').classList.add('hidden');
-  ['Makassar','Bulukumba','Gorontalo','SehatIndah','TokoPareto'].forEach(b=>{
+  document.getElementById('distToggleRow').classList.add('hidden');
+  ['Makassar','Bulukumba','Gorontalo','SehatIndah','TokoPareto','Distributor'].forEach(b=>{
     document.getElementById('btn-' + b).classList.toggle('hidden', !cfg.branches.includes(b));
   });
   document.getElementById('btn-TargetCabang').classList.toggle('hidden', isDashboard || !cfg.branches.includes('Makassar'));
   currentBranch = cfg.branches[0];
-  ['Makassar','Bulukumba','Gorontalo','SehatIndah','TokoPareto','TargetCabang'].forEach(b=>{
+  ['Makassar','Bulukumba','Gorontalo','SehatIndah','TokoPareto','Distributor','TargetCabang'].forEach(b=>{
     document.getElementById('btn-' + b).classList.toggle('branch-active', b === currentBranch);
   });
   if(isDashboard) await loadDashboardBranch(currentBranch);
@@ -6099,15 +6109,17 @@ function compute(){
   if(currentBranch === 'TargetCabang'){ computeTargetCabang(); return; }
   if(currentBranch === 'SehatIndah'){ computeSehatIndah(); return; }
   if(currentBranch === 'TokoPareto'){ computeSehatPareto(); return; }
+  if(currentBranch === 'Distributor'){ computeDistributor(); return; }
   computeOktober();
 }
 
 function switchBranch(branch){
   currentBranch = branch;
-  ['Makassar','Bulukumba','Gorontalo','SehatIndah','TokoPareto','TargetCabang'].forEach(b=>{
+  ['Makassar','Bulukumba','Gorontalo','SehatIndah','TokoPareto','Distributor','TargetCabang'].forEach(b=>{
     const btn = document.getElementById('btn-' + b);
     if(btn) btn.classList.toggle('branch-active', b === branch);
   });
+  document.getElementById('distToggleRow').classList.toggle('hidden', branch !== 'Distributor');
   if(currentMode === 'dashboard'){
     ['tokoMT','BSP','totalTarget'].forEach(id=>{
       const btn = document.getElementById('btn-' + id);
@@ -6379,6 +6391,86 @@ function openParetoModal(no){
       style="width:100%; padding:8px; margin-bottom:12px; border:1px solid #ccc; border-radius:4px; box-sizing:border-box;">
     <table style="width:100%; margin-top:6px;"><tr><th>Nama Item</th><th>Omzet</th><th>Jumlah PO</th><th>Tanggal</th></tr>${rincian || '<tr><td colspan="4">(belum ada order di data yang diupload)</td></tr>'}</table>`;
   document.getElementById('tokoModalOverlay').classList.remove('hidden');
+}
+
+// ===== Pencapaian Distributor (Fahri) =====
+// Target periode: Semua Rp1.100.000.000, Hilo Rp17.500.000, sisanya Nutrisari.
+// Ach = total DPP data yang diupload (baris BONUS/GIMMICK tidak dihitung).
+const DIST_TARGET = {
+  Semua: 1100000000,
+  Hilo: 17500000,
+  Nutrisari: 1100000000 - 17500000
+};
+const DIST_LABEL = { Semua:'Semua Produk', Hilo:'Hilo', Nutrisari:'Nutrisari' };
+let currentDistView = 'Semua';
+
+function switchDistributorView(view){
+  currentDistView = view;
+  ['Semua','Hilo','Nutrisari'].forEach(v=>{
+    const btn = document.getElementById('btn-dist-' + v);
+    if(btn) btn.classList.toggle('branch-active', v === view);
+  });
+  if(currentBranch === 'Distributor') computeDistributor();
+}
+
+function isHiloBarang(nama, merek){
+  const n = String(nama || '').toUpperCase();
+  return merek === 'HILO' || n.includes('HILO') || n.includes('HI LO');
+}
+function isNutrisariBarang(nama, merek){
+  const n = String(nama || '').toUpperCase();
+  return merek === 'NUTRISARI' || n.startsWith('NS ') || n.includes('NUTRISARI');
+}
+
+function calcDistributor(){
+  const hasil = { Semua:0, Hilo:0, Nutrisari:0 };
+  const toko = new Set();
+  const nota = new Set();
+  rawData.forEach(r=>{
+    if(isBonusRow(r)) return; // BONUS / GIMMICK tidak dihitung
+    const dpp = Number(field(r, 'DPP')) || 0;
+    if(!dpp) return;
+    const nama = field(r, 'Nama Barang', 'NamaBarang');
+    const merek = String(field(r, 'Merek') || '').trim().toUpperCase();
+    hasil.Semua += dpp;
+    if(isHiloBarang(nama, merek)) hasil.Hilo += dpp;
+    if(isNutrisariBarang(nama, merek)) hasil.Nutrisari += dpp;
+    const t = String(field(r, 'Ship To', 'ShipTo') || field(r, 'Perusahaan') || '').trim();
+    if(t) toko.add(t);
+    const nt = field(r, 'Kode Nota', 'KodeNota');
+    if(nt) nota.add(String(nt));
+  });
+  return { hasil, jmlToko: toko.size, jmlNota: nota.size };
+}
+
+function computeDistributor(){
+  hideAchSlider(); hideSalesFilter();
+  const { hasil, jmlToko, jmlNota } = calcDistributor();
+  const table = document.getElementById('mainTable');
+  table.className = 'pareto';
+  delete table.dataset.splitRow;
+  table.innerHTML = '<caption>Pencapaian Distributor — Sehat Indah</caption>';
+  const barCell = p_=>{
+    const w = Math.max(0, Math.min(p_, 100));
+    return `<td class="bar-cell"><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:${w}%"></div></div><span class="bar-label">${p_}%</span></div></td>`;
+  };
+  const urut = ['Semua','Hilo','Nutrisari'];
+  const tampil = currentDistView === 'Semua' ? urut : [currentDistView];
+  addMobileTitle(table, `Pencapaian Distributor &bull; ${jmlToko} toko &bull; ${jmlNota} nota`, 4);
+  const thead = table.insertRow(-1);
+  thead.innerHTML = '<th>Kategori</th><th>Target</th><th>Ach</th><th>%Ach</th>';
+  tampil.forEach(k=>{
+    const ach = hasil[k] || 0;
+    const p_ = pct(ach, DIST_TARGET[k]);
+    const row = table.insertRow(-1);
+    row.dataset.pct = String(p_);
+    row.dataset.sales = DIST_LABEL[k];
+    if(k === 'Semua') row.className = 'tot-row';
+    row.innerHTML = `<td class="nama">${DIST_LABEL[k]}</td>`
+      + `<td style="font-weight:bold;">${fmtRp(DIST_TARGET[k])}</td>`
+      + `<td>${fmtRp(ach)}</td>`
+      + barCell(p_);
+  });
 }
 
 function computeSehatIndah(){
