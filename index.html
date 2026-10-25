@@ -122,7 +122,7 @@
     body { background:#f6f7f9; font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; color:#101828; -webkit-font-smoothing: antialiased; }
     .toolbar { background:#fff; border:1px solid #eaecf0; border-radius:12px; box-shadow:0 1px 2px rgba(16,24,40,.05); }
     .toolbar button { border-radius:8px; font-weight:600; }
-    #btn-Makassar, #btn-Bulukumba, #btn-Gorontalo, #btn-SehatIndah, #btn-TargetCabang, #btn-TokoPareto, #btn-BSP, #btn-tokoMT, #btn-totalTarget, #btn-month-Oktober { background:#f2f4f7 !important; color:#344054 !important; box-shadow:none !important; }
+    #btn-Makassar, #btn-Bulukumba, #btn-Gorontalo, #btn-SehatIndah, #btn-TargetCabang, #btn-TokoPareto, #btn-SHIGorontalo, #btn-BSP, #btn-tokoMT, #btn-totalTarget, #btn-month-Oktober { background:#f2f4f7 !important; color:#344054 !important; box-shadow:none !important; }
     .toolbar button.branch-active { background:#0a5c36 !important; color:#fff !important; box-shadow:none !important; }
     #status { font-size:12px; font-weight:600; }
     .table-wrap { background:#fff; border:1px solid #eaecf0; border-radius:12px; box-shadow:0 1px 3px rgba(16,24,40,.08); }
@@ -199,6 +199,7 @@
   <button id="btn-Gorontalo" onclick="switchBranch('Gorontalo')">Gorontalo</button>
   <button id="btn-SehatIndah" class="hidden" onclick="switchBranch('SehatIndah')">Sehat Indah</button>
   <button id="btn-TokoPareto" class="hidden" onclick="switchBranch('TokoPareto')">Toko Pareto</button>
+  <button id="btn-SHIGorontalo" class="hidden" onclick="showSHIGorontaloDashboard()" style="background:#888;">SHI Gorontalo</button>
   <button id="btn-tokoMT" class="hidden" onclick="showTokoMTDashboard()" style="background:#888;">Toko MT</button>
   <button id="btn-totalTarget" class="hidden" onclick="showTotalTargetDashboard()" style="background:#888;">Total Target</button>
 </div>
@@ -330,7 +331,7 @@ async function loadDataFromCloud(branch){
 const LOGIN_CONFIG = {
   Irfan: { branches:['Makassar','Bulukumba'] },
   Teddy: { branches:['Gorontalo'] },
-  Fahri: { branches:['SehatIndah','TokoPareto'] },
+  Fahri: { branches:['SehatIndah'] },
   RKA: { branches:['Makassar','Bulukumba','Gorontalo'], mode:'dashboard' }
 };
 let currentMode = 'insentif';
@@ -5072,7 +5073,7 @@ async function login(user){
   document.getElementById('monthToggleRow').classList.toggle('hidden', !isDashboard);
   currentDashboardMonth = 'Oktober';
   if(!isDashboard){ hideAchSlider(); hideSalesFilter(); }
-  ['tokoMT','BSP','totalTarget'].forEach(id=>{
+  ['tokoMT','BSP','totalTarget','SHIGorontalo'].forEach(id=>{
     const btn = document.getElementById('btn-' + id);
     btn.classList.toggle('hidden', !isDashboard);
     btn.classList.remove('branch-active');
@@ -5101,6 +5102,7 @@ function switchInsentifMonth(month){
   if(currentBranch === 'TokoMT') showTokoMTDashboard();
   else if(currentBranch === 'BSP') showBSPDashboard();
   else if(currentBranch === 'TotalTarget') showTotalTargetDashboard();
+  else if(currentBranch === 'TokoPareto') showSHIGorontaloDashboard();
   else loadDashboardBranch(currentBranch);
 }
 function itemGroupKPI(name){
@@ -5684,6 +5686,7 @@ async function showTokoMTDashboard(){
   });
   document.getElementById('btn-BSP').classList.remove('branch-active');
   document.getElementById('btn-totalTarget').classList.remove('branch-active');
+  document.getElementById('btn-SHIGorontalo').classList.remove('branch-active');
   document.getElementById('bspUploadRow').classList.add('hidden');
   document.getElementById('btn-tokoMT').classList.add('branch-active');
   setStatus('⏳ Memuat Dashboard Toko MT...', 'pending');
@@ -5802,6 +5805,7 @@ async function showBSPDashboard(){
   });
   document.getElementById('btn-tokoMT').classList.remove('branch-active');
   document.getElementById('btn-totalTarget').classList.remove('branch-active');
+  document.getElementById('btn-SHIGorontalo').classList.remove('branch-active');
   document.getElementById('btn-BSP').classList.add('branch-active');
   document.getElementById('bspUploadRow').classList.remove('hidden');
   setStatus('⏳ Memuat data BSP dari cloud...', 'pending');
@@ -5844,6 +5848,7 @@ async function showTotalTargetDashboard(){
   });
   document.getElementById('btn-tokoMT').classList.remove('branch-active');
   document.getElementById('btn-BSP').classList.remove('branch-active');
+  document.getElementById('btn-SHIGorontalo').classList.remove('branch-active');
   document.getElementById('bspUploadRow').classList.add('hidden');
   document.getElementById('btn-totalTarget').classList.add('branch-active');
   setStatus('⏳ Memuat Dashboard Total Target...', 'pending');
@@ -6155,11 +6160,12 @@ function switchBranch(branch){
     if(btn) btn.classList.toggle('branch-active', b === branch);
   });
   if(currentMode === 'dashboard'){
-    ['tokoMT','BSP','totalTarget'].forEach(id=>{
+    ['tokoMT','BSP','totalTarget','SHIGorontalo'].forEach(id=>{
       const btn = document.getElementById('btn-' + id);
       if(btn) btn.classList.remove('branch-active');
     });
     document.getElementById('bspUploadRow').classList.add('hidden');
+    hideAchSlider(); hideSalesFilter();
     loadDashboardBranch(branch);
     return;
   }
@@ -6370,15 +6376,15 @@ function calcSehatPareto(){
 }
 
 function computeSehatPareto(){
-  const table = document.getElementById('mainTable');
+  const table = document.getElementById(currentMode === 'dashboard' ? 'dashboardTable' : 'mainTable');
   table.className = 'pareto';
   const { hasil, jmlBulan } = calcSehatPareto();
-  table.innerHTML = '<caption>Toko Pareto Sehat Indah</caption>';
+  table.innerHTML = '<caption>Toko Pareto SHI Gorontalo</caption>';
   const barCell = p_=>{
     const w = Math.max(0, Math.min(p_, 100));
     return `<td class="bar-cell"><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:${w}%"></div></div><span class="bar-label">${p_}%</span></div></td>`;
   };
-  addMobileTitle(table, `Toko Pareto Sehat Indah &bull; target per bulan &bull; Ach dari ${jmlBulan} bulan data terupload`, 6);
+  addMobileTitle(table, `Toko Pareto SHI Gorontalo &bull; target per bulan &bull; Ach dari ${jmlBulan} bulan data terupload`, 6);
   const thead = table.insertRow(-1);
   thead.innerHTML = '<th class="col-no">No</th><th>Nama Toko</th><th>Salesman</th><th>Target/bln</th><th>Ach</th><th>%Ach</th>';
   SEHAT_PARETO.forEach(p=>{
@@ -6398,6 +6404,28 @@ function computeSehatPareto(){
   table.dataset.splitRow = String(Math.floor(table.rows.length / 2));
   showAchSlider();
   showSalesFilter();
+}
+
+// RKA: Toko Pareto SHI Gorontalo (data Fahri/Sehat Indah dari cloud)
+async function showSHIGorontaloDashboard(){
+  currentBranch = 'TokoPareto';
+  ['Makassar','Bulukumba','Gorontalo'].forEach(b=>{
+    const btn = document.getElementById('btn-' + b);
+    if(btn) btn.classList.remove('branch-active');
+  });
+  ['tokoMT','BSP','totalTarget'].forEach(id=>document.getElementById('btn-' + id).classList.remove('branch-active'));
+  document.getElementById('bspUploadRow').classList.add('hidden');
+  document.getElementById('btn-SHIGorontalo').classList.add('branch-active');
+  setStatus('⏳ Memuat Toko Pareto SHI Gorontalo dari cloud...', 'pending');
+  try{
+    rawData = (await loadDataFromCloud('Fahri')).filter(inOktNov);
+    computeSehatPareto();
+    setStatus(`✅ Toko Pareto SHI Gorontalo dimuat (${rawData.length} baris).`, 'ok');
+  }catch(err){
+    rawData = [];
+    computeSehatPareto();
+    setStatus(`❌ GAGAL memuat data SHI Gorontalo: ${err.message}`, 'error');
+  }
 }
 
 // klik nama toko di tabel Toko Pareto: rincian item yang pernah diorder + tanggalnya
