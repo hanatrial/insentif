@@ -41,6 +41,8 @@
     <div class="sub">Unggah file BSP (Excel / CSV), cek pratinjau, lalu simpan ke Firestore. Hasilnya langsung muncul di Dashboard BSP.</div>
   </div>
 
+  <div class="card" style="padding:12px 18px"><b>Terakhir upload:</b> <span id="last">memuat...</span></div>
+
   <div class="card">
     <label class="drop" id="drop" for="file">
       <b>Pilih file atau seret ke sini</b>
@@ -106,7 +108,9 @@
       var s=await db.collection('insentifData').doc(BRANCH).get();
       oldCount=s.exists?(s.data().rowCount||0):0;
       $('nOld').textContent=oldCount;
-    }catch(e){$('nOld').textContent='?';}
+      var ts=s.exists?s.data().updatedAt:null;
+      $('last').textContent=ts?ts.toDate().toLocaleString('id-ID',{day:'numeric',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'})+' WIB ('+oldCount+' baris)':'Belum ada upload';
+    }catch(e){$('nOld').textContent='?';$('last').textContent='gagal memuat';}
   }
 
   function handle(f){
@@ -164,6 +168,7 @@
 
   $('file').addEventListener('change',function(e){handle(e.target.files[0]);e.target.value='';});
   $('save').addEventListener('click',save);
+  loadOld();
   var d=$('drop');
   ['dragenter','dragover'].forEach(function(t){d.addEventListener(t,function(e){e.preventDefault();d.classList.add('over')})});
   ['dragleave','drop'].forEach(function(t){d.addEventListener(t,function(e){e.preventDefault();d.classList.remove('over')})});
