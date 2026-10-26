@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="robots" content="noindex, nofollow">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Input Data BSP</title>
+<style>
+  :root{--bg:#F4F1E8;--card:#fff;--ink:#12261F;--mut:#6b7a73;--line:#e3ded0;--g1:#0B2B26;--g2:#235347;--lime:#B5D334;--ok:#1f9d63;--err:#c0392b}
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+  main{max-width:900px;margin:0 auto;padding:24px 16px 40px;display:flex;flex-direction:column;gap:16px}
+  h1{font-size:22px;margin:0;font-weight:800}
+  .sub{font-size:13px;color:var(--mut);margin-top:2px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px}
+  .drop{border:2px dashed var(--line);border-radius:16px;padding:32px 16px;text-align:center;cursor:pointer;transition:border-color .15s,background .15s}
+  .drop.over{border-color:var(--g2);background:#f3f8f1}
+  .drop b{display:block;font-size:16px;margin-bottom:4px}
+  .drop span{font-size:13px;color:var(--mut)}
+  input[type=file]{display:none}
+  .row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+  select,button{font:inherit;border-radius:12px;border:1px solid var(--line);padding:10px 14px;background:#fff;color:var(--ink)}
+  button{cursor:pointer;font-weight:700}
+  button.pri{background:var(--lime);border-color:var(--lime);color:var(--g1)}
+  button:disabled{opacity:.5;cursor:not-allowed}
+  .nums{display:flex;gap:10px;flex-wrap:wrap}
+  .nums div{background:#f7f5ee;border-radius:12px;padding:10px 14px}
+  .nums b{display:block;font-size:20px}.nums span{font-size:12px;color:var(--mut)}
+  .msg{font-size:14px}.msg.err{color:var(--err)}.msg.ok{color:var(--ok)}
+  .tw{overflow:auto;max-height:420px;border:1px solid var(--line);border-radius:12px}
+  table{border-collapse:collapse;width:100%;font-size:12.5px}
+  th,td{padding:7px 10px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+  th{position:sticky;top:0;background:var(--g1);color:#fff}
+  .hide{display:none}
+</style>
+</head>
+<body>
+<main>
+  <div>
+    <h1>Input Data BSP</h1>
+    <div class="sub">Unggah file Excel / CSV, cek pratinjau, lalu unduh hasilnya. File dibaca di browser Anda dan tidak dikirim ke server.</div>
+  </div>
+
+  <div class="card">
+    <label class="drop" id="drop" for="file">
+      <b>Pilih file atau seret ke sini</b>
+      <span>.xlsx, .xls, atau .csv</span>
+    </label>
+    <input type="file" id="file" accept=".xlsx,.xls,.csv">
+    <p class="msg hide" id="msg"></p>
+  </div>
+
+  <div class="card hide" id="res">
+    <div class="row" style="justify-content:space-between;margin-bottom:12px">
+      <div class="row">
+        <select id="sheet" aria-label="Sheet"></select>
+        <span class="sub" id="fname"></span>
+      </div>
+      <div class="row">
+        <button id="dlCsv" class="pri">Unduh CSV</button>
+        <button id="dlJson">Unduh JSON</button>
+      </div>
+    </div>
+    <div class="nums" style="margin-bottom:12px">
+      <div><b id="nRows">0</b><span>baris data</span></div>
+      <div><b id="nCols">0</b><span>kolom</span></div>
+      <div><b id="nEmpty">0</b><span>baris kosong dilewati</span></div>
+    </div>
+    <div class="tw"><table id="tbl"></table></div>
+    <div class="sub" id="more" style="margin-top:8px"></div>
+  </div>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+(function(){
+  var PREVIEW=100;
+  var $=function(id){return document.getElementById(id)};
+  var wb=null,rows=[],name='';
+
+  function msg(t,c){var m=$('msg');m.textContent=t;m.className='msg '+(c||'');}
+  function esc(s){return String(s==null?'':s).replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c]})}
+
+  function loadSheet(sn){
+    var all=XLSX.utils.sheet_to_json(wb.Sheets[sn],{header:1,defval:'',raw:false});
+    var head=(all[0]||[]).map(function(h,i){return String(h).trim()||('Kolom '+(i+1))});
+    var body=all.slice(1),kept=[],empty=0;
+    body.forEach(function(r){
+      if(r.every(function(v){return String(v).trim()===''}))empty++;else kept.push(r);
+    });
+    rows={head:head,body:kept};
+    $('nRows').textContent=kept.length;
+    $('nCols').textContent=head.length;
+    $('nEmpty').textContent=empty;
+    var h='<thead><tr>'+head.map(function(x){return '<th>'+esc(x)+'</th>'}).join('')+'</tr></thead><tbody>';
+    kept.slice(0,PREVIEW).forEach(function(r){
+      h+='<tr>'+head.map(function(_,i){return '<td>'+esc(r[i])+'</td>'}).join('')+'</tr>';
+    });
+    $('tbl').innerHTML=h+'</tbody>';
+    $('more').textContent=kept.length>PREVIEW?('Menampilkan '+PREVIEW+' dari '+kept.length+' baris.'):'';
+    $('dlCsv').disabled=$('dlJson').disabled=!kept.length;
+  }
+
+  function handle(f){
+    if(!f)return;
+    if(!/\.(xlsx|xls|csv)$/i.test(f.name)){msg('Format tidak didukung. Pakai .xlsx, .xls, atau .csv.','err');return;}
+    var rd=new FileReader();
+    rd.onload=function(e){
+      try{
+        wb=XLSX.read(e.target.result,{type:'array'});
+        name=f.name.replace(/\.[^.]+$/,'');
+        $('sheet').innerHTML=wb.SheetNames.map(function(s){return '<option>'+esc(s)+'</option>'}).join('');
+        $('sheet').style.display=wb.SheetNames.length>1?'':'none';
+        $('fname').textContent=f.name;
+        $('res').classList.remove('hide');
+        loadSheet(wb.SheetNames[0]);
+        msg('File berhasil dibaca.','ok');
+      }catch(err){msg('Gagal membaca file: '+err.message,'err');}
+    };
+    rd.onerror=function(){msg('Gagal membuka file.','err');};
+    rd.readAsArrayBuffer(f);
+    $('msg').classList.remove('hide');
+  }
+
+  function save(blob,fn){
+    var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=fn;
+    document.body.appendChild(a);a.click();a.remove();
+    setTimeout(function(){URL.revokeObjectURL(a.href)},1000);
+  }
+
+  $('file').addEventListener('change',function(e){handle(e.target.files[0]);e.target.value='';});
+  $('sheet').addEventListener('change',function(e){loadSheet(e.target.value);});
+  var d=$('drop');
+  ['dragenter','dragover'].forEach(function(t){d.addEventListener(t,function(e){e.preventDefault();d.classList.add('over')})});
+  ['dragleave','drop'].forEach(function(t){d.addEventListener(t,function(e){e.preventDefault();d.classList.remove('over')})});
+  d.addEventListener('drop',function(e){handle(e.dataTransfer.files[0]);});
+
+  $('dlCsv').addEventListener('click',function(){
+    var ws=XLSX.utils.aoa_to_sheet([rows.head].concat(rows.body));
+    save(new Blob(['﻿'+XLSX.utils.sheet_to_csv(ws)],{type:'text/csv;charset=utf-8'}),name+'.csv');
+  });
+  $('dlJson').addEventListener('click',function(){
+    var out=rows.body.map(function(r){var o={};rows.head.forEach(function(h,i){o[h]=r[i]==null?'':r[i]});return o;});
+    save(new Blob([JSON.stringify(out,null,2)],{type:'application/json'}),name+'.json');
+  });
+})();
+</script>
+</body>
+</html>
