@@ -38,7 +38,7 @@
 <main>
   <div>
     <h1>Input Data BSP</h1>
-    <div class="sub">Unggah file Excel / CSV, cek pratinjau, lalu unduh hasilnya. File dibaca di browser Anda dan tidak dikirim ke server.</div>
+    <div class="sub">Unggah file BSP (Excel / CSV), cek pratinjau, lalu simpan ke Firestore. Hasilnya langsung muncul di Dashboard BSP.</div>
   </div>
 
   <div class="card">
@@ -53,52 +53,60 @@
   <div class="card hide" id="res">
     <div class="row" style="justify-content:space-between;margin-bottom:12px">
       <div class="row">
-        <select id="sheet" aria-label="Sheet"></select>
         <span class="sub" id="fname"></span>
       </div>
       <div class="row">
-        <button id="dlCsv" class="pri">Unduh CSV</button>
-        <button id="dlJson">Unduh JSON</button>
+        <button id="save" class="pri">Simpan ke Firestore</button>
       </div>
     </div>
     <div class="nums" style="margin-bottom:12px">
-      <div><b id="nRows">0</b><span>baris data</span></div>
+      <div><b id="nRows">0</b><span>baris akan disimpan</span></div>
       <div><b id="nCols">0</b><span>kolom</span></div>
-      <div><b id="nEmpty">0</b><span>baris kosong dilewati</span></div>
+      <div><b id="nSkip">0</b><span>baris dilewati (bukan Hilo/NS Tradisional)</span></div>
+      <div><b id="nOld">–</b><span>baris tersimpan sekarang</span></div>
     </div>
     <div class="tw"><table id="tbl"></table></div>
     <div class="sub" id="more" style="margin-top:8px"></div>
   </div>
 </main>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="vendor/xlsx.full.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script>
 (function(){
-  var PREVIEW=100;
+  // Firebase & format data sama persis dengan dashboard (index.html) -> insentifData/BSP/chunks
+  firebase.initializeApp({
+    apiKey:"AIzaSyCA8Q8athqYIsY3By5wPxcU97GjDBR6DAs",
+    authDomain:"mds-sulawesi.firebaseapp.com",
+    projectId:"mds-sulawesi",
+    storageBucket:"mds-sulawesi.firebasestorage.app",
+    messagingSenderId:"511949021685",
+    appId:"1:511949021685:web:bc32007af0555449e7c0bc"
+  });
+  var db=firebase.firestore(),BRANCH='BSP',CHUNK=1000,PREVIEW=100;
   var $=function(id){return document.getElementById(id)};
-  var wb=null,rows=[],name='';
+  var data=[],oldCount=null;
 
   function msg(t,c){var m=$('msg');m.textContent=t;m.className='msg '+(c||'');}
   function esc(s){return String(s==null?'':s).replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c]})}
 
-  function loadSheet(sn){
-    var all=XLSX.utils.sheet_to_json(wb.Sheets[sn],{header:1,defval:'',raw:false});
-    var head=(all[0]||[]).map(function(h,i){return String(h).trim()||('Kolom '+(i+1))});
-    var body=all.slice(1),kept=[],empty=0;
-    body.forEach(function(r){
-      if(r.every(function(v){return String(v).trim()===''}))empty++;else kept.push(r);
-    });
-    rows={head:head,body:kept};
-    $('nRows').textContent=kept.length;
-    $('nCols').textContent=head.length;
-    $('nEmpty').textContent=empty;
-    var h='<thead><tr>'+head.map(function(x){return '<th>'+esc(x)+'</th>'}).join('')+'</tr></thead><tbody>';
-    kept.slice(0,PREVIEW).forEach(function(r){
-      h+='<tr>'+head.map(function(_,i){return '<td>'+esc(r[i])+'</td>'}).join('')+'</tr>';
-    });
-    $('tbl').innerHTML=h+'</tbody>';
-    $('more').textContent=kept.length>PREVIEW?('Menampilkan '+PREVIEW+' dari '+kept.length+' baris.'):'';
-    $('dlCsv').disabled=$('dlJson').disabled=!kept.length;
+  function cleanName(raw){
+    if(!raw)return raw;
+    var m=String(raw).match(/\(([^)]+)\)\s*$/);
+    return m?m[1].trim():String(raw).trim();
+  }
+  function slim(r){
+    return {'Tgl':r['Tgl Faktur'],'Nomor Faktur':r['Nomor Faktur'],'Nama Toko':cleanName(r['Outlet']||r['Nama Customer']),
+      'Nama Barang':r['Nama Barang'],'Sub Group Barang':r['Sub Group Barang'],'Salesman':r['Salesman'],'Netto':r['Netto']};
+  }
+
+  async function loadOld(){
+    try{
+      var s=await db.collection('insentifData').doc(BRANCH).get();
+      oldCount=s.exists?(s.data().rowCount||0):0;
+      $('nOld').textContent=oldCount;
+    }catch(e){$('nOld').textContent='?';}
   }
 
   function handle(f){
@@ -107,42 +115,59 @@
     var rd=new FileReader();
     rd.onload=function(e){
       try{
-        wb=XLSX.read(e.target.result,{type:'array'});
-        name=f.name.replace(/\.[^.]+$/,'');
-        $('sheet').innerHTML=wb.SheetNames.map(function(s){return '<option>'+esc(s)+'</option>'}).join('');
-        $('sheet').style.display=wb.SheetNames.length>1?'':'none';
+        var wb=XLSX.read(new Uint8Array(e.target.result),{type:'array',cellDates:true});
+        var ws=wb.Sheets[wb.SheetNames[0]];
+        var all=XLSX.utils.sheet_to_json(ws,{defval:null,range:2});
+        data=all.filter(function(r){
+          var sg=String(r['Sub Group Barang']||'').trim().toUpperCase();
+          return sg==='HILO TRADISIONAL'||sg==='NS TRADITIONAL';
+        }).map(slim);
         $('fname').textContent=f.name;
+        $('nRows').textContent=data.length;
+        $('nSkip').textContent=all.length-data.length;
+        var cols=data.length?Object.keys(data[0]):['Tgl','Nomor Faktur','Nama Toko','Nama Barang','Sub Group Barang','Salesman','Netto'];
+        $('tbl').innerHTML='<thead><tr>'+cols.map(function(c){return '<th>'+esc(c)+'</th>'}).join('')+'</tr></thead><tbody>'+
+          data.slice(0,PREVIEW).map(function(r){return '<tr>'+cols.map(function(c){
+            var v=r[c];if(v instanceof Date)v=v.toLocaleDateString('id-ID');return '<td>'+esc(v)+'</td>'}).join('')+'</tr>'}).join('')+'</tbody>';
+        $('more').textContent=data.length>PREVIEW?('Menampilkan '+PREVIEW+' dari '+data.length+' baris.'):'';
+        $('save').disabled=!data.length;
         $('res').classList.remove('hide');
-        loadSheet(wb.SheetNames[0]);
-        msg('File berhasil dibaca.','ok');
+        loadOld();
+        if(data.length)msg('Terbaca '+data.length+' baris tradisional dari '+all.length+' baris. Cek pratinjau, lalu klik Simpan.','ok');
+        else msg('Tidak ada baris Hilo Tradisional / NS Traditional. Cek file dan kolom "Sub Group Barang" (header harus di baris ke-3).','err');
       }catch(err){msg('Gagal membaca file: '+err.message,'err');}
     };
     rd.onerror=function(){msg('Gagal membuka file.','err');};
     rd.readAsArrayBuffer(f);
-    $('msg').classList.remove('hide');
   }
 
-  function save(blob,fn){
-    var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=fn;
-    document.body.appendChild(a);a.click();a.remove();
-    setTimeout(function(){URL.revokeObjectURL(a.href)},1000);
+  async function save(){
+    if(!data.length)return;
+    if(!confirm('Data BSP di Firestore ('+(oldCount==null?'?':oldCount)+' baris) akan DITIMPA dengan '+data.length+' baris dari file ini. Lanjut?'))return;
+    $('save').disabled=true;
+    try{
+      var col=db.collection('insentifData').doc(BRANCH).collection('chunks'),chunks=[];
+      for(var i=0;i<data.length;i+=CHUNK)chunks.push(data.slice(i,i+CHUNK));
+      for(var k=0;k<chunks.length;k++){
+        msg('Mengunggah '+(k+1)+' / '+chunks.length+'...','');
+        await col.doc(String(k).padStart(5,'0')).set({rows:chunks[k],updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
+      }
+      var ex=await col.get(),b=db.batch(),n=0;
+      for(var d of ex.docs){var ix=parseInt(d.id,10);if(!isNaN(ix)&&ix<chunks.length)continue;b.delete(d.ref);n++;}
+      if(n)await b.commit();
+      await db.collection('insentifData').doc(BRANCH).set({chunkCount:chunks.length,rowCount:data.length,updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
+      msg('Tersimpan di Firestore: '+data.length+' baris. Buka Dashboard BSP untuk melihat hasilnya.','ok');
+      loadOld();
+    }catch(err){msg('GAGAL simpan: '+err.message,'err');}
+    $('save').disabled=false;
   }
 
   $('file').addEventListener('change',function(e){handle(e.target.files[0]);e.target.value='';});
-  $('sheet').addEventListener('change',function(e){loadSheet(e.target.value);});
+  $('save').addEventListener('click',save);
   var d=$('drop');
   ['dragenter','dragover'].forEach(function(t){d.addEventListener(t,function(e){e.preventDefault();d.classList.add('over')})});
   ['dragleave','drop'].forEach(function(t){d.addEventListener(t,function(e){e.preventDefault();d.classList.remove('over')})});
   d.addEventListener('drop',function(e){handle(e.dataTransfer.files[0]);});
-
-  $('dlCsv').addEventListener('click',function(){
-    var ws=XLSX.utils.aoa_to_sheet([rows.head].concat(rows.body));
-    save(new Blob(['﻿'+XLSX.utils.sheet_to_csv(ws)],{type:'text/csv;charset=utf-8'}),name+'.csv');
-  });
-  $('dlJson').addEventListener('click',function(){
-    var out=rows.body.map(function(r){var o={};rows.head.forEach(function(h,i){o[h]=r[i]==null?'':r[i]});return o;});
-    save(new Blob([JSON.stringify(out,null,2)],{type:'application/json'}),name+'.json');
-  });
 })();
 </script>
 </body>
