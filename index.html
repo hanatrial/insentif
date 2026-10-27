@@ -5368,6 +5368,21 @@ function isUmumRow(r){
   return s === 'UMUM' || s.startsWith('UMUM ');
 }
 
+/* Sehat Indah: sheet "STOK ..." di file ekspor ikut disimpan (insentifData/FahriStok) untuk tab Stok SHI di aplikasi stok (repo noo).
+   Hanya barang Nutrifood (pemasok P00008 atau nama NS/HILO/LOKALATE/TS/BONUS/GIMMICK). Baris: k=kode, n=nama, s=stok (pcs), t=stok dalam karton+sisa (stk_kms), h=harga jual, p=pemasok. */
+function parseSehatStok(wb){
+  const nm = wb.SheetNames.find(n=>/^stok/i.test(String(n).trim()));
+  if(!nm) return null;
+  const rows = XLSX.utils.sheet_to_json(wb.Sheets[nm], {defval:null})
+    .filter(r=>r['kd_brg'] != null && r['nm_brg'] != null &&
+      (String(r['pemasok'] || '').trim().toUpperCase() === 'P00008' || /^(NS |HI ?LO|LOKALATE|TS |BONUS|GIM)/i.test(String(r['nm_brg']).trim())))
+    .map(r=>({k:String(r['kd_brg']).trim(), n:String(r['nm_brg']).trim(), s:Number(r['stok']) || 0, t:String(r['stk_kms'] || '').trim(), h:Number(r['hrg_jual']) || 0, p:String(r['pemasok'] || '').trim()}));
+  return rows.length ? {sheet:nm, rows} : null;
+}
+async function saveSehatStokToCloud(st){
+  await db.collection('insentifData').doc('FahriStok').set({sheet:st.sheet, rows:st.rows, rowCount:st.rows.length, updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
+}
+
 function processFile(){
   const f = document.getElementById('fileInput').files[0];
   if(!f){ document.getElementById('status').textContent = 'Pilih file dulu.'; return; }
@@ -5379,6 +5394,7 @@ function processFile(){
   };
   reader.onload = async function(e){
     await new Promise(resolve => setTimeout(resolve, 0)); // biar status "Membaca file..." kelihatan sebelum parsing berat
+    let stokSehat = null;
     try{
       const data = new Uint8Array(e.target.result);
       const wb = XLSX.read(data, {type:'array', cellDates:true});
@@ -5403,6 +5419,7 @@ function processFile(){
         return;
       }
       rawData = simpan;
+      if(sehat){ try{ stokSehat = parseSehatStok(wb); }catch(e){ console.warn('stok Sehat Indah gagal dibaca', e); } }
     }catch(parseErr){
       setStatus(`❌ GAGAL MEMBACA/PARSING FILE: ${parseErr.message}`, 'error');
       return;
@@ -5419,7 +5436,12 @@ function processFile(){
       setStatus(`❌ GAGAL SIMPAN KE CLOUD: ${saveError.message}. Data cuma ada di layar ini, akan hilang saat refresh!`, 'error');
     } else {
       document.getElementById('lastUpload').textContent = formatLastUpload(new Date());
-      setStatus(`✅ TERSIMPAN DI CLOUD — data ${currentUser} sudah diganti (${rawData.length} baris).`, 'ok');
+      let stokInfo = '';
+      if(stokSehat){
+        try{ await saveSehatStokToCloud(stokSehat); stokInfo = ` Stok (${stokSehat.sheet}) ikut tersimpan: ${stokSehat.rows.length} item.`; }
+        catch(e){ stokInfo = ` Penjualan tersimpan, tapi stok GAGAL disimpan: ${e.message}`; }
+      }
+      setStatus(`✅ TERSIMPAN DI CLOUD — data ${currentUser} sudah diganti (${rawData.length} baris).${stokInfo}`, 'ok');
     }
   };
   reader.readAsArrayBuffer(f);
