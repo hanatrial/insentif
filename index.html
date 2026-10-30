@@ -5167,26 +5167,7 @@ function calcRoMango(branch){
   salesList.forEach(s=>{ res.all[s] = all[s] ? all[s].size : 0; res.nov[s] = nov[s] ? nov[s].size : 0; });
   return res;
 }
-function appendRoMango(){
-  const table = document.getElementById('mainTable');
-  const salesList = getSalesList();
-  const mg = calcRoMango(currentBranch);
-  const cab = currentBranch === 'Gorontalo' ? RO_MANGO.targetCabang.Gorontalo : 0;
-  const rp = n=>'Rp ' + n.toLocaleString('id-ID');
-  const t = RO_MANGO.target;
-  const bar = p_=>`<div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:${Math.max(0, Math.min(p_, 100))}%"></div></div><span class="bar-label">${p_}%</span></div>`;
-  let h = `<tr class="m-title"><td colspan="20">${RO_MANGO.title} &bull; ${RO_MANGO.periode} &bull; Toko unik NS Milky Mango PLS &bull; Capai ${t} s.d. November = ${rp(RO_MANGO.insentifNov)}, capai di Desember = ${rp(RO_MANGO.insentifDes)}</td></tr>`;
-  h += '<tr><th>Nama Salesman</th><th>Target</th><th>Ach s.d. Nov</th><th>Ach Nov-Des</th><th>%Ach</th><th>Insentif</th></tr>';
-  let total = 0, totalIns = 0;
-  salesList.forEach(s=>{
-    const a = mg.all[s], ins = mg.nov[s] >= t ? RO_MANGO.insentifNov : (a >= t ? RO_MANGO.insentifDes : 0);
-    total += a; totalIns += ins;
-    h += `<tr><td class="nama">${s}</td><td>${t}</td><td>${mg.nov[s]}</td><td>${a}</td><td class="bar-cell">${bar(pct(a, t))}</td><td style="font-weight:bold;">${rp(ins)}</td></tr>`;
-  });
-  if(cab) h += `<tr class="tot-row" style="background:#eef3ea;"><td class="nama" style="color:#000;">TOTAL CABANG</td><td style="font-weight:bold;">${cab}</td><td></td><td style="font-weight:bold;">${total}</td><td class="bar-cell">${bar(pct(total, cab))}</td><td style="font-weight:bold;">${rp(totalIns)}</td></tr>`;
-  table.tBodies[0].insertAdjacentHTML('beforeend', h);
-}
-
+const RO_MANGO_INS = 'Rp 1.000.000 (100 s.d. Nov) / Rp 250.000 (100 di Des)';
 const OKTOBER_PERIODE = 'Oktober - November';
 const OKTOBER_KPI = [
   { id:'okEaHilo', title:'EA Hilo (EA Okt + EA Nov)', periode:OKTOBER_PERIODE, target:120 },
@@ -6322,6 +6303,7 @@ function calcOktoberResults(branch){
   results.okNs7 = countNs7(ns7All);
   results.okNs7Okt = countNs7(ns7Okt);
   if(OKTOBER_MT5.byBranch[branch]) results.okMt5 = calcMt5(salesList);
+  results[RO_MANGO.id] = calcRoMango(branch).all;
   return results;
 }
 
@@ -6680,7 +6662,6 @@ function computeOktober(){
   const results = calcOktoberResults(currentBranch);
   if(currentBranch === 'Bulukumba') renderOktoberMatrix(results);
   else renderOktober(results);
-  appendRoMango();
   document.getElementById('status').textContent = `Selesai menghitung dari ${rawData.length} baris data.`;
 }
 
@@ -6698,7 +6679,7 @@ function computeTargetCabang(){
   });
   if(cfg.ndMango !== undefined){
     sum.ndMango = 0;
-    if(rawData.length) cfg.branches.forEach(b=>{ const mg = calcRoMango(b); OKTOBER_SALES[b].forEach(s=>{ sum.ndMango += mg.all[s] || 0; }); });
+    if(rawData.length) cfg.branches.forEach(b=>{ const mg = calcRoMango(b).all; OKTOBER_SALES[b].forEach(s=>{ sum.ndMango += mg[s] || 0; }); });
   }
   renderTargetCabang(cfg, sum, jmlSales);
   document.getElementById('status').textContent = rawData.length ? `Selesai menghitung dari ${rawData.length} baris data.` : '';
@@ -6863,6 +6844,7 @@ function renderOktober(results){
   }
 
   table.dataset.splitRow = table.rows.length;
+  renderBlock(RO_MANGO, RO_MANGO_INS, currentBranch === 'Gorontalo' ? RO_MANGO.targetCabang.Gorontalo : 0);
   const varianAktif = OKTOBER_VARIAN.filter(p=>p.branches.includes(currentBranch));
   varianAktif.forEach(p=>renderBlock(p, 'Rp ' + p.insentif + '/varian', (cabangCfg && cabangCfg[p.id]) || 0));
 
@@ -6974,6 +6956,7 @@ function renderOktoberMatrix(results){
 
   table.dataset.splitRow = table.rows.length;
   addHeader();
+  progRow(RO_MANGO, RO_MANGO_INS);
   OKTOBER_VARIAN.filter(p=>p.branches.includes(currentBranch)).forEach(p=>progRow(p, 'Rp ' + p.insentif + '/varian'));
 
   const mt5Cfg = OKTOBER_MT5.byBranch[currentBranch];
@@ -6995,7 +6978,7 @@ function updateTarget(id, val){
     compute();
     return;
   }
-  const p = OKTOBER_KPI.find(p=>p.id===id) || OKTOBER_VARIAN.find(p=>p.id===id) || SEHAT_KPI.find(p=>p.id===id) || (id === SEHAT_TEEN.id ? SEHAT_TEEN : null);
+  const p = OKTOBER_KPI.find(p=>p.id===id) || OKTOBER_VARIAN.find(p=>p.id===id) || (id === RO_MANGO.id ? RO_MANGO : null) || SEHAT_KPI.find(p=>p.id===id) || (id === SEHAT_TEEN.id ? SEHAT_TEEN : null);
   if(p){
     const num = parseInt(val) || 0;
     if(p.targetByBranch && p.targetByBranch[currentBranch] !== undefined){
