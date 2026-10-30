@@ -5141,7 +5141,7 @@ const OKTOBER_MT5 = {
   byBranch:{ Bulukumba:{ target:25, targetCabang:50, nominal:300000 }, Gorontalo:{ target:20, targetCabang:80, nominal:250000 } }
 };
 const RO_MANGO = {
-  id:'ndMango', title:'RO Milky Mango', periode:'November - Desember', target:100,
+  id:'ndMango', title:'EA Milky Mango', periode:'November - Desember', target:100,
   insentifNov:1000000, insentifDes:250000,
   targetCabang:{ Makassar:900, Bulukumba:900, Gorontalo:360 }
 };
@@ -6717,7 +6717,7 @@ function renderTargetCabang(cfg, sum, jmlSales){
     { label:'Insentif Raport Sales Q4 2026', items:OKTOBER_KPI.map(k=>({ id:k.id, name:k.title })) },
     { label:'Insentif Hilo School PLS', items:[{ id:'okSchoolCok', name:'Coklat' }, { id:'okSchoolVan', name:'Vanilla' }] },
     { label:'Insentif Hilo Teen (3in1) PLS', items:[{ id:'okTeen', name:'3in1 Coklat Belgia / ACT Belgian' }] },
-    { label:'RO Milky Mango (Nov - Des)', items:[{ id:'ndMango', name:'Toko unik Milky Mango PLS' }] }
+    { label:'EA Milky Mango (Nov - Des)', items:[{ id:'ndMango', name:'Toko unik Milky Mango PLS' }] }
   ].map(g=>({ label:g.label, items:g.items.filter(it=>cfg[it.id] !== undefined) })).filter(g=>g.items.length);
   let first = true;
   groups.forEach(g=>{
