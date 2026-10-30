@@ -5140,6 +5140,53 @@ const OKTOBER_MT5 = {
   id:'okMt5', title:'Insentif MT 5 Varian', periode:'Oktober - Desember',
   byBranch:{ Bulukumba:{ target:25, targetCabang:50, nominal:300000 }, Gorontalo:{ target:20, targetCabang:80, nominal:250000 } }
 };
+const RO_MANGO = {
+  id:'ndMango', title:'RO Milky Mango', periode:'November - Desember', target:100,
+  insentifNov:1000000, insentifDes:250000,
+  targetCabang:{ Makassar:900, Bulukumba:900, Gorontalo:360 }
+};
+function isMilkyMango(r){
+  const n = String(field(r, 'Nama Barang', 'NamaBarang') || '').toUpperCase();
+  return n.includes('MILKY MANGO') && n.includes('PLS') && !isBonusRow(r);
+}
+// toko unik per sales yang transaksi Milky Mango PLS (bukan bonus); Nov = s.d. akhir November, Des = kumulatif Nov-Des
+function calcRoMango(branch){
+  const salesList = OKTOBER_SALES[branch];
+  const rNov = periodRange('November'), rAll = periodRange(RO_MANGO.periode);
+  const nov = {}, all = {};
+  rawData.forEach(r=>{
+    const sales = normSales(field(r, 'Nama Sales', 'NamaSales'));
+    if(!salesList.includes(sales) || !isMilkyMango(r)) return;
+    const d = toDate(field(r, 'Tgl'));
+    if(!d || d < rAll[0] || d > rAll[1]) return;
+    const toko = String(field(r, 'Ship To', 'ShipTo') || field(r, 'Perusahaan'));
+    (all[sales] = all[sales] || new Set()).add(toko);
+    if(d <= rNov[1]) (nov[sales] = nov[sales] || new Set()).add(toko);
+  });
+  const res = { all:{}, nov:{} };
+  salesList.forEach(s=>{ res.all[s] = all[s] ? all[s].size : 0; res.nov[s] = nov[s] ? nov[s].size : 0; });
+  return res;
+}
+function appendRoMango(){
+  const table = document.getElementById('mainTable');
+  const salesList = getSalesList();
+  const mg = calcRoMango(currentBranch);
+  const cab = RO_MANGO.targetCabang[currentBranch];
+  const rp = n=>'Rp ' + n.toLocaleString('id-ID');
+  const t = RO_MANGO.target;
+  const bar = p_=>`<div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:${Math.max(0, Math.min(p_, 100))}%"></div></div><span class="bar-label">${p_}%</span></div>`;
+  let h = `<tr class="m-title"><td colspan="20">${RO_MANGO.title} &bull; ${RO_MANGO.periode} &bull; Toko unik NS Milky Mango PLS &bull; Capai ${t} s.d. November = ${rp(RO_MANGO.insentifNov)}, capai di Desember = ${rp(RO_MANGO.insentifDes)}</td></tr>`;
+  h += '<tr><th>Nama Salesman</th><th>Target</th><th>Ach s.d. Nov</th><th>Ach Nov-Des</th><th>%Ach</th><th>Insentif</th></tr>';
+  let total = 0, totalIns = 0;
+  salesList.forEach(s=>{
+    const a = mg.all[s], ins = mg.nov[s] >= t ? RO_MANGO.insentifNov : (a >= t ? RO_MANGO.insentifDes : 0);
+    total += a; totalIns += ins;
+    h += `<tr><td class="nama">${s}</td><td>${t}</td><td>${mg.nov[s]}</td><td>${a}</td><td class="bar-cell">${bar(pct(a, t))}</td><td style="font-weight:bold;">${rp(ins)}</td></tr>`;
+  });
+  h += `<tr class="tot-row" style="background:#eef3ea;"><td class="nama" style="color:#000;">TOTAL CABANG</td><td style="font-weight:bold;">${cab}</td><td></td><td style="font-weight:bold;">${total}</td><td class="bar-cell">${bar(pct(total, cab))}</td><td style="font-weight:bold;">${rp(totalIns)}</td></tr>`;
+  table.tBodies[0].insertAdjacentHTML('beforeend', h);
+}
+
 const OKTOBER_PERIODE = 'Oktober - November';
 const OKTOBER_KPI = [
   { id:'okEaHilo', title:'EA Hilo (EA Okt + EA Nov)', periode:OKTOBER_PERIODE, target:120 },
@@ -5207,6 +5254,7 @@ function itemGroupKompetisi(name, branch){
     if(n.includes('BLACKCURRANT') && n.includes('TEA')) return 'BLACKCURRANT';
     if(n.includes('LYCHEE TEA')) return 'LYCHEE_TEA';
     if(n.includes('MILKY ORANGE')) return 'MILKY';
+    if(n.includes('MILKY MANGO')) return 'MILKY_MANGO';
     if(n.includes('MARKISA')) return 'MARKISA';
     if(n.includes('STRAWBERRY')) return 'STRAWBERRY';
     return null;
@@ -5217,6 +5265,7 @@ function itemGroupKompetisi(name, branch){
     if(n.includes('JERUK NIPIS')) return 'NIPIS';
     if(n.includes('LEMON TEA')) return 'LEMON_TEA';
     if(n.includes('MILKY ORANGE')) return 'MILKY';
+    if(n.includes('MILKY MANGO')) return 'MILKY_MANGO';
     if(n.includes('BLACKCURRANT') && n.includes('TEA')) return 'BLACKCURRANT';
     if(n.includes('LYCHEE TEA')) return 'LYCHEE_TEA';
     if(n.includes('JERUK PONTIANAK')) return 'PONTIANAK';
@@ -5234,6 +5283,7 @@ function itemGroupKompetisi(name, branch){
   if(n.includes('ANGGUR')) return 'ANGGUR';
   if(n.includes('BLACKCURRANT') && n.includes('TEA')) return 'BLACKCURRANT';
   if(n.includes('MILKY ORANGE')) return 'MILKY';
+  if(n.includes('MILKY MANGO')) return 'MILKY_MANGO';
   if(n.includes('STRAWBERRY')) return 'STRAWBERRY';
   if(n.includes('MELON')) return 'MELON';
   if(n.includes('SIRSAK')) return 'SIRSAK';
@@ -6630,6 +6680,7 @@ function computeOktober(){
   const results = calcOktoberResults(currentBranch);
   if(currentBranch === 'Bulukumba') renderOktoberMatrix(results);
   else renderOktober(results);
+  appendRoMango();
   document.getElementById('status').textContent = `Selesai menghitung dari ${rawData.length} baris data.`;
 }
 
