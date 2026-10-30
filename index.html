@@ -5167,6 +5167,11 @@ function calcRoMango(branch){
   salesList.forEach(s=>{ res.all[s] = all[s] ? all[s].size : 0; res.nov[s] = nov[s] ? nov[s].size : 0; });
   return res;
 }
+function roMangoNote(results, s){
+  const nov = (results.ndMangoNov && results.ndMangoNov[s]) || 0, all = (results.ndMango && results.ndMango[s]) || 0;
+  const ins = nov >= RO_MANGO.target ? RO_MANGO.insentifNov : (all >= RO_MANGO.target ? RO_MANGO.insentifDes : 0);
+  return ins ? `<div style="font-weight:bold;color:#067647;font-size:12px;">Rp ${ins.toLocaleString('id-ID')}</div>` : '';
+}
 const RO_MANGO_INS = 'Rp 1.000.000 (100 s.d. Nov) / Rp 250.000 (100 di Des)';
 const OKTOBER_PERIODE = 'Oktober - November';
 const OKTOBER_KPI = [
@@ -6303,7 +6308,9 @@ function calcOktoberResults(branch){
   results.okNs7 = countNs7(ns7All);
   results.okNs7Okt = countNs7(ns7Okt);
   if(OKTOBER_MT5.byBranch[branch]) results.okMt5 = calcMt5(salesList);
-  results[RO_MANGO.id] = calcRoMango(branch).all;
+  const mg = calcRoMango(branch);
+  results[RO_MANGO.id] = mg.all;
+  results.ndMangoNov = mg.nov;
   return results;
 }
 
@@ -6758,7 +6765,7 @@ function renderOktober(results){
       salesList.forEach(sales=>{
         const ach = get(p.id, sales);
         const row = table.insertRow(-1);
-        row.innerHTML = `<td class="nama">${sales}</td><td><input class="target-input" type="number" value="${p.target}" onchange="updateTarget('${p.id}', this.value)"></td><td>${ach}</td>` + barCell(pct(ach, p.target), 2);
+        row.innerHTML = `<td class="nama">${sales}</td><td><input class="target-input" type="number" value="${p.target}" onchange="updateTarget('${p.id}', this.value)"></td><td>${ach}${p.id === RO_MANGO.id ? roMangoNote(results, sales) : ''}</td>` + barCell(pct(ach, p.target), 2);
       });
       if(withCabang){
         const total = salesList.reduce((acc, s)=>acc + get(p.id, s), 0);
@@ -6785,7 +6792,7 @@ function renderOktober(results){
       html += `<td class="nama">${sales}</td>`;
       if(idx === 0) html += `<td class="col-ins" rowspan="${rs}">${insentifText}</td>`;
       html += `<td><input class="target-input" type="number" value="${p.target}" onchange="updateTarget('${p.id}', this.value)"></td>`;
-      html += `<td>${ach}</td>`;
+      html += `<td>${ach}${p.id === RO_MANGO.id ? roMangoNote(results, sales) : ''}</td>`;
       html += `<td class="bar-cell"><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:${width}%"></div></div><span class="bar-label">${p_}%</span></div></td>`;
       row.innerHTML = html;
     });
@@ -6915,9 +6922,9 @@ function renderOktoberMatrix(results){
       if(m){
         const p_ = pct(ach, p.target);
         const w = Math.max(0, Math.min(p_, 100));
-        html += `<td><b>${ach}</b> &nbsp;<span class="bar-label">${p_}%</span><div class="bar-bg mbar"><div class="bar-fill" style="width:${w}%"></div></div></td>`;
+        html += `<td><b>${ach}</b>${p.id === RO_MANGO.id ? roMangoNote(results, s) : ''} &nbsp;<span class="bar-label">${p_}%</span><div class="bar-bg mbar"><div class="bar-fill" style="width:${w}%"></div></div></td>`;
       } else {
-        html += `<td>${ach}</td>` + bar(pct(ach, p.target), 1);
+        html += `<td>${ach}${p.id === RO_MANGO.id ? roMangoNote(results, s) : ''}</td>` + bar(pct(ach, p.target), 1);
       }
     });
     if(!m) html += `<td class="col-per">${p.periode}</td><td class="col-ins">${insentifText}</td>`;
