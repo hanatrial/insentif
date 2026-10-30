@@ -5183,6 +5183,26 @@ function roMangoNote(results, s){
   const ins = nov >= RO_MANGO.target ? RO_MANGO.insentifNov : (all >= RO_MANGO.target ? RO_MANGO.insentifDes : 0);
   return ins ? `<div style="font-weight:bold;color:#067647;font-size:12px;">Rp ${ins.toLocaleString('id-ID')}</div>` : '';
 }
+// Ringkasan insentif November per sales: Raport 2 bulan + per varian + MT 5 Varian + EA Milky Mango
+function novemberSummary(results, salesList, raport){
+  const mt5Cfg = OKTOBER_MT5.byBranch[currentBranch];
+  const out = {};
+  salesList.forEach(s=>{
+    const g = id=>(results[id] && results[id][s]) || 0;
+    const varian = OKTOBER_VARIAN.filter(p=>p.branches.includes(currentBranch) && p.target > 0 && g(p.id) >= p.target)
+      .reduce((acc, p)=>acc + (parseInt(String(p.insentif).replace(/[.,]/g, ''), 10) || 0), 0);
+    const mt5 = mt5Cfg && mt5Cfg.target > 0 && g(OKTOBER_MT5.id) >= mt5Cfg.target ? mt5Cfg.nominal : 0;
+    const nov = (results.ndMangoNov && results.ndMangoNov[s]) || 0, all = g(RO_MANGO.id);
+    const mango = nov >= RO_MANGO.target ? RO_MANGO.insentifNov : (all >= RO_MANGO.target ? RO_MANGO.insentifDes : 0);
+    const rap = raport[s].nominal;
+    out[s] = { rap, varian, mt5, mango, total: rap + varian + mt5 + mango };
+  });
+  return out;
+}
+function novemberSummaryCell(t){
+  const f = n=>'Rp ' + n.toLocaleString('id-ID');
+  return `${f(t.total)}<div style="font-weight:normal;font-size:11px;color:#667085;">Raport ${f(t.rap)} &bull; Varian ${f(t.varian)} &bull; MT5 ${f(t.mt5)} &bull; EA Mango ${f(t.mango)}</div>`;
+}
 const RO_MANGO_INS = 'Rp 1.000.000 (100 s.d. Nov) / Rp 250.000 (100 di Des)';
 const OKTOBER_PERIODE = 'Oktober - November';
 const OKTOBER_KPI = [
@@ -6756,6 +6776,7 @@ function renderTargetCabang(cfg, sum, jmlSales){
 
 function renderOktober(results){
   const salesList = getSalesList();
+  const isNov = insentifViewMonth === 'November';
   const table = document.getElementById('mainTable');
   table.className = '';
   table.innerHTML = '<caption>Program Insentif Oktober - November</caption>';
@@ -6835,16 +6856,16 @@ function renderOktober(results){
   if(m){
     addMobileTitle(table, `Insentif Raport Sales Q4 2026 &bull; ${OKTOBER_PERIODE} &bull; * = EA Hilo >${OKTOBER_EA_HILO_BONUS_MIN}`, 5);
     const th = table.insertRow(-1);
-    th.innerHTML = '<th>Nama Salesman</th><th>KPI (dari 5)</th><th>Raport 2 Bln</th><th>KPI &ge;60%</th><th>Bonus Okt</th>';
+    th.innerHTML = '<th>Nama Salesman</th><th>KPI (dari 5)</th><th>Raport 2 Bln</th>' + (isNov ? '' : '<th>KPI &ge;60%</th><th>Bonus Okt</th>');
     salesList.forEach(sales=>{
       const rp = raport[sales];
       const row = table.insertRow(-1);
-      row.innerHTML = `<td class="nama">${sales}</td><td>${rp.achCount}${rp.allBonus ? '*' : ''}</td><td style="font-weight:bold;">Rp ${fmtRp(rp.nominal)}</td><td>${rp.okt60}</td><td style="font-weight:bold;">Rp ${fmtRp(rp.bonusOkt)}</td>`;
+      row.innerHTML = `<td class="nama">${sales}</td><td>${rp.achCount}${rp.allBonus ? '*' : ''}</td><td style="font-weight:bold;">Rp ${fmtRp(rp.nominal)}</td>` + (isNov ? '' : `<td>${rp.okt60}</td><td style="font-weight:bold;">Rp ${fmtRp(rp.bonusOkt)}</td>`);
     });
   } else {
   addMobileTitle(table, `Insentif Raport Sales Q4 2026 &bull; ${OKTOBER_PERIODE}`, 5);
   const theadR = table.insertRow(-1);
-  theadR.innerHTML = '<th class="col-prog">Program Insentif</th><th class="col-per">Periode</th><th>Nama Salesman</th><th>KPI Tercapai (dari 5)</th><th>Insentif Raport 2 Bulan</th><th>KPI >=60% di Oktober</th><th>Bonus Oktober</th>';
+  theadR.innerHTML = '<th class="col-prog">Program Insentif</th><th class="col-per">Periode</th><th>Nama Salesman</th><th>KPI Tercapai (dari 5)</th><th>Insentif Raport 2 Bulan</th>' + (isNov ? '' : '<th>KPI >=60% di Oktober</th><th>Bonus Oktober</th>');
   salesList.forEach((sales, idx)=>{
     const rp = raport[sales];
     const row = table.insertRow(-1);
@@ -6856,8 +6877,10 @@ function renderOktober(results){
     html += `<td class="nama">${sales}</td>`;
     html += `<td>${rp.achCount}${rp.allBonus ? ' (EA Hilo >' + OKTOBER_EA_HILO_BONUS_MIN + ')' : ''}</td>`;
     html += `<td style="font-weight:bold;">Rp ${rp.nominal.toLocaleString('id-ID')}</td>`;
-    html += `<td>${rp.okt60}</td>`;
-    html += `<td style="font-weight:bold;">Rp ${rp.bonusOkt.toLocaleString('id-ID')}</td>`;
+    if(!isNov){
+      html += `<td>${rp.okt60}</td>`;
+      html += `<td style="font-weight:bold;">Rp ${rp.bonusOkt.toLocaleString('id-ID')}</td>`;
+    }
     row.innerHTML = html;
   });
   }
@@ -6868,42 +6891,42 @@ function renderOktober(results){
   varianAktif.forEach(p=>renderBlock(p, 'Rp ' + p.insentif + '/varian', (cabangCfg && cabangCfg[p.id]) || 0));
 
   const mt5Cfg = OKTOBER_MT5.byBranch[currentBranch];
-  if(mt5Cfg){
+  if(mt5Cfg && isNov){
     renderBlock({ id:OKTOBER_MT5.id, title:OKTOBER_MT5.title, periode:OKTOBER_MT5.periode, target:mt5Cfg.target }, 'Rp ' + mt5Cfg.nominal.toLocaleString('id-ID') + '/sales', mt5Cfg.targetCabang);
   }
 
-  const totals = {};
-  salesList.forEach(s=>{
-    totals[s] = raport[s].bonusOkt;
-  });
+  const isNovSum = isNov ? novemberSummary(results, salesList, raport) : null;
+  const sumTitle = isNov ? 'Ringkasan: Total Insentif November' : 'Ringkasan: Total Insentif Oktober (hanya Bonus Oktober)';
+  const sumCell = sales=> isNov ? novemberSummaryCell(isNovSum[sales]) : 'Rp ' + raport[sales].bonusOkt.toLocaleString('id-ID');
 
   if(m){
-    addMobileTitle(table, 'Ringkasan: Total Insentif Oktober (hanya Bonus Oktober)', 5);
+    addMobileTitle(table, sumTitle, 5);
     const th = table.insertRow(-1);
     th.innerHTML = '<th colspan="2">Nama Salesman</th><th colspan="3">Total Insentif</th>';
     salesList.forEach(sales=>{
       const row = table.insertRow(-1);
-      row.innerHTML = `<td class="nama" colspan="2">${sales}</td><td colspan="3" style="text-align:right; font-weight:bold;">Rp ${fmtRp(totals[sales])}</td>`;
+      row.innerHTML = `<td class="nama" colspan="2">${sales}</td><td colspan="3" style="text-align:right; font-weight:bold;">${sumCell(sales)}</td>`;
     });
     return;
   }
-  addMobileTitle(table, 'Ringkasan: Total Insentif Oktober (hanya Bonus Oktober)', 2);
+  addMobileTitle(table, sumTitle, 2);
   const theadTotal = table.insertRow(-1);
   theadTotal.innerHTML = '<th class="col-prog" colspan="2">Ringkasan</th><th>Nama Salesman</th><th colspan="4">Total Insentif</th>';
   salesList.forEach((sales, idx)=>{
     const row = table.insertRow(-1);
     let html = '';
     if(idx === 0){
-      html += `<td class="program col-prog" rowspan="${salesList.length}" colspan="2">Total Insentif Oktober per Salesman (hanya Bonus Oktober)</td>`;
+      html += `<td class="program col-prog" rowspan="${salesList.length}" colspan="2">${isNov ? 'Total Insentif November per Salesman' : 'Total Insentif Oktober per Salesman (hanya Bonus Oktober)'}</td>`;
     }
     html += `<td class="nama">${sales}</td>`;
-    html += `<td colspan="4" style="text-align:right; font-weight:bold;">Rp ${totals[sales].toLocaleString('id-ID')}</td>`;
+    html += `<td colspan="4" style="text-align:right; font-weight:bold;">${sumCell(sales)}</td>`;
     row.innerHTML = html;
   });
 }
 
 function renderOktoberMatrix(results){
   const salesList = getSalesList();
+  const isNov = insentifViewMonth === 'November';
   const n = salesList.length;
   const table = document.getElementById('mainTable');
   table.className = 'mtx';
@@ -6970,8 +6993,10 @@ function renderOktoberMatrix(results){
   sectionRow('Insentif Raport Sales Q4 2026 (Oktober - November)');
   infoRow('KPI Tercapai (dari 5)', salesList.map(s=>raport[s].achCount + (raport[s].allBonus ? ' (EA Hilo >' + OKTOBER_EA_HILO_BONUS_MIN + ')' : '')));
   infoRow('Insentif Raport 2 Bulan', salesList.map(s=>'Rp ' + raport[s].nominal.toLocaleString('id-ID')), true);
-  infoRow('KPI >=60% di Oktober', salesList.map(s=>raport[s].okt60));
-  infoRow('Bonus Oktober', salesList.map(s=>'Rp ' + raport[s].bonusOkt.toLocaleString('id-ID')), true);
+  if(!isNov){
+    infoRow('KPI >=60% di Oktober', salesList.map(s=>raport[s].okt60));
+    infoRow('Bonus Oktober', salesList.map(s=>'Rp ' + raport[s].bonusOkt.toLocaleString('id-ID')), true);
+  }
 
   table.dataset.splitRow = table.rows.length;
   addHeader();
@@ -6979,7 +7004,7 @@ function renderOktoberMatrix(results){
   OKTOBER_VARIAN.filter(p=>p.branches.includes(currentBranch)).forEach(p=>progRow(p, 'Rp ' + p.insentif + '/varian'));
 
   const mt5Cfg = OKTOBER_MT5.byBranch[currentBranch];
-  if(mt5Cfg){
+  if(mt5Cfg && isNov){
     progRow({ id:OKTOBER_MT5.id, title:OKTOBER_MT5.title, periode:OKTOBER_MT5.periode, target:mt5Cfg.target }, 'Rp ' + mt5Cfg.nominal.toLocaleString('id-ID') + '/sales');
     const total = salesList.reduce((acc, s)=>acc + get(OKTOBER_MT5.id, s), 0);
     const row = table.insertRow(-1);
@@ -6988,7 +7013,12 @@ function renderOktoberMatrix(results){
   }
 
   sectionRow('Ringkasan');
-  infoRow('Total Insentif Oktober (hanya Bonus Oktober)', salesList.map(s=>'Rp ' + raport[s].bonusOkt.toLocaleString('id-ID')), true);
+  if(isNov){
+    const ns = novemberSummary(results, salesList, raport);
+    infoRow('Total Insentif November', salesList.map(s=>novemberSummaryCell(ns[s])), true);
+  } else {
+    infoRow('Total Insentif Oktober (hanya Bonus Oktober)', salesList.map(s=>'Rp ' + raport[s].bonusOkt.toLocaleString('id-ID')), true);
+  }
 }
 
 function updateTarget(id, val){
