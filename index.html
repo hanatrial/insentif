@@ -122,7 +122,7 @@
     body { background:#f6f7f9; font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; color:#101828; -webkit-font-smoothing: antialiased; }
     .toolbar { background:#fff; border:1px solid #eaecf0; border-radius:12px; box-shadow:0 1px 2px rgba(16,24,40,.05); }
     .toolbar button { border-radius:8px; font-weight:600; }
-    #btn-Makassar, #btn-Bulukumba, #btn-Gorontalo, #btn-SehatIndah, #btn-TargetCabang, #btn-TokoPareto, #btn-SHIGorontalo, #btn-BSP, #btn-tokoMT, #btn-totalTarget, #btn-month-Oktober { background:#f2f4f7 !important; color:#344054 !important; box-shadow:none !important; }
+    #btn-Makassar, #btn-Bulukumba, #btn-Gorontalo, #btn-SehatIndah, #btn-TargetCabang, #btn-TokoPareto, #btn-SHIGorontalo, #btn-BSP, #btn-tokoMT, #btn-totalTarget, #btn-month-Oktober, #btn-month-November { background:#f2f4f7 !important; color:#344054 !important; box-shadow:none !important; }
     .toolbar button.branch-active { background:#0a5c36 !important; color:#fff !important; box-shadow:none !important; }
     #status { font-size:12px; font-weight:600; }
     .table-wrap { background:#fff; border:1px solid #eaecf0; border-radius:12px; box-shadow:0 1px 3px rgba(16,24,40,.08); }
@@ -206,7 +206,8 @@
 
 <div id="monthToggleRow" class="toolbar hidden">
   <span style="font-size:13px; font-weight:bold;">Bulan:</span>
-  <button id="btn-month-Oktober" class="branch-active" onclick="switchInsentifMonth('Oktober')">Oktober</button>
+  <button id="btn-month-Oktober" onclick="switchInsentifMonth('Oktober')">Oktober</button>
+  <button id="btn-month-November" class="branch-active" onclick="switchInsentifMonth('November')">November</button>
 </div>
 
 <div id="bspUploadRow" class="toolbar hidden">
@@ -4908,6 +4909,7 @@ const TOKO_TARGETS = {
 };
 
 let currentDashboardMonth = 'Oktober';
+let insentifViewMonth = 'November'; // toggle bulan untuk Irfan & Teddy: Oktober = tanpa EA Milky Mango
 function inDashboardMonth(tgl){
   const d = toDate(tgl);
   if(!d) return false;
@@ -5070,8 +5072,12 @@ async function login(user){
   document.querySelector('button[onclick="processFile()"]').classList.toggle('hidden', isDashboard);
   document.querySelector('button[onclick="exportToExcel()"]').classList.toggle('hidden', isDashboard);
   document.getElementById('btn-exportImage').classList.toggle('hidden', isDashboard);
-  document.getElementById('monthToggleRow').classList.toggle('hidden', !isDashboard);
+  document.getElementById('monthToggleRow').classList.toggle('hidden', !(isDashboard || user === 'Irfan' || user === 'Teddy'));
+  document.getElementById('btn-month-November').classList.toggle('hidden', isDashboard);
   currentDashboardMonth = 'Oktober';
+  insentifViewMonth = 'November';
+  document.getElementById('btn-month-Oktober').classList.toggle('branch-active', isDashboard);
+  document.getElementById('btn-month-November').classList.toggle('branch-active', !isDashboard);
   if(!isDashboard){ hideAchSlider(); hideSalesFilter(); }
   ['tokoMT','BSP','totalTarget','SHIGorontalo'].forEach(id=>{
     const btn = document.getElementById('btn-' + id);
@@ -5096,9 +5102,14 @@ function getSalesList(){
 }
 
 function switchInsentifMonth(month){
-  currentDashboardMonth = month;
   document.getElementById('btn-month-Oktober').classList.toggle('branch-active', month === 'Oktober');
-  if(currentMode !== 'dashboard') return;
+  document.getElementById('btn-month-November').classList.toggle('branch-active', month === 'November');
+  if(currentMode !== 'dashboard'){
+    insentifViewMonth = month;
+    if(rawData.length) compute();
+    return;
+  }
+  currentDashboardMonth = month;
   if(currentBranch === 'TokoMT') showTokoMTDashboard();
   else if(currentBranch === 'BSP') showBSPDashboard();
   else if(currentBranch === 'TotalTarget') showTotalTargetDashboard();
@@ -6673,7 +6684,8 @@ function computeOktober(){
 }
 
 function computeTargetCabang(){
-  const cfg = OKTOBER_TARGET_CABANG.Makassar;
+  const cfg = Object.assign({}, OKTOBER_TARGET_CABANG.Makassar);
+  if(insentifViewMonth !== 'November') delete cfg.ndMango;
   const sum = {}; targetCabangRows(cfg).forEach(k=>sum[k.id] = 0);
   let jmlSales = 0;
   cfg.branches.forEach(b=>{
@@ -6851,7 +6863,7 @@ function renderOktober(results){
   }
 
   table.dataset.splitRow = table.rows.length;
-  renderBlock(RO_MANGO, RO_MANGO_INS, currentBranch === 'Gorontalo' ? RO_MANGO.targetCabang.Gorontalo : 0);
+  if(insentifViewMonth === 'November') renderBlock(RO_MANGO, RO_MANGO_INS, currentBranch === 'Gorontalo' ? RO_MANGO.targetCabang.Gorontalo : 0);
   const varianAktif = OKTOBER_VARIAN.filter(p=>p.branches.includes(currentBranch));
   varianAktif.forEach(p=>renderBlock(p, 'Rp ' + p.insentif + '/varian', (cabangCfg && cabangCfg[p.id]) || 0));
 
@@ -6963,7 +6975,7 @@ function renderOktoberMatrix(results){
 
   table.dataset.splitRow = table.rows.length;
   addHeader();
-  progRow(RO_MANGO, RO_MANGO_INS);
+  if(insentifViewMonth === 'November') progRow(RO_MANGO, RO_MANGO_INS);
   OKTOBER_VARIAN.filter(p=>p.branches.includes(currentBranch)).forEach(p=>progRow(p, 'Rp ' + p.insentif + '/varian'));
 
   const mt5Cfg = OKTOBER_MT5.byBranch[currentBranch];
