@@ -5073,11 +5073,11 @@ async function login(user){
   document.querySelector('button[onclick="exportToExcel()"]').classList.toggle('hidden', isDashboard);
   document.getElementById('btn-exportImage').classList.toggle('hidden', isDashboard);
   document.getElementById('monthToggleRow').classList.toggle('hidden', !(isDashboard || user === 'Irfan' || user === 'Teddy'));
-  document.getElementById('btn-month-November').classList.toggle('hidden', isDashboard);
-  currentDashboardMonth = 'Oktober';
+  document.getElementById('btn-month-November').classList.remove('hidden');   // RKA (dashboard) juga punya toggle Oktober / November
+  currentDashboardMonth = 'November';   // dashboard hanya mengambil data bulan yang dipilih (per bulan, lihat inDashboardMonth)
   insentifViewMonth = 'November';
-  document.getElementById('btn-month-Oktober').classList.toggle('branch-active', isDashboard);
-  document.getElementById('btn-month-November').classList.toggle('branch-active', !isDashboard);
+  document.getElementById('btn-month-Oktober').classList.remove('branch-active');
+  document.getElementById('btn-month-November').classList.add('branch-active');
   if(!isDashboard){ hideAchSlider(); hideSalesFilter(); }
   ['tokoMT','BSP','totalTarget','SHIGorontalo'].forEach(id=>{
     const btn = document.getElementById('btn-' + id);
