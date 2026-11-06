@@ -5972,12 +5972,13 @@ async function showTotalTargetDashboard(){
       return { gt, mt: 0 };
     }
     // SHI (Sehat Indah) Gorontalo: target GT = semua produk (Rp1,1 M), tanpa target MT.
-    // Omzet = total DPP (kolom amount ekspor Sehat Indah) seluruh baris yang diupload,
-    // TANPA filter bulan. Baris BONUS/GIMMICK dan sales UMUM tidak dihitung.
+    // Omzet = total DPP (kolom amount ekspor Sehat Indah) pada bulan yang dipilih di toggle.
+    // Baris BONUS/GIMMICK dan sales UMUM tidak dihitung.
     function sumGT_SHI(rows){
       let gt = 0;
       rows.forEach(r=>{
         if(isBonusRow(r) || isUmumRow(r)) return;
+        if(!inDashboardMonth(field(r, 'Tgl'))) return;
         gt += Number(field(r, 'DPP')) || 0;
       });
       return { gt, mt: 0 };
