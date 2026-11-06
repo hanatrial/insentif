@@ -5201,7 +5201,7 @@ function novemberSummary(results, salesList, raport){
 }
 function novemberSummaryCell(t){
   const f = n=>'Rp ' + n.toLocaleString('id-ID');
-  return `${f(t.total)}<div style="font-weight:normal;font-size:11px;color:#667085;">Raport ${f(t.rap)} &bull; Varian ${f(t.varian)} &bull; MT5 ${f(t.mt5)} &bull; EA Mango ${f(t.mango)}</div>`;
+  return f(t.total);
 }
 const RO_MANGO_INS = 'Rp 1.000.000 (100 s.d. Nov) / Rp 250.000 (100 di Des)';
 const OKTOBER_PERIODE = 'Oktober - November';
