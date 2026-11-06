@@ -6449,8 +6449,10 @@ function calcSehatPareto(){
   const hasil = {};   // no -> { ach, toko }
   const bulan = {};
   let tokoKetemu = 0;
+  const perBulan = currentMode === 'dashboard';   // RKA: ikut toggle bulan (hanya bulan terpilih, target = 1 bulan)
   rawData.forEach(r=>{
     const d = toDate(field(r, 'Tgl'));
+    if(perBulan && !inDashboardMonth(d)) return;
     if(d) bulan[d.getFullYear() + '-' + d.getMonth()] = true;
     if(isBonusRow(r)) return; // BONUS / GIMMICK tidak dihitung
     const toko = String(field(r, 'Ship To', 'ShipTo') || field(r, 'Perusahaan') || '').trim();
